@@ -21,7 +21,7 @@ public class SleeveDetection extends OpenCvPipeline {
         CENTER,
         RIGHT
     }
-
+    int pos;
     // TOPLEFT anchor point for the bounding box
     private static Point SLEEVE_TOPLEFT_ANCHOR_POINT = new Point(145, 168);
 
@@ -58,6 +58,7 @@ public class SleeveDetection extends OpenCvPipeline {
         // Change the bounding box color based on the sleeve color
         if (sumColors.val[0] == minColor) {
             position = ParkingPosition.CENTER;
+            pos=2;
             Imgproc.rectangle(
                     input,
                     sleeve_pointA,
@@ -67,6 +68,7 @@ public class SleeveDetection extends OpenCvPipeline {
             );
         } else if (sumColors.val[1] == minColor) {
             position = ParkingPosition.RIGHT;
+            pos=3;
             Imgproc.rectangle(
                     input,
                     sleeve_pointA,
@@ -76,6 +78,7 @@ public class SleeveDetection extends OpenCvPipeline {
             );
         } else {
             position = ParkingPosition.LEFT;
+            pos=1;
             Imgproc.rectangle(
                     input,
                     sleeve_pointA,
@@ -91,7 +94,7 @@ public class SleeveDetection extends OpenCvPipeline {
     }
 
     // Returns an enum being the current position where the robot will park
-    public ParkingPosition getPosition() {
-        return position;
+    public int getPosition() {
+        return pos;
     }
 }

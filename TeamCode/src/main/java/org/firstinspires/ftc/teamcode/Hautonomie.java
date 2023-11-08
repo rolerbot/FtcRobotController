@@ -68,6 +68,9 @@ public class Hautonomie extends GlobalScope2023
                 }
             }
         }
+
+
+
     }
     private void initVuforia() {
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
@@ -91,5 +94,7 @@ public class Hautonomie extends GlobalScope2023
         //tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
          tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
     }
+
+
 
 }

@@ -12,10 +12,6 @@ import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 
 public abstract class GlobalScope2023 extends LinearOpMode
 {
-
-    //------------------------------ANUNT-------------------------------
-    // Toma nu mai ai dreptul de a mai modifica comentarii. -Cu drag, echipa roLERbot.
-    //----------------------------FINAL ANUNT---------------------------
     public int brattpr= 1440;
 
     /*

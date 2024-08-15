@@ -19,20 +19,17 @@ public class TeleOpSlidere extends GlobalScopeSlidere
 
         Initialise();
 
-        Intake.setPosition(0);
+        ServoIntake.setPosition(0.008);
         ServoRotire.setPosition(0.5);//0.1105
-        ServoBrat.setPosition(0.05);//0.19
-        /*while(!RevButon.isPressed())
-        {
-            SliderStanga.setPower(-1);
-            SliderDreapta.setPower(-1);
-        }*/
-        sleep(850);
-        ServoBrat.setPosition(0.15);//0.19,0.17
-        ServoGhearaStanga.setPosition(0.6);
-        ServoGhearaDreapta.setPosition(0.918);
-        ServoStanga.setPosition(0.2);//0.17,0.185,0.2,0.215
-        ServoDreapta.setPosition(0.038);//0,0.015,0.03,0.045
+        /*ServoBrat.setPosition(0.05);//0.19
+        while(!RevButon.isPressed())
+            MotorSlider.setPower(-1);
+        sleep(850);*/
+        ServoBrat.setPosition(0.161);//0.19,0.17
+        ServoGhearaStanga.setPosition(0);
+        ServoGhearaDreapta.setPosition(0.39);
+        ServoStanga.setPosition(0.187);//0.17,0.185,0.2,0.215
+        ServoDreapta.setPosition(0.017);//0,0.015,0.03,0.045
 
         waitForStart();
 
@@ -66,12 +63,16 @@ public class TeleOpSlidere extends GlobalScopeSlidere
             Brat();
             //SRotire 190 grade poz= 0.11
             telemetry.update();
-            /*if (gamepad1.dpad_up)
-                ServoRotire.setPosition(ServoRotire.getPosition() + 0.01);
-            if(gamepad1.dpad_down)
-                ServoRotire.setPosition(ServoRotire.getPosition() - 0.01);
-            telemetry.addData("Rotire", ServoRotire.getPosition());*/
-            telemetry.addData("MotorSlider", MotorSlider.getCurrentPosition());
+            /*if (gamepad2.dpad_up)
+            {
+                ServoIntake.setPosition(ServoIntake.getPosition() + 0.01);
+            }
+            if(gamepad2.dpad_down)
+            {
+                ServoIntake.setPosition(ServoIntake.getPosition() - 0.01);
+            }*/
+            telemetry.addData("SIntake", ServoIntake.getPosition());
+            telemetry.addData("IntakeCNT", pozitieActualaIntake);
             telemetry.addData("Distanta Dreapta ", SenzorDreapta.getDistance(DistanceUnit.MM));
             telemetry.addData("Distanta Stanga " , SenzorStanga.getDistance(DistanceUnit.MM));
         }

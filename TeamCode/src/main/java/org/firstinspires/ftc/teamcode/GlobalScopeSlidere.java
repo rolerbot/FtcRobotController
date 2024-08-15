@@ -24,7 +24,7 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     public DcMotorEx MotorSlider = null;
     public DcMotorEx MotorIntake = null;
     public TouchSensor RevButon = null; //Buton oprire
-    public Servo Intake = null;
+    public Servo ServoIntake = null;
     public Servo ServoRotire = null;
     public Servo ServoStanga = null;// Servo Stanga
     public Servo ServoDreapta = null; //Servo Dreapta
@@ -52,7 +52,7 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         ServoGhearaDreapta = hardwareMap.get(Servo.class, "CStanga");
         ServoRotire = hardwareMap.get(Servo.class, "SRotire");
         MotorIntake = hardwareMap.get(DcMotorEx.class, "MotorI");
-        Intake = hardwareMap.get(Servo.class, "Intake");
+        ServoIntake = hardwareMap.get(Servo.class, "Intake");
     }
 
     void Initialise() {
@@ -90,7 +90,7 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         ServoGhearaStanga.setDirection(Servo.Direction.REVERSE);
         ServoRotire.setDirection(Servo.Direction.FORWARD);
         ServoRotire.scaleRange(0,0.2);
-        Intake.setDirection(Servo.Direction.REVERSE);
+        ServoIntake.setDirection(Servo.Direction.REVERSE);
     }
 
     /// TELEOP
@@ -100,11 +100,11 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     double twist;
     double[] speeds = new double[4];
     double schimbator = 0.4;
-    int cnt = 8100;
+    int cnt = 8000;
     int ok = 0;
     double vit = 1; //Viteza
     int c1 = 0, c2 = 0, b = 0, t = 0, pozitieActualaIntake = 0, n = 0, senzor = 0;
-    double pozitiiIntake[] = {0, 0.0275, 0.0275};
+    double pozitiiIntake[] = {0.008, 0.0275, 0.03};
     GamepadEx ct1, ct2;
     ButtonReader IAMSPEED; /// cautator de viteze
     ButtonReader Vit, Launch;
@@ -240,23 +240,23 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         if(GhearaStanga.wasJustPressed() && c1 == 0)
         {
             c1++;
-            ServoGhearaStanga.setPosition(0);
+            ServoGhearaStanga.setPosition(0.6);
         }
         else if(GhearaStanga.wasJustPressed() && c1 == 1)
         {
             c1--;
-            ServoGhearaStanga.setPosition(0.6);
+            ServoGhearaStanga.setPosition(0);
         }
 
         if(GhearaDreapta.wasJustPressed() && c2 == 0)
         {
             c2++;
-            ServoGhearaDreapta.setPosition(0.39);//0.16
+            ServoGhearaDreapta.setPosition(0.918);//0.16
         }
         else if(GhearaDreapta.wasJustPressed() && c2 == 1)
         {
             c2--;
-            ServoGhearaDreapta.setPosition(0.918);//0.6// cu cleste 1
+            ServoGhearaDreapta.setPosition(0.39);//0.6// cu cleste 1
         }
     }
 
@@ -265,12 +265,12 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         BratSus.readValue();
         if(BratSus.wasJustPressed() && b == 0)
         {
-            ServoStanga.setPosition(0.85);
-            ServoDreapta.setPosition(0.7);
+            ServoStanga.setPosition(0.76);
+            ServoDreapta.setPosition(0.59);
             sleep(100);
             ServoBrat.setPosition(0.05);
             sleep(400);
-            ServoBrat.setPosition(0.5);
+            ServoBrat.setPosition(0.63);
             b++;
         }
         BratJos.readValue();
@@ -279,12 +279,12 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
             ServoRotire.setPosition(0.5);
             ServoGhearaStanga.setPosition(0);
             ServoGhearaDreapta.setPosition(0.3875);
-            ServoBrat.setPosition(0.05);
-            sleep(200);
-            ServoStanga.setPosition(0.2);//0.19
-            ServoDreapta.setPosition(0.038); //0.02
-            sleep(700);
-            ServoBrat.setPosition(0.15);//0.19/0.173
+            ServoBrat.setPosition(0.161);
+            sleep(150);
+            ServoStanga.setPosition(0.187);//0.19
+            ServoDreapta.setPosition(0.017); //0.02
+            //sleep(700);
+            //ServoBrat.setPosition(0.155);//0.19/0.173
             b--;
         }
     }
@@ -327,14 +327,14 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         IntakeDown.readValue();
         IntakeUp.readValue();
 
-        if(IntakeDown.wasJustPressed() && pozitieActualaIntake > 0)
+        if(IntakeDown.wasJustPressed() && pozitieActualaIntake > 1)
         {
-            Intake.setPosition(pozitiiIntake[pozitieActualaIntake]);
             pozitieActualaIntake--;
+            ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
         }
-        if(IntakeUp.wasJustPressed() && pozitieActualaIntake < 2)
+        if(IntakeUp.wasJustPressed() && pozitieActualaIntake < 1)
         {
-            Intake.setPosition(pozitiiIntake[pozitieActualaIntake]);
+            ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
             pozitieActualaIntake++;
         }
     }

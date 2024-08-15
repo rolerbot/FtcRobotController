@@ -71,6 +71,7 @@ public class TeleOpSlidere extends GlobalScopeSlidere
             if(gamepad1.dpad_down)
                 ServoRotire.setPosition(ServoRotire.getPosition() - 0.01);
             telemetry.addData("Rotire", ServoRotire.getPosition());*/
+            telemetry.addData("MotorSlider", MotorSlider.getCurrentPosition());
             telemetry.addData("Distanta Dreapta ", SenzorDreapta.getDistance(DistanceUnit.MM));
             telemetry.addData("Distanta Stanga " , SenzorStanga.getDistance(DistanceUnit.MM));
         }

@@ -21,8 +21,7 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     public DcMotorEx MotorFD = null; /// Fata dreapta
     public DcMotorEx MotorSS = null; /// Spate stanga
     public DcMotorEx MotorSD = null; /// Spate dreapta
-    public DcMotorEx SliderStanga = null;
-    public DcMotorEx SliderDreapta = null;
+    public DcMotorEx MotorSlider = null;
     public DcMotorEx MotorIntake = null;
     public TouchSensor RevButon = null; //Buton oprire
     public Servo Intake = null;
@@ -41,8 +40,7 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         MotorFD = hardwareMap.get(DcMotorEx.class, "MotorFD");
         MotorSS = hardwareMap.get(DcMotorEx.class, "MotorSS");
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
-        SliderStanga = hardwareMap.get(DcMotorEx.class, "SliderStanga");
-        SliderDreapta = hardwareMap.get(DcMotorEx.class, "SliderDreapta");
+        MotorSlider = hardwareMap.get(DcMotorEx.class, "SliderStanga");
         RevButon = hardwareMap.get(TouchSensor.class, "RevButon");
         ServoDreapta = hardwareMap.get(Servo.class, "SDreapta");
         ServoStanga = hardwareMap.get(Servo.class, "SStanga");
@@ -78,14 +76,10 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         MotorIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         //--------------------------BRATZ-------------
-        SliderDreapta.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SliderStanga.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SliderStanga.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        SliderDreapta.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        SliderStanga.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        SliderDreapta.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        SliderStanga.setDirection(DcMotorSimple.Direction.FORWARD);//Forward
-        SliderDreapta.setDirection(DcMotorSimple.Direction.REVERSE);//Reverse
+        MotorSlider.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        MotorSlider.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorSlider.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        MotorSlider.setDirection(DcMotorSimple.Direction.FORWARD);
 
         //------------------------Servo---------------------
         ServoBrat.setDirection(Servo.Direction.REVERSE);
@@ -153,27 +147,17 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     {
         if (gamepad2.left_stick_y > 0.5 && !RevButon.isPressed()) // Coboara
         {
-            SliderStanga.setPower(-vit);
-            SliderDreapta.setPower(-vit); //-
+            MotorSlider.setPower(-vit);
             ok = 0;
-
         }
-        else if (gamepad2.left_stick_y < -0.5 && SliderDreapta.getCurrentPosition() < cnt) //Urca
-        {
-            SliderStanga.setPower(vit);
-            SliderDreapta.setPower(vit);
-        }
+        else if (gamepad2.left_stick_y < -0.5 && MotorSlider.getCurrentPosition() < cnt) //Urca
+            MotorSlider.setPower(vit);
         else
-        {
-            SliderStanga.setPower(0);
-            SliderDreapta.setPower(0);
-        }
+            MotorSlider.setPower(0);
         if(RevButon.isPressed() && ok == 0)
         {
-            SliderStanga.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            SliderDreapta.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            SliderDreapta.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            SliderStanga.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            MotorSlider.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            MotorSlider.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             ok = 1;
         }
     }

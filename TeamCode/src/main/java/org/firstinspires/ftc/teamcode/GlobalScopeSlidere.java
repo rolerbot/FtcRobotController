@@ -106,11 +106,11 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     double twist;
     double[] speeds = new double[4];
     double schimbator = 0.4;
-    int cnt = 8100;
+    int cnt = 8000;
     int ok = 0;
     double vit = 1; //Viteza
     int c1 = 0, c2 = 0, b = 0, t = 0, pozitieActualaIntake = 0, n = 0, senzor = 0;
-    double pozitiiIntake[] = {0, 0.0275, 0.0275};
+    double pozitiiIntake[] = {0.007, 0.0275, 0.03};
     GamepadEx ct1, ct2;
     ButtonReader IAMSPEED; /// cautator de viteze
     ButtonReader Vit, Launch;
@@ -229,21 +229,24 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     void SenzorSiCleste()
     {
         GhearaStanga.readValue();
-        if(ServoBrat.getPosition()<0.2 && ServoStanga.getPosition()<0.2) {
+        if(ServoBrat.getPosition() < 0.2 && ServoStanga.getPosition() < 0.2) {
             if (SenzorStanga.getDistance(DistanceUnit.MM) < 58) {
                 //sleep(1000);
-                //ServoGhearaDreapta.setPosition(0.06);
+                ServoGhearaDreapta.setPosition(0.918);
                 gamepad1.rumble(0,200,1000);
-            } else {
-                //ServoGhearaDreapta.setPosition(0.64);
+                gamepad1.rumble(0,0,1000);
+            }
+            else {
+                ServoGhearaDreapta.setPosition(0.39);
             }
             if (SenzorDreapta.getDistance(DistanceUnit.MM) < 58) {
                 //sleep(1000);
-                //ServoGhearaStanga.setPosition(0.06);
+                ServoGhearaStanga.setPosition(0.06);
                 gamepad1.rumble(200,0,1000);
-            } else {
-                //ServoGhearaStanga.setPosition(0.64);
-
+                gamepad1.rumble(200,0,1000);
+            }
+            else {
+                ServoGhearaStanga.setPosition(0);
             }
         }
     }
@@ -281,12 +284,12 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         BratSus.readValue();
         if(BratSus.wasJustPressed() && b == 0)
         {
-            ServoStanga.setPosition(0.85);
-            ServoDreapta.setPosition(0.7);
+            ServoStanga.setPosition(0.75);
+            ServoDreapta.setPosition(0.58);
             sleep(100);
             ServoBrat.setPosition(0.05);
-            sleep(400);
-            ServoBrat.setPosition(0.5);
+            sleep(350);
+            ServoBrat.setPosition(0.65);
             b++;
         }
         BratJos.readValue();
@@ -297,10 +300,10 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
             ServoGhearaDreapta.setPosition(0.3875);
             ServoBrat.setPosition(0.05);
             sleep(200);
-            ServoStanga.setPosition(0.2);//0.19
-            ServoDreapta.setPosition(0.038); //0.02
+            ServoStanga.setPosition(0.17);//0.19
+            ServoDreapta.setPosition(0.025); //0.02
             sleep(700);
-            ServoBrat.setPosition(0.15);//0.19/0.173
+            ServoBrat.setPosition(0.156);//0.19/0.173
             b--;
         }
     }
@@ -343,15 +346,15 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         IntakeDown.readValue();
         IntakeUp.readValue();
 
-        if(IntakeDown.wasJustPressed() && pozitieActualaIntake > 0)
+        if(IntakeDown.wasJustPressed() && pozitieActualaIntake >= 1)
         {
-            ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
             pozitieActualaIntake--;
-        }
-        if(IntakeUp.wasJustPressed() && pozitieActualaIntake < 2)
-        {
             ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
-            pozitieActualaIntake++;
+        }
+        if(IntakeUp.wasJustPressed() && pozitieActualaIntake <= 1)
+        {
+            pozitieActualaIntake--;
+            ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
         }
     }
 }

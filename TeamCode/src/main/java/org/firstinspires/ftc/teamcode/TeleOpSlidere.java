@@ -19,17 +19,17 @@ public class TeleOpSlidere extends GlobalScopeSlidere
 
         Initialise();
 
-        ServoIntake.setPosition(0.005);
+        ServoIntake.setPosition(0.007);
         ServoRotire.setPosition(0.5);//0.1105
         /*ServoBrat.setPosition(0.05);//0.19
         while(!RevButon.isPressed())
             MotorSlider.setPower(-1);
         sleep(850);*/
-        ServoBrat.setPosition(0.171);//0.19,0.17
+        ServoBrat.setPosition(0.156);//0.19,0.17
         ServoGhearaStanga.setPosition(0);
         ServoGhearaDreapta.setPosition(0.39);
-        ServoStanga.setPosition(0.187);//0.17,0.185,0.2,0.215
-        ServoDreapta.setPosition(0.017);//0,0.015,0.03,0.045
+        ServoStanga.setPosition(0.17);//0.17,0.185,0.2,0.215
+        ServoDreapta.setPosition(0.025);//0,0.015,0.03,0.045
 
         waitForStart();
 
@@ -43,8 +43,8 @@ public class TeleOpSlidere extends GlobalScopeSlidere
         GhearaDreapta = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
         Launch = new ButtonReader(ct1, GamepadKeys.Button.X);
         VitezaPozitivaIntake = new ButtonReader(ct1, GamepadKeys.Button.A);
-        //IntakeUp = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
-        //IntakeDown = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        IntakeUp = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+        IntakeDown = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
         VitezaNegativaIntake = new ButtonReader(ct1, GamepadKeys.Button.Y);
         BratSus = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);
         BratJos = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_BUMPER);
@@ -54,7 +54,7 @@ public class TeleOpSlidere extends GlobalScopeSlidere
             WeGottaMove();
             WeGottaExtend();
             //SlideVit();
-            //Intake();
+            Intake();
             Roteste();
             SenzoriCuloare();
             //SenzorSiCleste();
@@ -62,29 +62,19 @@ public class TeleOpSlidere extends GlobalScopeSlidere
             Cleste();
             Brat();
             //SRotire 190 grade poz= 0.11
-            if (gamepad2.dpad_up)
+            /*if (gamepad1.dpad_left)
             {
                 ServoBrat.setPosition(ServoBrat.getPosition() + 0.01);
             }
-            if(gamepad2.dpad_down)
+            if(gamepad1.dpad_right)
             {
                 ServoBrat.setPosition(ServoBrat.getPosition() - 0.01);
-            }
-            if (gamepad1.dpad_up)
-            {
-                ServoStanga.setPosition(ServoStanga.getPosition() + 0.01);
-                ServoDreapta.setPosition(ServoDreapta.getPosition() + 0.01);
-            }
-            if(gamepad1.dpad_down)
-            {
-                ServoStanga.setPosition(ServoStanga.getPosition() - 0.01);
-                ServoDreapta.setPosition(ServoDreapta.getPosition() - 0.01);
-            }
+            }*/
             telemetry.update();
-            telemetry.addData("SStanga", ServoStanga.getPosition());
-            telemetry.addData("SDreapta", ServoDreapta.getPosition());
-            telemetry.addData("SBrat", ServoBrat.getPosition());
-            //telemetry.addData("IntakeCNT", pozitieActualaIntake);
+            //telemetry.addData("SStanga", ServoStanga.getPosition());
+            //telemetry.addData("SDreapta", ServoDreapta.getPosition());
+            //telemetry.addData("SBrat", ServoBrat.getPosition());
+            telemetry.addData("IntakeCNT", pozitieActualaIntake);
             telemetry.addData("Distanta Dreapta ", SenzorDreapta.getDistance(DistanceUnit.MM));
             telemetry.addData("Distanta Stanga " , SenzorStanga.getDistance(DistanceUnit.MM));
         }

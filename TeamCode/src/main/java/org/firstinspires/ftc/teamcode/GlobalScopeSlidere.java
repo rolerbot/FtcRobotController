@@ -104,7 +104,7 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     int ok = 0;
     double vit = 1; //Viteza
     int c1 = 0, c2 = 0, b = 0, t = 0, pozitieActualaIntake = 0, n = 0, senzor = 0;
-    double pozitiiIntake[] = {0.008, 0.0275, 0.03};
+    double pozitiiIntake[] = {0.005, 0.275, 0.036};
     GamepadEx ct1, ct2;
     ButtonReader IAMSPEED; /// cautator de viteze
     ButtonReader Vit, Launch;
@@ -177,8 +177,8 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         if(Launch.wasJustPressed())
         {
             ServoDrona.setPosition(0.4);/// vedem daca 0.3 e bine, deocamdata e pus la misto
-            sleep(1500);
-            ServoDrona.setPosition(0.6);
+            //sleep(1500);
+            //ServoDrona.setPosition(0.6);
         }
     }
 
@@ -279,12 +279,12 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
             ServoRotire.setPosition(0.5);
             ServoGhearaStanga.setPosition(0);
             ServoGhearaDreapta.setPosition(0.3875);
-            ServoBrat.setPosition(0.161);
+            ServoBrat.setPosition(0.153);
             sleep(150);
             ServoStanga.setPosition(0.187);//0.19
             ServoDreapta.setPosition(0.017); //0.02
-            //sleep(700);
-            //ServoBrat.setPosition(0.155);//0.19/0.173
+            sleep(700);
+            ServoBrat.setPosition(0.171);//0.19/0.173
             b--;
         }
     }
@@ -327,15 +327,15 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         IntakeDown.readValue();
         IntakeUp.readValue();
 
-        if(IntakeDown.wasJustPressed() && pozitieActualaIntake > 1)
+        if(IntakeDown.wasJustPressed() && pozitieActualaIntake >= 1)
         {
             pozitieActualaIntake--;
             ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
         }
-        if(IntakeUp.wasJustPressed() && pozitieActualaIntake < 1)
+        if(IntakeUp.wasJustPressed() && pozitieActualaIntake <= 1)
         {
-            ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
             pozitieActualaIntake++;
+            ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
         }
     }
 }

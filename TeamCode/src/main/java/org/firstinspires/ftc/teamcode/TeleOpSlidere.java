@@ -19,13 +19,13 @@ public class TeleOpSlidere extends GlobalScopeSlidere
 
         Initialise();
 
-        ServoIntake.setPosition(0.008);
+        ServoIntake.setPosition(0.005);
         ServoRotire.setPosition(0.5);//0.1105
         /*ServoBrat.setPosition(0.05);//0.19
         while(!RevButon.isPressed())
             MotorSlider.setPower(-1);
         sleep(850);*/
-        ServoBrat.setPosition(0.161);//0.19,0.17
+        ServoBrat.setPosition(0.171);//0.19,0.17
         ServoGhearaStanga.setPosition(0);
         ServoGhearaDreapta.setPosition(0.39);
         ServoStanga.setPosition(0.187);//0.17,0.185,0.2,0.215
@@ -62,16 +62,16 @@ public class TeleOpSlidere extends GlobalScopeSlidere
             Cleste();
             Brat();
             //SRotire 190 grade poz= 0.11
-            telemetry.update();
             /*if (gamepad2.dpad_up)
             {
-                ServoIntake.setPosition(ServoIntake.getPosition() + 0.01);
+                ServoBrat.setPosition(ServoBrat.getPosition() + 0.01);
             }
             if(gamepad2.dpad_down)
             {
-                ServoIntake.setPosition(ServoIntake.getPosition() - 0.01);
+                ServoBrat.setPosition(ServoBrat.getPosition() - 0.01);
             }*/
-            telemetry.addData("SIntake", ServoIntake.getPosition());
+            telemetry.update();
+            telemetry.addData("SBrat", ServoBrat.getPosition());
             telemetry.addData("IntakeCNT", pozitieActualaIntake);
             telemetry.addData("Distanta Dreapta ", SenzorDreapta.getDistance(DistanceUnit.MM));
             telemetry.addData("Distanta Stanga " , SenzorStanga.getDistance(DistanceUnit.MM));

@@ -41,6 +41,7 @@ public class TeleOpSlidere extends GlobalScopeSlidere
         {
             MiscareBaza();
             SliderExtend();
+            SliderBaza();
             Intake();
             Roteste();
             Cleste();

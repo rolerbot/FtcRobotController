@@ -20,8 +20,9 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     public DcMotorEx MotorSD = null; /// Spate dreapta
     public DcMotorEx Slider = null;
     public TouchSensor RevButon = null; //Buton oprire
-    public Servo ServoIntake = null;
     public Servo ServoRotire = null;
+    public Servo BazaDreapta = null;
+    public Servo BazaStanga = null;
     public Servo ServoDrona = null; // Servo Drona
     public Servo ServoGhearaDreapta = null; //Cleste Stanga
     public Servo ServoGhearaStanga = null; //Cleste Dreapta
@@ -37,7 +38,6 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         ServoGhearaStanga = hardwareMap.get(Servo.class, "CDreapta");
         ServoGhearaDreapta = hardwareMap.get(Servo.class, "CStanga");
         ServoRotire = hardwareMap.get(Servo.class, "SRotire");
-        ServoIntake = hardwareMap.get(Servo.class, "Intake");
     }
 
     void Initialise() {
@@ -66,11 +66,9 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         ServoGhearaStanga.setDirection(Servo.Direction.REVERSE);
         ServoRotire.setDirection(Servo.Direction.FORWARD);
         ServoRotire.scaleRange(0,0.2);
-        ServoIntake.setDirection(Servo.Direction.REVERSE);
     }
 
     /// TELEOP
-    Gamepad.RumbleEffect customRumbleEffect;
     double drive;
     double strafe;
     double twist;
@@ -137,6 +135,20 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         }
     }
 
+    void SliderBaza()
+    {
+        if (gamepad1.left_stick_y > 0.5 && BazaDreapta.getPosition() > 0) // Coboara
+        {
+           BazaDreapta.setPosition(BazaDreapta.getPosition() - 0.01);
+           BazaStanga.setPosition(BazaStanga.getPosition() - 0.01);
+        }
+        else if (gamepad1.left_stick_y < -0.5 && BazaDreapta.getPosition() < 0.5)
+        {
+            BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.01);
+            BazaStanga.setPosition(BazaStanga.getPosition() + 0.01);
+        }
+    }
+
     void Cleste()
     {
         GhearaStanga.readValue();
@@ -161,7 +173,7 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         else if(GhearaDreapta.wasJustPressed() && cleste2 == 1)
         {
             cleste2--;
-            ServoGhearaDreapta.setPosition(0.918);//0.6// cu cleste 1
+            ServoGhearaDreapta.setPosition(0.918);
         }
     }
 
@@ -174,11 +186,11 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     {
         RotireStanga.readValue();
         RotireDreapta.readValue();
-        double posRotire = ServoRotire.getPosition();
+        double PosInitial = ServoRotire.getPosition();
         if(RotireStanga.wasJustPressed())
-            ServoRotire.setPosition(posRotire - 0.125);
+            ServoRotire.setPosition(PosInitial - 0.125);
         if(RotireDreapta.wasJustPressed())
-            ServoRotire.setPosition(posRotire +0.125);
+            ServoRotire.setPosition(PosInitial + 0.125);
     }
 
     void Intake()

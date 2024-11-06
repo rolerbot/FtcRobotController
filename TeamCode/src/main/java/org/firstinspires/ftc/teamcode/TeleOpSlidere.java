@@ -19,18 +19,6 @@ public class TeleOpSlidere extends GlobalScopeSlidere
 
         Initialise();
 
-        ServoIntake.setPosition(0.007);
-        ServoRotire.setPosition(0.5);//0.1105
-        /*ServoBrat.setPosition(0.05);//0.19
-        while(!RevButon.isPressed())
-            MotorSlider.setPower(-1);
-        sleep(850);*/
-        ServoBrat.setPosition(0.156);//0.19,0.17
-        ServoGhearaStanga.setPosition(0);
-        ServoGhearaDreapta.setPosition(0.39);
-        ServoStanga.setPosition(0.17);//0.17,0.185,0.2,0.215
-        ServoDreapta.setPosition(0.025);//0,0.015,0.03,0.045
-
         waitForStart();
 
         ct1 = new GamepadEx(gamepad1);
@@ -51,32 +39,14 @@ public class TeleOpSlidere extends GlobalScopeSlidere
 
         while (opModeIsActive())
         {
-            WeGottaMove();
-            WeGottaExtend();
-            //SlideVit();
+            MiscareBaza();
+            SliderExtend();
             Intake();
             Roteste();
-            SenzoriCuloare();
-            //SenzorSiCleste();
-            WeGottaLunchDrone();
             Cleste();
             Brat();
-            //SRotire 190 grade poz= 0.11
-            /*if (gamepad1.dpad_left)
-            {
-                ServoBrat.setPosition(ServoBrat.getPosition() + 0.01);
-            }
-            if(gamepad1.dpad_right)
-            {
-                ServoBrat.setPosition(ServoBrat.getPosition() - 0.01);
-            }*/
             telemetry.update();
-            //telemetry.addData("SStanga", ServoStanga.getPosition());
-            //telemetry.addData("SDreapta", ServoDreapta.getPosition());
-            //telemetry.addData("SBrat", ServoBrat.getPosition());
             telemetry.addData("IntakeCNT", pozitieActualaIntake);
-            telemetry.addData("Distanta Dreapta ", SenzorDreapta.getDistance(DistanceUnit.MM));
-            telemetry.addData("Distanta Stanga " , SenzorStanga.getDistance(DistanceUnit.MM));
         }
     }
 }

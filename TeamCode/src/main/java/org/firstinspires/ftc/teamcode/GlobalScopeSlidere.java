@@ -4,7 +4,6 @@ import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.TriggerReader;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.ColorRangeSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -13,47 +12,31 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
 public abstract class GlobalScopeSlidere extends LinearOpMode
 {
     public DcMotorEx MotorFS = null; /// Fata stanga
     public DcMotorEx MotorFD = null; /// Fata dreapta
     public DcMotorEx MotorSS = null; /// Spate stanga
     public DcMotorEx MotorSD = null; /// Spate dreapta
-    public DcMotorEx SliderStanga = null;
-    public DcMotorEx SliderDreapta = null;
-    public DcMotorEx MotorIntake = null;
+    public DcMotorEx Slider = null;
     public TouchSensor RevButon = null; //Buton oprire
     public Servo ServoIntake = null;
     public Servo ServoRotire = null;
-    public Servo ServoStanga = null;// Servo Stanga
-    public Servo ServoDreapta = null; //Servo Dreapta
     public Servo ServoDrona = null; // Servo Drona
     public Servo ServoGhearaDreapta = null; //Cleste Stanga
     public Servo ServoGhearaStanga = null; //Cleste Dreapta
-    public Servo ServoBrat = null;
-    public ColorRangeSensor SenzorStanga = null; //Senzor culoare Stang
-    public ColorRangeSensor SenzorDreapta = null; //Senzor culoare drept
 
     void LinkComponents() {
         MotorFS = hardwareMap.get(DcMotorEx.class, "MotorFS");
         MotorFD = hardwareMap.get(DcMotorEx.class, "MotorFD");
         MotorSS = hardwareMap.get(DcMotorEx.class, "MotorSS");
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
-        SliderStanga = hardwareMap.get(DcMotorEx.class, "SliderStanga");
-        SliderDreapta = hardwareMap.get(DcMotorEx.class, "SliderDreapta");
+        Slider = hardwareMap.get(DcMotorEx.class, "Slider");
         RevButon = hardwareMap.get(TouchSensor.class, "RevButon");
-        ServoDreapta = hardwareMap.get(Servo.class, "SDreapta");
-        ServoStanga = hardwareMap.get(Servo.class, "SStanga");
         ServoDrona = hardwareMap.get(Servo.class, "SDrona");
-        ServoBrat = hardwareMap.get(Servo.class, "SBrat");
-        SenzorStanga = hardwareMap.get(ColorRangeSensor.class, "Color1");
-        SenzorDreapta = hardwareMap.get(ColorRangeSensor.class, "Color2");
         ServoGhearaStanga = hardwareMap.get(Servo.class, "CDreapta");
         ServoGhearaDreapta = hardwareMap.get(Servo.class, "CStanga");
         ServoRotire = hardwareMap.get(Servo.class, "SRotire");
-        MotorIntake = hardwareMap.get(DcMotorEx.class, "MotorI");
         ServoIntake = hardwareMap.get(Servo.class, "Intake");
     }
 
@@ -68,29 +51,16 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         MotorFD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorSS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorSD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //MotorFS.setTargetPositionTolerance(5); /// Eroare de 10 unitati I guess idk
-        //MotorFD.setTargetPositionTolerance(5);
-        //MotorSS.setTargetPositionTolerance(5);
-        //MotorSD.setTargetPositionTolerance(5);
         MotorFS.setDirection(DcMotorSimple.Direction.REVERSE);
         MotorSS.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        MotorIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
         //--------------------------BRATZ-------------
-        SliderDreapta.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SliderStanga.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SliderStanga.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        SliderDreapta.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        SliderStanga.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        SliderDreapta.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        SliderStanga.setDirection(DcMotorSimple.Direction.FORWARD);//Forward
-        SliderDreapta.setDirection(DcMotorSimple.Direction.REVERSE);//Reverse
+        Slider.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Slider.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        Slider.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        Slider.setDirection(DcMotorSimple.Direction.REVERSE);//Reverse
 
         //------------------------Servo---------------------
-        ServoBrat.setDirection(Servo.Direction.REVERSE);
-        ServoStanga.setDirection(Servo.Direction.REVERSE);
-        ServoDreapta.setDirection(Servo.Direction.FORWARD);
         ServoDrona.setDirection(Servo.Direction.FORWARD); //Vedem daca trebuie Reverse
         ServoGhearaDreapta.setDirection(Servo.Direction.FORWARD);
         ServoGhearaStanga.setDirection(Servo.Direction.REVERSE);
@@ -109,8 +79,7 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     int cnt = 8000;
     int ok = 0;
     double vit = 1; //Viteza
-    int c1 = 0, c2 = 0, b = 0, t = 0, pozitieActualaIntake = 0, n = 0, senzor = 0;
-    double pozitiiIntake[] = {0.007, 0.0275, 0.03};
+    int cleste1 = 0, cleste2 = 0, pozitieActualaIntake = 0;
     GamepadEx ct1, ct2;
     ButtonReader IAMSPEED; /// cautator de viteze
     ButtonReader Vit, Launch;
@@ -120,7 +89,7 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     TriggerReader GhearaStanga, GhearaDreapta;
     ButtonReader VitezaNegativaIntake;
 
-    void WeGottaMove()
+    void MiscareBaza()
     {
         IAMSPEED.readValue();
         if(IAMSPEED.wasJustPressed())
@@ -149,105 +118,22 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         MotorSD.setPower(speeds[3]);
     }
 
-    void WeGottaExtend()
+    void SliderExtend()
     {
         if (gamepad2.left_stick_y > 0.5 && !RevButon.isPressed()) // Coboara
         {
-            SliderStanga.setPower(-vit);
-            SliderDreapta.setPower(-vit); //-
+            Slider.setPower(-vit); //-
             ok = 0;
-
         }
-        else if (gamepad2.left_stick_y < -0.5 && SliderDreapta.getCurrentPosition() < cnt) //Urca
-        {
-            SliderStanga.setPower(vit);
-            SliderDreapta.setPower(vit);
-        }
+        else if (gamepad2.left_stick_y < -0.5 && Slider.getCurrentPosition() < cnt) //Urca
+            Slider.setPower(vit);
         else
-        {
-            SliderStanga.setPower(0);
-            SliderDreapta.setPower(0);
-        }
+            Slider.setPower(0);
         if(RevButon.isPressed() && ok == 0)
         {
-            SliderStanga.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            SliderDreapta.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            SliderDreapta.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            SliderStanga.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            Slider.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            Slider.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             ok = 1;
-        }
-    }
-
-    void SlideVit()
-    {
-        Vit.readValue();
-        if (Vit.wasJustPressed() && vit == 1)
-            vit = 0.5;
-        else if (Vit.wasJustPressed() && vit == 0.5)
-            vit = 1;
-    }
-
-    void WeGottaLunchDrone()
-    {
-        Launch.readValue();
-        if(Launch.wasJustPressed())
-        {
-            ServoDrona.setPosition(0.4);/// vedem daca 0.3 e bine, deocamdata e pus la misto
-            sleep(1500);
-            ServoDrona.setPosition(0.6);
-        }
-    }
-
-    void SenzoriCuloare()
-    {
-        if (SenzorStanga.getDistance(DistanceUnit.MM) < 55 && SenzorDreapta.getDistance(DistanceUnit.MM) < 55 && senzor == 0)
-        {
-            senzor = 1;
-            gamepad1.rumble(0,200,1000);
-            gamepad1.rumble(0,200,1000);
-            gamepad1.rumble(0,0,200);
-            gamepad1.rumble(0,0,200);
-            gamepad1.rumble(0,200,1000);
-            gamepad1.rumble(0,200,1000);
-        }
-        else if (SenzorStanga.getDistance(DistanceUnit.MM) < 55 && senzor == 0)
-        {
-            gamepad1.rumble(0,200,1000);
-            gamepad1.rumble(0,200,1000);
-            senzor = 1;
-        }
-        else if(SenzorDreapta.getDistance(DistanceUnit.MM) < 55 && senzor == 0)
-        {
-            gamepad1.rumble(0,200,1000);
-            gamepad1.rumble(0,200,1000);
-            senzor = 1;
-        }
-        if(SenzorDreapta.getDistance(DistanceUnit.MM) > 55 && SenzorStanga.getDistance(DistanceUnit.MM) > 55)
-            senzor = 0;
-    }
-
-    void SenzorSiCleste()
-    {
-        GhearaStanga.readValue();
-        if(ServoBrat.getPosition() < 0.2 && ServoStanga.getPosition() < 0.2) {
-            if (SenzorStanga.getDistance(DistanceUnit.MM) < 58) {
-                //sleep(1000);
-                ServoGhearaDreapta.setPosition(0.918);
-                gamepad1.rumble(0,200,1000);
-                gamepad1.rumble(0,0,1000);
-            }
-            else {
-                ServoGhearaDreapta.setPosition(0.39);
-            }
-            if (SenzorDreapta.getDistance(DistanceUnit.MM) < 58) {
-                //sleep(1000);
-                ServoGhearaStanga.setPosition(0.06);
-                gamepad1.rumble(200,0,1000);
-                gamepad1.rumble(200,0,1000);
-            }
-            else {
-                ServoGhearaStanga.setPosition(0);
-            }
         }
     }
 
@@ -256,56 +142,32 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         GhearaStanga.readValue();
         GhearaDreapta.readValue();
 
-        if(GhearaStanga.wasJustPressed() && c1 == 0)
+        if(GhearaStanga.wasJustPressed() && cleste1 == 0)
         {
-            c1++;
+            cleste1++;
             ServoGhearaStanga.setPosition(0);
         }
-        else if(GhearaStanga.wasJustPressed() && c1 == 1)
+        else if(GhearaStanga.wasJustPressed() && cleste1 == 1)
         {
-            c1--;
+            cleste1--;
             ServoGhearaStanga.setPosition(0.6);
         }
 
-        if(GhearaDreapta.wasJustPressed() && c2 == 0)
+        if(GhearaDreapta.wasJustPressed() && cleste2 == 0)
         {
-            c2++;
+            cleste2++;
             ServoGhearaDreapta.setPosition(0.39);//0.16
         }
-        else if(GhearaDreapta.wasJustPressed() && c2 == 1)
+        else if(GhearaDreapta.wasJustPressed() && cleste2 == 1)
         {
-            c2--;
+            cleste2--;
             ServoGhearaDreapta.setPosition(0.918);//0.6// cu cleste 1
         }
     }
 
     void Brat()
     {
-        BratSus.readValue();
-        if(BratSus.wasJustPressed() && b == 0)
-        {
-            ServoStanga.setPosition(0.75);
-            ServoDreapta.setPosition(0.58);
-            sleep(100);
-            ServoBrat.setPosition(0.05);
-            sleep(350);
-            ServoBrat.setPosition(0.65);
-            b++;
-        }
-        BratJos.readValue();
-        if(BratJos.wasJustPressed() && b == 1)
-        {
-            ServoRotire.setPosition(0.5);
-            ServoGhearaStanga.setPosition(0);
-            ServoGhearaDreapta.setPosition(0.3875);
-            ServoBrat.setPosition(0.05);
-            sleep(200);
-            ServoStanga.setPosition(0.17);//0.19
-            ServoDreapta.setPosition(0.025); //0.02
-            sleep(700);
-            ServoBrat.setPosition(0.156);//0.19/0.173
-            b--;
-        }
+
     }
 
     void Roteste()
@@ -321,40 +183,6 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
 
     void Intake()
     {
-        VitezaPozitivaIntake.readValue();
-        if(VitezaPozitivaIntake.wasJustPressed() && t == 0){
-            MotorIntake.setPower(0.6);
-            t++;
-        }
-        else if(VitezaPozitivaIntake.wasJustPressed() && t == 1)
-        {
-            MotorIntake.setPower(0);
-            t--;
-        }
-        VitezaNegativaIntake.readValue();
-        if(VitezaNegativaIntake.wasJustPressed() && n == 0)
-        {
-            MotorIntake.setPower(-0.6);
-            n++;
-        }
-        else if(VitezaNegativaIntake.wasJustPressed() && n == 1)
-        {
-            MotorIntake.setPower(0);
-            n--;
-        }
 
-        IntakeDown.readValue();
-        IntakeUp.readValue();
-
-        if(IntakeDown.wasJustPressed() && pozitieActualaIntake >= 1)
-        {
-            pozitieActualaIntake--;
-            ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
-        }
-        if(IntakeUp.wasJustPressed() && pozitieActualaIntake <= 1)
-        {
-            pozitieActualaIntake--;
-            ServoIntake.setPosition(pozitiiIntake[pozitieActualaIntake]);
-        }
     }
 }

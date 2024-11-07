@@ -20,29 +20,17 @@ public class TeleOp extends GlobalScope
 
         ct1 = new GamepadEx(gamepad1);
         ct2 = new GamepadEx(gamepad2);
-        IAMSPEED = new ButtonReader(ct1, GamepadKeys.Button.B);
-        Vit = new ButtonReader(ct2, GamepadKeys.Button.Y);
-        RotireStanga = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
-        RotireDreapta = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
-        GhearaStanga = new TriggerReader(ct2, GamepadKeys.Trigger.LEFT_TRIGGER);
-        GhearaDreapta = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
-        Launch = new ButtonReader(ct1, GamepadKeys.Button.X);
-        VitezaPozitivaIntake = new ButtonReader(ct1, GamepadKeys.Button.A);
-        IntakeUp = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
-        IntakeDown = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
-        VitezaNegativaIntake = new ButtonReader(ct1, GamepadKeys.Button.Y);
-        BratSus = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);
-        BratJos = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_BUMPER);
+
 
         while (opModeIsActive())
         {
             MiscareBaza();
             SliderExtend();
-            SliderBaza();
+            /**SliderBaza();
             Intake();
             Roteste();
             Cleste();
-            Brat();
+            Brat();*/
             telemetry.update();
         }
     }

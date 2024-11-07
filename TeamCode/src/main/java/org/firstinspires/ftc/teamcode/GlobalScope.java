@@ -22,6 +22,8 @@ public abstract class GlobalScope extends LinearOpMode
     public Servo ServoRotire = null;
     public Servo BazaDreapta = null;
     public Servo BazaStanga = null;
+    public Servo IntakeDreapta = null;
+    public Servo IntakeStanga = null;
     public Servo ServoGhearaDreapta = null; //Cleste Stanga
     public Servo ServoGhearaStanga = null; //Cleste Dreapta
 
@@ -35,6 +37,8 @@ public abstract class GlobalScope extends LinearOpMode
         ServoGhearaStanga = hardwareMap.get(Servo.class, "CDreapta");
         ServoGhearaDreapta = hardwareMap.get(Servo.class, "CStanga");
         ServoRotire = hardwareMap.get(Servo.class, "SRotire");
+        IntakeStanga = hardwareMap.get(Servo.class, "BratStanga");
+        IntakeDreapta = hardwareMap.get(Servo.class, "BratDreapta");
     }
 
     void Initialise() {
@@ -51,17 +55,19 @@ public abstract class GlobalScope extends LinearOpMode
         MotorFS.setDirection(DcMotorSimple.Direction.REVERSE);
         MotorSS.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        //--------------------------BRATZ-------------
+        //--------------------------SLIDE-------------
         Slider.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         Slider.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         Slider.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         Slider.setDirection(DcMotorSimple.Direction.REVERSE);//Reverse
 
-        //------------------------Servo---------------------
+        //------------------------SERVO---------------------
         ServoGhearaDreapta.setDirection(Servo.Direction.FORWARD);
         ServoGhearaStanga.setDirection(Servo.Direction.REVERSE);
         ServoRotire.setDirection(Servo.Direction.FORWARD);
         ServoRotire.scaleRange(0,0.2);
+        IntakeDreapta.setDirection(Servo.Direction.FORWARD);
+        IntakeStanga.setDirection(Servo.Direction.REVERSE);
     }
 
     /// TELEOP
@@ -73,20 +79,19 @@ public abstract class GlobalScope extends LinearOpMode
     int cnt = 8000;
     int ok = 0;
     double vit = 1; //Viteza
-    int cleste1 = 0, cleste2 = 0, pozitieActualaIntake = 0;
+    int cleste1 = 0, cleste2 = 0, pozitieIntake = 0;
+    double PozBrat[] = {0, 0.1, 0.2, 0.3};
     GamepadEx ct1, ct2;
-    ButtonReader IAMSPEED; /// cautator de viteze
-    ButtonReader Vit, Launch;
+    ButtonReader Viteza; /// cautator de viteze
     ButtonReader RotireStanga, RotireDreapta;
-    ButtonReader BratSus, BratJos;
-    ButtonReader VitezaPozitivaIntake, IntakeUp, IntakeDown;
+    ButtonReader IntakeSus, IntakeJos;
+    ButtonReader IntakeUp, IntakeDown;
     TriggerReader GhearaStanga, GhearaDreapta;
-    ButtonReader VitezaNegativaIntake;
 
     void MiscareBaza()
     {
-        IAMSPEED.readValue();
-        if(IAMSPEED.wasJustPressed())
+        Viteza.readValue();
+        if(Viteza.wasJustPressed())
         {
             schimbator = 1.4 - schimbator;
             telemetry.addData("viteza este", schimbator);
@@ -114,12 +119,12 @@ public abstract class GlobalScope extends LinearOpMode
 
     void SliderExtend()
     {
-        if (gamepad2.left_stick_y > 0.5 && !RevButon.isPressed()) // Coboara
+        if (gamepad2.left_stick_y > 0.5 ) // Coboara && !RevButon.isPressed()
         {
             Slider.setPower(-vit); //-
             ok = 0;
         }
-        else if (gamepad2.left_stick_y < -0.5 && Slider.getCurrentPosition() < cnt) //Urca
+        else if (gamepad2.left_stick_y < -0.5 ) //Urca && Slider.getCurrentPosition() < cnt
             Slider.setPower(vit);
         else
             Slider.setPower(0);
@@ -173,9 +178,23 @@ public abstract class GlobalScope extends LinearOpMode
         }
     }
 
-    void Brat()
+    void Intake()
     {
+        IntakeSus.readValue();
+        IntakeJos.readValue();
 
+        if(IntakeSus.wasJustPressed() && pozitieIntake < 2)
+        {
+              IntakeDreapta.setPosition(PozBrat[pozitieIntake]);
+              IntakeStanga.setPosition(PozBrat[pozitieIntake]);
+              pozitieIntake++;
+        }
+        if(IntakeJos.wasJustPressed() && pozitieIntake > 0)
+        {
+            IntakeDreapta.setPosition(PozBrat[pozitieIntake]);
+            IntakeStanga.setPosition(PozBrat[pozitieIntake]);
+            pozitieIntake--;
+        }
     }
 
     void Roteste()
@@ -189,7 +208,7 @@ public abstract class GlobalScope extends LinearOpMode
             ServoRotire.setPosition(PosInitial + 0.125);
     }
 
-    void Intake()
+    void Brat()
     {
 
     }

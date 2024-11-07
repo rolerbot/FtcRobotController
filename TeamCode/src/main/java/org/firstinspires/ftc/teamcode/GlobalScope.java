@@ -8,11 +8,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
-public abstract class GlobalScopeSlidere extends LinearOpMode
+public abstract class GlobalScope extends LinearOpMode
 {
     public DcMotorEx MotorFS = null; /// Fata stanga
     public DcMotorEx MotorFD = null; /// Fata dreapta
@@ -23,7 +22,6 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
     public Servo ServoRotire = null;
     public Servo BazaDreapta = null;
     public Servo BazaStanga = null;
-    public Servo ServoDrona = null; // Servo Drona
     public Servo ServoGhearaDreapta = null; //Cleste Stanga
     public Servo ServoGhearaStanga = null; //Cleste Dreapta
 
@@ -34,7 +32,6 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
         Slider = hardwareMap.get(DcMotorEx.class, "Slider");
         RevButon = hardwareMap.get(TouchSensor.class, "RevButon");
-        ServoDrona = hardwareMap.get(Servo.class, "SDrona");
         ServoGhearaStanga = hardwareMap.get(Servo.class, "CDreapta");
         ServoGhearaDreapta = hardwareMap.get(Servo.class, "CStanga");
         ServoRotire = hardwareMap.get(Servo.class, "SRotire");
@@ -61,7 +58,6 @@ public abstract class GlobalScopeSlidere extends LinearOpMode
         Slider.setDirection(DcMotorSimple.Direction.REVERSE);//Reverse
 
         //------------------------Servo---------------------
-        ServoDrona.setDirection(Servo.Direction.FORWARD); //Vedem daca trebuie Reverse
         ServoGhearaDreapta.setDirection(Servo.Direction.FORWARD);
         ServoGhearaStanga.setDirection(Servo.Direction.REVERSE);
         ServoRotire.setDirection(Servo.Direction.FORWARD);

@@ -4,13 +4,10 @@ import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.gamepad.TriggerReader;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
-@TeleOp(name="Robot16Aug", group="Linear Opmode")
-public class TeleOpSlidere extends GlobalScopeSlidere
+@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="Robot16Aug", group="Linear Opmode")
+public class TeleOp extends GlobalScope
 {
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -47,7 +44,6 @@ public class TeleOpSlidere extends GlobalScopeSlidere
             Cleste();
             Brat();
             telemetry.update();
-            telemetry.addData("IntakeCNT", pozitieActualaIntake);
         }
     }
 }

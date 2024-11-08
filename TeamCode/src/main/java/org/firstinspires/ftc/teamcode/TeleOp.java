@@ -22,7 +22,9 @@ public class TeleOp extends GlobalScope
         ct2 = new GamepadEx(gamepad2);
         BazaDreapta.setPosition(0);
         BazaStanga.setPosition(0);
-        Viteza = new ButtonReader(gamepad1, GamepadKeys.Button.B);
+        ServoGhearaIntake.setPosition(0);
+        ServoGhearaOutake.setPosition(0);
+        Viteza  = new ButtonReader(ct1, GamepadKeys.Button.B);
 
         while (opModeIsActive())
         {
@@ -34,6 +36,8 @@ public class TeleOp extends GlobalScope
             //Cleste();
             //Brat();
             telemetry.update();
+            telemetry.addData("BazaDreapta.getPosition()");
+            telemetry.addData(BazaDreapta.getPosition());
         }
     }
 }

@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.TouchSensor;
 
 public abstract class GlobalScope extends LinearOpMode
 {
@@ -23,8 +22,8 @@ public abstract class GlobalScope extends LinearOpMode
     public Servo BazaStanga = null;
     public Servo IntakeDreapta = null;
     public Servo IntakeStanga = null;
-    //public Servo ServoGhearaDreapta = null; //Cleste Stanga
-    //public Servo ServoGhearaStanga = null; //Cleste Dreapta
+    public Servo ServoGhearaIntake = null; //Cleste Stanga
+    public Servo ServoGhearaOutake = null; //Cleste Dreapta
 
     void LinkComponents() {
         MotorFS = hardwareMap.get(DcMotorEx.class, "MotorFS");
@@ -32,8 +31,8 @@ public abstract class GlobalScope extends LinearOpMode
         MotorSS = hardwareMap.get(DcMotorEx.class, "MotorSS");
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
         Slider = hardwareMap.get(DcMotorEx.class, "Slider");
-        //ServoGhearaStanga = hardwareMap.get(Servo.class, "ServoGhearaStanga");
-        //ServoGhearaDreapta = hardwareMap.get(Servo.class, "ServoGhearaDreapta");
+        ServoGhearaOutake = hardwareMap.get(Servo.class, "ServoGhearaStanga");
+        ServoGhearaIntake = hardwareMap.get(Servo.class, "ServoGhearaDreapta");
         //ServoRotire = hardwareMap.get(Servo.class, "ServoRotire");
         IntakeStanga = hardwareMap.get(Servo.class, "IntakeStanga");
         IntakeDreapta = hardwareMap.get(Servo.class, "IntakeDreapta");
@@ -62,8 +61,8 @@ public abstract class GlobalScope extends LinearOpMode
         Slider.setDirection(DcMotorSimple.Direction.REVERSE);//Reverse
 
         //------------------------SERVO---------------------
-        //ServoGhearaDreapta.setDirection(Servo.Direction.FORWARD);
-        //ServoGhearaStanga.setDirection(Servo.Direction.REVERSE);
+        ServoGhearaIntake.setDirection(Servo.Direction.FORWARD);
+        ServoGhearaOutake.setDirection(Servo.Direction.REVERSE);
         //ServoRotire.setDirection(Servo.Direction.FORWARD);
         //ServoRotire.scaleRange(0,0.2);
         BazaDreapta.setDirection(Servo.Direction.FORWARD);
@@ -87,7 +86,7 @@ public abstract class GlobalScope extends LinearOpMode
     ButtonReader RotireStanga, RotireDreapta;
     ButtonReader IntakeSus, IntakeJos;
     ButtonReader IntakeUp, IntakeDown;
-    TriggerReader GhearaStanga, GhearaDreapta;
+    TriggerReader GhearaIntake, GhearaOutake;
 
     void MiscareBaza()
     {
@@ -120,9 +119,9 @@ public abstract class GlobalScope extends LinearOpMode
 
     void SliderExtend()
     {
-        if (gamepad2.left_stick_y > 0.5 && Slider.getCurrentPosition() > cnt) // Coboara
+        if (gamepad2.left_stick_y > 0.5 ) // Coboara && Slider.getCurrentPosition() > cnt
             Slider.setPower(-vit);
-        else if (gamepad2.left_stick_y < -0.5 && Slider.getCurrentPosition() < cnt) //Urca
+        else if (gamepad2.left_stick_y < -0.5 ) //Urca && Slider.getCurrentPosition() < cnt
             Slider.setPower(vit);
         else
             Slider.setPower(0);
@@ -136,12 +135,12 @@ public abstract class GlobalScope extends LinearOpMode
 
     void SliderBaza()
     {
-        if (gamepad2.left_stick_x > 0.5 && BazaDreapta.getPosition() > 0) // Coboara
+        if (gamepad2.left_stick_x > 0.5 ) // Coboara && BazaDreapta.getPosition() > 0
         {
            BazaDreapta.setPosition(BazaDreapta.getPosition() - 0.01);
            BazaStanga.setPosition(BazaStanga.getPosition() - 0.01);
         }
-        else if (gamepad2.left_stick_x < -0.5 && BazaDreapta.getPosition() < 0.5) //Urca
+        else if (gamepad2.left_stick_x < -0.5) //Urca && BazaDreapta.getPosition() < 0.5
         {
             BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.01);
             BazaStanga.setPosition(BazaStanga.getPosition() + 0.01);

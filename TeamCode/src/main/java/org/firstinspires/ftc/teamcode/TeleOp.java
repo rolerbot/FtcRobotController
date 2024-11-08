@@ -20,17 +20,19 @@ public class TeleOp extends GlobalScope
 
         ct1 = new GamepadEx(gamepad1);
         ct2 = new GamepadEx(gamepad2);
-
+        BazaDreapta.setPosition(0);
+        BazaStanga.setPosition(0);
+        Viteza = new ButtonReader(gamepad1, GamepadKeys.Button.B);
 
         while (opModeIsActive())
         {
             MiscareBaza();
             SliderExtend();
-            /**SliderBaza();
-            Intake();
-            Roteste();
-            Cleste();
-            Brat();*/
+            SliderBaza();
+            //Intake();
+            //Roteste();
+            //Cleste();
+            //Brat();
             telemetry.update();
         }
     }

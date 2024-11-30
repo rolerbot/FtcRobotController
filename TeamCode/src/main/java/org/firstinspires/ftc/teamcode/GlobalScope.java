@@ -20,7 +20,10 @@ public abstract class GlobalScope extends LinearOpMode
     public Servo ServoRotire = null;
     public Servo BazaDreapta = null;
     public Servo BazaStanga = null;
-    public Servo Intake = null;
+    public Servo IntakeStanga = null;
+    public Servo IntakeDreapta = null;
+    public Servo OutakeStanga = null;
+    public Servo OutakeDreapta = null;
     public Servo ServoGhearaIntake = null; //Cleste Stanga
     public Servo ServoGhearaOutake = null; //Cleste Dreapta
 
@@ -30,13 +33,15 @@ public abstract class GlobalScope extends LinearOpMode
         MotorSS = hardwareMap.get(DcMotorEx.class, "MotorSS");
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
         Slider = hardwareMap.get(DcMotorEx.class, "Slider");
-        ServoGhearaOutake = hardwareMap.get(Servo.class, "ServoGhearaStanga");
-        ServoGhearaIntake = hardwareMap.get(Servo.class, "ServoGhearaDreapta");
+        ServoGhearaOutake = hardwareMap.get(Servo.class, "ServoGhearaOutake");
+        ServoGhearaIntake = hardwareMap.get(Servo.class, "ServoGhearaIntake");
         ServoRotire = hardwareMap.get(Servo.class, "ServoRotire");
-        //IntakeStanga = hardwareMap.get(Servo.class, "IntakeStanga");
-        Intake = hardwareMap.get(Servo.class, "Intake");
+        IntakeDreapta = hardwareMap.get(Servo.class, "IntakeDreapta");
+        IntakeStanga = hardwareMap.get(Servo.class, "IntakeStanga");
         BazaDreapta = hardwareMap.get(Servo.class, "BazaDreapta");
         BazaStanga = hardwareMap. get(Servo.class, "BazaStanga");
+        OutakeStanga = hardwareMap.get(Servo.class, "OutakeStanga");
+        OutakeDreapta = hardwareMap.get(Servo.class, "OutakeDreapta");
     }
 
     void Initialise() {
@@ -60,13 +65,16 @@ public abstract class GlobalScope extends LinearOpMode
         Slider.setDirection(DcMotorSimple.Direction.REVERSE);//Reverse
 
         //------------------------SERVO---------------------
-        ServoGhearaIntake.setDirection(Servo.Direction.REVERSE);
-        ServoGhearaOutake.setDirection(Servo.Direction.FORWARD);
+        ServoGhearaIntake.setDirection(Servo.Direction.FORWARD);
+        ServoGhearaOutake.setDirection(Servo.Direction.REVERSE);
         ServoRotire.setDirection(Servo.Direction.FORWARD);
         ServoRotire.scaleRange(0,0.2);
-        BazaDreapta.setDirection(Servo.Direction.REVERSE);
-        BazaStanga.setDirection(Servo.Direction.FORWARD);
-        Intake.setDirection(Servo.Direction.FORWARD);
+        BazaDreapta.setDirection(Servo.Direction.FORWARD);
+        BazaStanga.setDirection(Servo.Direction.REVERSE);
+        IntakeStanga.setDirection(Servo.Direction.FORWARD);
+        IntakeDreapta.setDirection(Servo.Direction.REVERSE);
+        OutakeStanga.setDirection(Servo.Direction.REVERSE);
+        OutakeDreapta.setDirection(Servo.Direction.FORWARD);
     }
 
     /// TELEOP
@@ -83,8 +91,8 @@ public abstract class GlobalScope extends LinearOpMode
     ButtonReader Viteza; /// cautator de viteze
     ButtonReader RotireStanga, RotireDreapta;
     ButtonReader IntakeSus, IntakeJos;
-    ButtonReader IntakeUp, IntakeDown;
     TriggerReader GhearaIntake, GhearaOutake;
+    ButtonReader OutakeJos, OutakeSus;
 
     void MiscareBaza()
     {
@@ -117,9 +125,10 @@ public abstract class GlobalScope extends LinearOpMode
 
     void SliderExtend()
     {
-        if (gamepad2.left_stick_y > 0.5 && Slider.getCurrentPosition() > cnt) // Coboara
+        double deadzone = 0.5;
+        if (gamepad2.left_stick_y > deadzone && Slider.getCurrentPosition() > cnt) // Coboara
             Slider.setPower(-vit);
-        else if (gamepad2.left_stick_y < -0.5 && Slider.getCurrentPosition() < cnt) //Urca
+        else if (gamepad2.left_stick_y < -deadzone && Slider.getCurrentPosition() < cnt) //Urca
             Slider.setPower(vit);
         else
             Slider.setPower(0);
@@ -131,51 +140,64 @@ public abstract class GlobalScope extends LinearOpMode
         }*/
     }
 
+
+
     void SliderBaza()
     {
-        if (gamepad2.left_stick_x > 0.5 ) // Coboara && BazaDreapta.getPosition() > 0
+        double deadzone = 0.005;
+        if (gamepad2.left_stick_x > deadzone && BazaDreapta.getPosition() < 0.33 ||
+            gamepad2.left_stick_x < -deadzone && BazaStanga.getPosition() > 0.007)
         {
-           //BazaDreapta.setPosition(BazaDreapta.getPosition() - 0.0002);
-           //BazaStanga.setPosition(BazaStanga.getPosition() - 0.0002);
-            BazaDreapta.setPosition(0.05);
-            BazaStanga.setPosition(0.05);
-        }
-        else if (gamepad2.left_stick_x < -0.5) //Urca && BazaDreapta.getPosition() < 0.5
-        {
-            //BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.0002);
-            //BazaStanga.setPosition(BazaStanga.getPosition() + 0.0002);
-            BazaDreapta.setPosition(0);
-            BazaStanga.setPosition(0);
+            BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.003 * gamepad2.left_stick_x);
+            BazaStanga.setPosition(BazaStanga.getPosition() + 0.003 * gamepad2.left_stick_x);
         }
     }
 
-    /*void Cleste()
+    /**void SliderBaza()
     {
-        GhearaStanga.readValue();
-        GhearaDreapta.readValue();
-
-        if(GhearaStanga.wasJustPressed() && cleste1 == 0)
+        if (gamepad2.left_stick_x > 0.005 && BazaDreapta.getPosition() < 0.075) // Extinde
         {
-            cleste1++;
-            ServoGhearaStanga.setPosition(0);
+           BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.0003 * gamepad2.left_stick_x);
+           BazaStanga.setPosition(BazaStanga.getPosition() + 0.0003 * gamepad2.left_stick_x);
+           //BazaDreapta.setPosition(0.07);
+           //BazaStanga.setPosition(0.07);
         }
-        else if(GhearaStanga.wasJustPressed() && cleste1 == 1)
+        else if (gamepad2.left_stick_x < -0.005 && BazaStanga.getPosition() > 0.018) //Retrage
         {
-            cleste1--;
-            ServoGhearaStanga.setPosition(0.6);
-        }
-
-        if(GhearaDreapta.wasJustPressed() && cleste2 == 0)
-        {
-            cleste2++;
-            ServoGhearaDreapta.setPosition(0.39);
-        }
-        else if(GhearaDreapta.wasJustPressed() && cleste2 == 1)
-        {
-            cleste2--;
-            ServoGhearaDreapta.setPosition(0.918);
+            BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.0003 * gamepad2.left_stick_x);
+            BazaStanga.setPosition(BazaStanga.getPosition() + 0.0003 * gamepad2.left_stick_x);
+            //BazaDreapta.setPosition(0.02);
+            //BazaStanga.setPosition(0.02);
         }
     }*/
+
+    void Cleste()
+    {
+        GhearaIntake.readValue();
+        GhearaOutake.readValue();
+
+        if(GhearaIntake.wasJustPressed() && cleste1 == 0)
+        {
+            cleste1++;
+            ServoGhearaIntake.setPosition(0.022);
+        }
+        else if(GhearaIntake.wasJustPressed() && cleste1 == 1)
+        {
+            cleste1--;
+            ServoGhearaIntake.setPosition(0); ///0.02
+        }
+
+        if(GhearaOutake.wasJustPressed() && cleste2 == 0)
+        {
+            cleste2++;
+            ServoGhearaOutake.setPosition(0.022);
+        }
+        else if(GhearaOutake.wasJustPressed() && cleste2 == 1)
+        {
+            cleste2--;
+            ServoGhearaOutake.setPosition(0); ///0.02
+        }
+    }
 
     void Intake()
     {
@@ -184,13 +206,32 @@ public abstract class GlobalScope extends LinearOpMode
 
         if(IntakeSus.wasJustPressed())
         {
-              Intake.setPosition(0.84);
+              IntakeStanga.setPosition(1);
+              IntakeDreapta.setPosition(1);
               //pozitieIntake++;
         }
-        if(IntakeJos.wasJustPressed() )
+        if(IntakeJos.wasJustPressed())
         {
-            Intake.setPosition(0);
+            IntakeDreapta.setPosition(0);
+            IntakeStanga.setPosition(0);
             //pozitieIntake--;
+        }
+    }
+
+    void Outake()
+    {
+        OutakeSus.readValue();
+        OutakeJos.readValue();
+
+        if(OutakeSus.wasJustPressed())
+        {
+            OutakeStanga.setPosition(0.5);
+            OutakeDreapta.setPosition(0.5);
+        }
+        if(OutakeJos.wasJustPressed())
+        {
+            OutakeDreapta.setPosition(0.6);
+            OutakeStanga.setPosition(0.55);
         }
     }
 
@@ -204,9 +245,4 @@ public abstract class GlobalScope extends LinearOpMode
         if(RotireDreapta.wasJustPressed())
             ServoRotire.setPosition(PosInitial + 0.125);
     }
-
-    /*void Brat()
-    {
-
-    }*/
 }

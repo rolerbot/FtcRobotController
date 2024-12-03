@@ -23,11 +23,12 @@ public class TeleOp extends GlobalScope
         ct2 = new GamepadEx(gamepad2);
         BazaDreapta.setPosition(0.02);
         BazaStanga.setPosition(0.02);
-        IntakeStanga.setPosition(0);
-        IntakeDreapta.setPosition(0);
-        OutakeStanga.setPosition(0.5);
-        OutakeDreapta.setPosition(0.5);
+        IntakeStanga.setPosition(0.088);
+        IntakeDreapta.setPosition(0.0905);
+        OutakeStanga.setPosition(0.3405);
+        OutakeDreapta.setPosition(0.37);
         ServoGhearaIntake.setPosition(0);
+        ServoGhearaOutake.setPosition(0);
         Viteza  = new ButtonReader(ct1, GamepadKeys.Button.B);
         IntakeSus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
         IntakeJos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
@@ -35,7 +36,10 @@ public class TeleOp extends GlobalScope
         GhearaOutake = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
         RotireStanga = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
         RotireDreapta = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
-
+        OutakeJosSTANGA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+        OutakeSusSTANGA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        ///OutakeJosDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
+        ///OutakeSusDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         while (opModeIsActive())
         {
             MiscareBaza();
@@ -44,10 +48,13 @@ public class TeleOp extends GlobalScope
             Roteste();
             Cleste();
             Intake();
+            Outake();
             telemetry.update();
             telemetry.addData("Stanga ", BazaStanga.getPosition());
             telemetry.addData("Dreapta ", BazaDreapta.getPosition());
             telemetry.addData("Gheara", ServoGhearaIntake.getPosition());
+            telemetry.addData("inst", IntakeStanga.getPosition());
+            telemetry.addData("indr", IntakeDreapta.getPosition());
             /**IntakeSus.readValue();
             IntakeJos.readValue();
             if(IntakeSus.wasJustPressed()){

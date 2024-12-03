@@ -92,7 +92,8 @@ public abstract class GlobalScope extends LinearOpMode
     ButtonReader RotireStanga, RotireDreapta;
     ButtonReader IntakeSus, IntakeJos;
     TriggerReader GhearaIntake, GhearaOutake;
-    ButtonReader OutakeJos, OutakeSus;
+    ButtonReader OutakeJosSTANGA, OutakeSusSTANGA;
+    ButtonReader OutakeJosDREAPTA, OutakeSusDREAPTA;
 
     void MiscareBaza()
     {
@@ -203,6 +204,22 @@ public abstract class GlobalScope extends LinearOpMode
     {
         IntakeSus.readValue();
         IntakeJos.readValue();
+        /**
+        double pozitieIntake = IntakeStanga.getPosition();
+        double pozitieintake2 = IntakeDreapta.getPosition();
+         if(IntakeSus.wasJustPressed())
+        {
+            IntakeStanga.setPosition(pozitieIntake + 0.01);
+            IntakeDreapta.setPosition(pozitieintake2 + 0.01);
+        }
+        if(IntakeJos.wasJustPressed())
+        {
+            IntakeStanga.setPosition(pozitieIntake - 0.01);
+            IntakeDreapta.setPosition(pozitieintake2 - 0.01);
+        }
+ */
+
+
 
         if(IntakeSus.wasJustPressed())
         {
@@ -212,27 +229,58 @@ public abstract class GlobalScope extends LinearOpMode
         }
         if(IntakeJos.wasJustPressed())
         {
-            IntakeDreapta.setPosition(0);
-            IntakeStanga.setPosition(0);
+            IntakeDreapta.setPosition(0.0905);
+            IntakeStanga.setPosition(0.088);
             //pozitieIntake--;
         }
+
     }
 
     void Outake()
     {
-        OutakeSus.readValue();
-        OutakeJos.readValue();
 
-        if(OutakeSus.wasJustPressed())
+        OutakeSusSTANGA.readValue();
+        OutakeJosSTANGA.readValue();
+        if(OutakeSusSTANGA.wasJustPressed())
         {
-            OutakeStanga.setPosition(0.5);
-            OutakeDreapta.setPosition(0.5);
+            OutakeStanga.setPosition(0.3405);
+            OutakeDreapta.setPosition(0.37);
+
+            ///OutakeDreapta.setPosition(0.5);
         }
-        if(OutakeJos.wasJustPressed())
+        if(OutakeJosSTANGA.wasJustPressed())
         {
-            OutakeDreapta.setPosition(0.6);
-            OutakeStanga.setPosition(0.55);
+            OutakeStanga.setPosition(0.467);
+            OutakeDreapta.setPosition(0.55);
         }
+         /**
+        OutakeSusSTANGA.readValue();
+        OutakeJosSTANGA.readValue();
+        OutakeSusDREAPTA.readValue();
+        OutakeJosDREAPTA.readValue();
+        double PosInt = OutakeStanga.getPosition();
+        double PosInt2 = OutakeDreapta.getPosition();
+        if(OutakeSusSTANGA.wasJustPressed())
+        {
+            OutakeStanga.setPosition(PosInt + 0.01);
+
+            ///OutakeDreapta.setPosition(0.5);
+        }
+        if(OutakeJosSTANGA.wasJustPressed())
+        {
+            OutakeStanga.setPosition(PosInt - 0.01);
+        }
+        if(OutakeSusDREAPTA.wasJustPressed())
+        {
+            OutakeDreapta.setPosition(PosInt2 + 0.01);
+
+            ///OutakeDreapta.setPosition(0.5);
+        }
+        if(OutakeJosDREAPTA.wasJustPressed())
+        {
+            OutakeDreapta.setPosition(PosInt2 - 0.01);
+        }
+        */
     }
 
     void Roteste()

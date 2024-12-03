@@ -88,11 +88,13 @@ public abstract class GlobalScope extends LinearOpMode
 
         BazaDreapta.setPosition(0.02);
         BazaStanga.setPosition(0.02);
-        IntakeStanga.setPosition(0);
-        IntakeDreapta.setPosition(0);
-        OutakeStanga.setPosition(0.5);
-        OutakeDreapta.setPosition(0.5);
+        IntakeStanga.setPosition(0.088);
+        IntakeDreapta.setPosition(0.0905);
+        OutakeStanga.setPosition(0.3405);
+        OutakeDreapta.setPosition(0.37);
         ServoGhearaIntake.setPosition(0);
+        ServoGhearaOutake.setPosition(0);
+
     }
 
     void Controler(){
@@ -108,6 +110,10 @@ public abstract class GlobalScope extends LinearOpMode
         GhearaOutake = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
         RotireStanga = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
         RotireDreapta = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
+        OutakeJosSTANGA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+        OutakeSusSTANGA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        ///OutakeJosDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
+        ///OutakeSusDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
     }
 
     /// TELEOP
@@ -117,7 +123,8 @@ public abstract class GlobalScope extends LinearOpMode
     int cnt = 8000;
     double vit = 1; //Viteza
     int cleste1 = 0, cleste2 = 0, pozitieIntake = 0;
-    double PozBrat[] = {0, 0.1, 0.2, 0.3};
+    double PozIntakeSt[] = {0.088, 0.168, 0.649 ,1};
+    double PozIntakeDr[] = {0.0905, 0.1705, 0.6505 ,1};
     GamepadEx ct1, ct2;
     ButtonReader Viteza; /// cautator de viteze
     ButtonReader RotireStanga, RotireDreapta;
@@ -229,7 +236,7 @@ public abstract class GlobalScope extends LinearOpMode
         }
     }
 
-    void Intake()
+    /**void Intake()
     {
         IntakeSus.readValue();
         IntakeJos.readValue();
@@ -249,7 +256,7 @@ public abstract class GlobalScope extends LinearOpMode
  */
 
 
-
+/**
         if(IntakeSus.wasJustPressed())
         {
               IntakeStanga.setPosition(1);
@@ -264,6 +271,27 @@ public abstract class GlobalScope extends LinearOpMode
         }
 
     }
+*/
+
+    void Intake()
+    {
+        IntakeSus.readValue();
+        IntakeJos.readValue();
+
+        if(IntakeSus.wasJustPressed() && pozitieIntake < 3)
+        {
+            IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
+            IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
+            pozitieIntake++;
+        }
+        if(IntakeJos.wasJustPressed() && pozitieIntake > 0)
+        {
+            IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
+            IntakeStanga.setPosition(PozIntakeDr[pozitieIntake]);
+            pozitieIntake--;
+        }
+    }
+
 
     void Outake()
     {

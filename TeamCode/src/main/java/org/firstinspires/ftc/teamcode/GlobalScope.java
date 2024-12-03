@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
+import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.gamepad.TriggerReader;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -26,6 +27,13 @@ public abstract class GlobalScope extends LinearOpMode
     public Servo OutakeDreapta = null;
     public Servo ServoGhearaIntake = null; //Cleste Stanga
     public Servo ServoGhearaOutake = null; //Cleste Dreapta
+
+    class Robot
+    {
+        public Servo stanga = null, dreapta = null;
+    };
+
+    Robot Outake, Intake, Baza;
 
     void LinkComponents() {
         MotorFS = hardwareMap.get(DcMotorEx.class, "MotorFS");
@@ -76,11 +84,34 @@ public abstract class GlobalScope extends LinearOpMode
         OutakeStanga.setDirection(Servo.Direction.REVERSE);
         OutakeDreapta.setDirection(Servo.Direction.FORWARD);
     }
+    void InitComponente(){
+
+        BazaDreapta.setPosition(0.02);
+        BazaStanga.setPosition(0.02);
+        IntakeStanga.setPosition(0);
+        IntakeDreapta.setPosition(0);
+        OutakeStanga.setPosition(0.5);
+        OutakeDreapta.setPosition(0.5);
+        ServoGhearaIntake.setPosition(0);
+    }
+
+    void Controler(){
+        InitComponente();
+
+        ct1 = new GamepadEx(gamepad1);
+        ct2 = new GamepadEx(gamepad2);
+
+        Viteza  = new ButtonReader(ct1, GamepadKeys.Button.B);
+        IntakeSus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
+        IntakeJos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
+        GhearaIntake = new TriggerReader(ct2, GamepadKeys.Trigger.LEFT_TRIGGER);
+        GhearaOutake = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
+        RotireStanga = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
+        RotireDreapta = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
+    }
 
     /// TELEOP
-    double drive;
-    double strafe;
-    double twist;
+    double drive, strafe, twist;
     double[] speeds = new double[4];
     double schimbator = 0.4;
     int cnt = 8000;
@@ -126,10 +157,10 @@ public abstract class GlobalScope extends LinearOpMode
 
     void SliderExtend()
     {
-        double deadzone = 0.5;
-        if (gamepad2.left_stick_y > deadzone && Slider.getCurrentPosition() > cnt) // Coboara
+        double Controler = 0.005;
+        if (gamepad2.left_stick_y > Controler && Slider.getCurrentPosition() > cnt) // Coboara
             Slider.setPower(-vit);
-        else if (gamepad2.left_stick_y < -deadzone && Slider.getCurrentPosition() < cnt) //Urca
+        else if (gamepad2.left_stick_y < -Controler && Slider.getCurrentPosition() < cnt) //Urca
             Slider.setPower(vit);
         else
             Slider.setPower(0);
@@ -141,13 +172,11 @@ public abstract class GlobalScope extends LinearOpMode
         }*/
     }
 
-
-
     void SliderBaza()
     {
-        double deadzone = 0.005;
-        if (gamepad2.left_stick_x > deadzone && BazaDreapta.getPosition() < 0.33 ||
-            gamepad2.left_stick_x < -deadzone && BazaStanga.getPosition() > 0.007)
+        double Controler = 0.005;
+        if (gamepad2.left_stick_x > Controler && BazaDreapta.getPosition() < 0.33 ||
+            gamepad2.left_stick_x < -Controler && BazaStanga.getPosition() > 0.007)
         {
             BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.003 * gamepad2.left_stick_x);
             BazaStanga.setPosition(BazaStanga.getPosition() + 0.003 * gamepad2.left_stick_x);

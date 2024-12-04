@@ -158,10 +158,10 @@ public abstract class GlobalScope extends LinearOpMode
 
     void SliderExtend()
     {
-        double Controler = 0.005;
-        if (gamepad2.left_stick_y > Controler && Slider.getCurrentPosition() > cnt) // Coboara
+        double Controler = 0.05;
+        if (gamepad2.left_stick_y > Controler ) // Coboara && Slider.getCurrentPosition() > cnta
             Slider.setPower(-vit);
-        else if (gamepad2.left_stick_y < -Controler && Slider.getCurrentPosition() < cnt) //Urca
+        else if (gamepad2.left_stick_y < -Controler ) //Urca && Slider.getCurrentPosition() < cnt
             Slider.setPower(vit);
         else
             Slider.setPower(0);
@@ -280,7 +280,6 @@ public abstract class GlobalScope extends LinearOpMode
         Intake.Dreapta.setPosition(PozIntakeDr[pozitieIntake]);
 
     }
-
 
     void Outake()
     {

@@ -19,15 +19,14 @@ public abstract class GlobalScope extends LinearOpMode
     public DcMotorEx MotorSD = null; /// Spate dreapta
     public DcMotorEx Slider = null;
     public Servo ServoRotire = null;
-    public Servo ServoGhearaIntake = null; //Cleste Stanga
-    public Servo ServoGhearaOutake = null; //Cleste Dreapta
 
     class Robot
     {
         public Servo Stanga = null, Dreapta = null;
+        public Servo Outake = null, Intake = null;
     };
 
-    Robot Outake, Intake, Baza;
+    Robot Outake, Intake, Baza, Gheara;
 
     void LinkComponents() {
         MotorFS = hardwareMap.get(DcMotorEx.class, "MotorFS");
@@ -35,8 +34,8 @@ public abstract class GlobalScope extends LinearOpMode
         MotorSS = hardwareMap.get(DcMotorEx.class, "MotorSS");
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
         Slider = hardwareMap.get(DcMotorEx.class, "Slider");
-        ServoGhearaOutake = hardwareMap.get(Servo.class, "ServoGhearaOutake");
-        ServoGhearaIntake = hardwareMap.get(Servo.class, "ServoGhearaIntake");
+        Gheara.Outake = hardwareMap.get(Servo.class, "ServoGhearaOutake");
+        Gheara.Intake = hardwareMap.get(Servo.class, "ServoGhearaIntake");
         ServoRotire = hardwareMap.get(Servo.class, "ServoRotire");
         Intake.Dreapta = hardwareMap.get(Servo.class, "IntakeDreapta");
         Intake.Stanga = hardwareMap.get(Servo.class, "IntakeStanga");
@@ -67,8 +66,8 @@ public abstract class GlobalScope extends LinearOpMode
         Slider.setDirection(DcMotorSimple.Direction.REVERSE);//Reverse
 
         //------------------------SERVO---------------------
-        ServoGhearaIntake.setDirection(Servo.Direction.FORWARD);
-        ServoGhearaOutake.setDirection(Servo.Direction.REVERSE);
+        Gheara.Intake.setDirection(Servo.Direction.FORWARD);
+        Gheara.Outake.setDirection(Servo.Direction.REVERSE);
         ServoRotire.setDirection(Servo.Direction.FORWARD);
         ServoRotire.scaleRange(0,0.2);
         Baza.Dreapta.setDirection(Servo.Direction.FORWARD);
@@ -86,8 +85,8 @@ public abstract class GlobalScope extends LinearOpMode
         Intake.Dreapta.setPosition(0.0905);
         Outake.Stanga.setPosition(0.3405);
         Outake.Dreapta.setPosition(0.37);
-        ServoGhearaIntake.setPosition(0);
-        ServoGhearaOutake.setPosition(0);
+        Gheara.Intake.setPosition(0);
+        Gheara.Outake.setPosition(0);
 
     }
 
@@ -165,11 +164,11 @@ public abstract class GlobalScope extends LinearOpMode
             Slider.setPower(vit);
         else
             Slider.setPower(0);
-        /*if(ok == 0)
+        /*if(Reset == 0)
         {
             Slider.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             Slider.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            ok = 1;
+            Reset = 1;
         }*/
     }
 
@@ -210,23 +209,23 @@ public abstract class GlobalScope extends LinearOpMode
         if(GhearaIntake.wasJustPressed() && cleste1 == 0)
         {
             cleste1++;
-            ServoGhearaIntake.setPosition(0.022);
+            Gheara.Intake.setPosition(0.022);
         }
         else if(GhearaIntake.wasJustPressed() && cleste1 == 1)
         {
             cleste1--;
-            ServoGhearaIntake.setPosition(0); ///0.02
+            Gheara.Intake.setPosition(0); ///0.02
         }
 
         if(GhearaOutake.wasJustPressed() && cleste2 == 0)
         {
             cleste2++;
-            ServoGhearaOutake.setPosition(0.022);
+            Gheara.Outake.setPosition(0.022);
         }
         else if(GhearaOutake.wasJustPressed() && cleste2 == 1)
         {
             cleste2--;
-            ServoGhearaOutake.setPosition(0); ///0.02
+            Gheara.Outake.setPosition(0); ///0.02
         }
     }
 
@@ -248,7 +247,6 @@ public abstract class GlobalScope extends LinearOpMode
             IntakeDreapta.setPosition(pozitieintake2 - 0.01);
         }
  */
-
 
 /**
         if(IntakeSus.wasJustPressed())

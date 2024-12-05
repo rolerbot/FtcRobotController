@@ -229,41 +229,43 @@ public abstract class GlobalScope extends LinearOpMode
         }
     }
 
+
     /**void Intake()
-    {
-        IntakeSus.readValue();
-        IntakeJos.readValue();
-        /**
-        double pozitieIntake = IntakeStanga.getPosition();
-        double pozitieintake2 = IntakeDreapta.getPosition();
-         if(IntakeSus.wasJustPressed())
-        {
-            IntakeStanga.setPosition(pozitieIntake + 0.01);
-            IntakeDreapta.setPosition(pozitieintake2 + 0.01);
-        }
-        if(IntakeJos.wasJustPressed())
-        {
-            IntakeStanga.setPosition(pozitieIntake - 0.01);
-            IntakeDreapta.setPosition(pozitieintake2 - 0.01);
-        }
- */
+     {
+     IntakeSus.readValue();
+     IntakeJos.readValue();
+     /**
+     double pozitieIntake = IntakeStanga.getPosition();
+     double pozitieintake2 = IntakeDreapta.getPosition();
+     if(IntakeSus.wasJustPressed())
+     {
+     IntakeStanga.setPosition(pozitieIntake + 0.01);
+     IntakeDreapta.setPosition(pozitieintake2 + 0.01);
+     }
+     if(IntakeJos.wasJustPressed())
+     {
+     IntakeStanga.setPosition(pozitieIntake - 0.01);
+     IntakeDreapta.setPosition(pozitieintake2 - 0.01);
+     }
+     */
 
-/**
-        if(IntakeSus.wasJustPressed())
-        {
-              IntakeStanga.setPosition(1);
-              IntakeDreapta.setPosition(1);
-              //pozitieIntake++;
-        }
-        if(IntakeJos.wasJustPressed())
-        {
-            IntakeDreapta.setPosition(0.0905);
-            IntakeStanga.setPosition(0.088);
-            //pozitieIntake--;
-        }
 
-    }
-*/
+    /**
+     if(IntakeSus.wasJustPressed())
+     {
+     IntakeStanga.setPosition(1);
+     IntakeDreapta.setPosition(1);
+     //pozitieIntake++;
+     }
+     if(IntakeJos.wasJustPressed())
+     {
+     IntakeDreapta.setPosition(0.0905);
+     IntakeStanga.setPosition(0.088);
+     //pozitieIntake--;
+     }
+
+     }
+     */
 
     void Intake()
     {
@@ -274,6 +276,7 @@ public abstract class GlobalScope extends LinearOpMode
             pozitieIntake++;
         if(IntakeJos.wasJustPressed() && pozitieIntake > 0)
             pozitieIntake--;
+
         Intake.Stanga.setPosition(PozIntakeSt[pozitieIntake]);
         Intake.Dreapta.setPosition(PozIntakeDr[pozitieIntake]);
 
@@ -285,46 +288,46 @@ public abstract class GlobalScope extends LinearOpMode
 
         OutakeSusSTANGA.readValue();
         OutakeJosSTANGA.readValue();
-        if(OutakeSusSTANGA.wasJustPressed())
+        if(OutakeJosSTANGA.wasJustPressed())
         {
             Outake.Stanga.setPosition(0.3405);
             Outake.Dreapta.setPosition(0.37);
 
             ///OutakeDreapta.setPosition(0.5);
         }
-        if(OutakeJosSTANGA.wasJustPressed())
+        if(OutakeSusSTANGA.wasJustPressed())
         {
             Outake.Stanga.setPosition(0.467);
             Outake.Dreapta.setPosition(0.55);
         }
-         /**
-        OutakeSusSTANGA.readValue();
-        OutakeJosSTANGA.readValue();
-        OutakeSusDREAPTA.readValue();
-        OutakeJosDREAPTA.readValue();
-        double PosInt = OutakeStanga.getPosition();
-        double PosInt2 = OutakeDreapta.getPosition();
-        if(OutakeSusSTANGA.wasJustPressed())
-        {
-            OutakeStanga.setPosition(PosInt + 0.01);
+        /**
+         OutakeSusSTANGA.readValue();
+         OutakeJosSTANGA.readValue();
+         OutakeSusDREAPTA.readValue();
+         OutakeJosDREAPTA.readValue();
+         double PosInt = OutakeStanga.getPosition();
+         double PosInt2 = OutakeDreapta.getPosition();
+         if(OutakeSusSTANGA.wasJustPressed())
+         {
+         OutakeStanga.setPosition(PosInt + 0.01);
 
-            ///OutakeDreapta.setPosition(0.5);
-        }
-        if(OutakeJosSTANGA.wasJustPressed())
-        {
-            OutakeStanga.setPosition(PosInt - 0.01);
-        }
-        if(OutakeSusDREAPTA.wasJustPressed())
-        {
-            OutakeDreapta.setPosition(PosInt2 + 0.01);
+         ///OutakeDreapta.setPosition(0.5);
+         }
+         if(OutakeJosSTANGA.wasJustPressed())
+         {
+         OutakeStanga.setPosition(PosInt - 0.01);
+         }
+         if(OutakeSusDREAPTA.wasJustPressed())
+         {
+         OutakeDreapta.setPosition(PosInt2 + 0.01);
 
-            ///OutakeDreapta.setPosition(0.5);
-        }
-        if(OutakeJosDREAPTA.wasJustPressed())
-        {
-            OutakeDreapta.setPosition(PosInt2 - 0.01);
-        }
-        */
+         ///OutakeDreapta.setPosition(0.5);
+         }
+         if(OutakeJosDREAPTA.wasJustPressed())
+         {
+         OutakeDreapta.setPosition(PosInt2 - 0.01);
+         }
+         */
     }
 
     void Roteste()

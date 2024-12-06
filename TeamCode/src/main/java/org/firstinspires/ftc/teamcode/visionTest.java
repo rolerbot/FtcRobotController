@@ -19,7 +19,7 @@
  * SOFTWARE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode2024;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -237,10 +237,10 @@ public class visionTest extends LinearOpMode {
             }
             Imgproc.circle(input, new Point(cx, cy), 100, new Scalar(0, 255, 0), 2);
             if (cx <= 213)
-                telemetry.addData("zone = 1", maxArea);
+                telemetry.addData("zona = 1", maxArea);
             else if (cx <= 426)
-                telemetry.addData("zone = 2", maxArea);
-            else telemetry.addData("zone = 3", maxArea);
+                telemetry.addData("zona = 2", maxArea);
+            else telemetry.addData("zona = 3", maxArea);
             return input;
         }
 

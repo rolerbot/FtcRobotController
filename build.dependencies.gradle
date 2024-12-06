@@ -17,5 +17,7 @@ dependencies {
     implementation 'org.firstinspires.ftc:RobotCore:10.1.0'
     implementation 'org.openftc:easyopencv:1.5.3'
     implementation 'com.acmerobotics.roadrunner:core:0.5.2'
+    implementation 'org.firstinspires.ftc:robotcore:7.2.0'
+    implementation 'org.firstinspires.ftc:ftc-dashboard:7.2.0'
 }
 

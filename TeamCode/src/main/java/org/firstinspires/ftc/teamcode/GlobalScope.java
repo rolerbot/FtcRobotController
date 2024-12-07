@@ -100,14 +100,14 @@ public abstract class GlobalScope extends LinearOpMode
         ct2 = new GamepadEx(gamepad2);
 
         Viteza  = new ButtonReader(ct1, GamepadKeys.Button.B);
-        IntakeSus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
-        IntakeJos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
-        GhearaIntake = new TriggerReader(ct2, GamepadKeys.Trigger.LEFT_TRIGGER);
-        GhearaOutake = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
+        IntakeSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+        IntakeJos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        GhearaIntake = new TriggerReader(ct1, GamepadKeys.Trigger.LEFT_TRIGGER);
+        GhearaOutake = new TriggerReader(ct1, GamepadKeys.Trigger.RIGHT_TRIGGER);
         RotireStanga = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
         RotireDreapta = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
-        OutakeJosSTANGA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
-        OutakeSusSTANGA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        OutakeJosSTANGA = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
+        OutakeSusSTANGA = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
         ///OutakeJosDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
         ///OutakeSusDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
     }
@@ -292,15 +292,15 @@ public abstract class GlobalScope extends LinearOpMode
         OutakeJosSTANGA.readValue();
         if(OutakeJosSTANGA.wasJustPressed())
         {
-            Outake.Stanga.setPosition(0.3405);
-            Outake.Dreapta.setPosition(0.37);
-
+            Outake.Stanga.setPosition(0.467);
+            Outake.Dreapta.setPosition(0.55);
             ///OutakeDreapta.setPosition(0.5);
         }
         if(OutakeSusSTANGA.wasJustPressed())
         {
-            Outake.Stanga.setPosition(0.467);
-            Outake.Dreapta.setPosition(0.55);
+            Outake.Stanga.setPosition(0.3405);
+            Outake.Dreapta.setPosition(0.37);
+
         }
         /**
          OutakeSusSTANGA.readValue();

@@ -30,7 +30,11 @@ public abstract class GlobalScope extends LinearOpMode
 
     public class Robot
     {
-        public Servo Stanga = null, Dreapta = null;
+        public Servo Stanga, Dreapta;
+        Robot (){
+            Stanga = null;
+            Dreapta = null;
+        }
     };
 
     //Robot Outake, Intake, Baza;

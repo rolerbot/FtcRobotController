@@ -80,7 +80,7 @@ public abstract class GlobalScope extends LinearOpMode
         ServoGhearaIntake.setDirection(Servo.Direction.FORWARD);
         ServoGhearaOutake.setDirection(Servo.Direction.REVERSE);
         ServoRotire.setDirection(Servo.Direction.FORWARD);
-        ServoRotire.scaleRange(0,0.2);
+        //ServoRotire.scaleRange(0,0.2);
         BazaDreapta.setDirection(Servo.Direction.FORWARD);
         BazaStanga.setDirection(Servo.Direction.REVERSE);
         IntakeStanga.setDirection(Servo.Direction.FORWARD);
@@ -108,14 +108,14 @@ public abstract class GlobalScope extends LinearOpMode
         ct2 = new GamepadEx(gamepad2);
 
         Viteza  = new ButtonReader(ct1, GamepadKeys.Button.B);
-        IntakeSus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
-        IntakeJos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
-        GhearaIntake = new TriggerReader(ct2, GamepadKeys.Trigger.LEFT_TRIGGER);
+        IntakeSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+        IntakeJos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        GhearaIntake = new TriggerReader(ct1, GamepadKeys.Trigger.LEFT_TRIGGER);
         GhearaOutake = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
-        RotireStanga = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
-        RotireDreapta = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
-        OutakeJosSTANGA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
-        OutakeSusSTANGA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        RotireStanga = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
+        RotireDreapta = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
+        OutakeJosSTANGA = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
+        OutakeSusSTANGA = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
         ///OutakeJosDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
         ///OutakeSusDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
     }
@@ -135,7 +135,6 @@ public abstract class GlobalScope extends LinearOpMode
     ButtonReader IntakeSus, IntakeJos;
     TriggerReader GhearaIntake, GhearaOutake;
     ButtonReader OutakeJosSTANGA, OutakeSusSTANGA;
-    ButtonReader OutakeJosDREAPTA, OutakeSusDREAPTA;
 
     void MiscareBaza()
     {
@@ -292,22 +291,24 @@ public abstract class GlobalScope extends LinearOpMode
     }
 
     void Outake()
-    {
+     {
 
-        OutakeSusSTANGA.readValue();
-        OutakeJosSTANGA.readValue();
-        if(OutakeSusSTANGA.wasJustPressed())
-        {
-            OutakeStanga.setPosition(0.3405);
-            OutakeDreapta.setPosition(0.37);
+     OutakeSusSTANGA.readValue();
+     OutakeJosSTANGA.readValue();
+     if(OutakeSusSTANGA.wasJustPressed())
+     {
+     OutakeStanga.setPosition(0.467);
+     OutakeDreapta.setPosition(0.55);
+     ///OutakeDreapta.setPosition(0.5);
+     }
+     if(OutakeJosSTANGA.wasJustPressed())
+     {
+     OutakeStanga.setPosition(0.3405);
+     OutakeDreapta.setPosition(0.37);
 
-            ///OutakeDreapta.setPosition(0.5);
-        }
-        if(OutakeJosSTANGA.wasJustPressed())
-        {
-            OutakeStanga.setPosition(0.467);
-            OutakeDreapta.setPosition(0.55);
-        }
+     }
+
+
          /**
         OutakeSusSTANGA.readValue();
         OutakeJosSTANGA.readValue();
@@ -340,12 +341,20 @@ public abstract class GlobalScope extends LinearOpMode
 
     void Roteste()
     {
-        RotireStanga.readValue();
-        RotireDreapta.readValue();
         double PosInitial = ServoRotire.getPosition();
-        if(RotireStanga.wasJustPressed())
-            ServoRotire.setPosition(PosInitial - 0.125);
-        if(RotireDreapta.wasJustPressed())
-            ServoRotire.setPosition(PosInitial + 0.125);
+        if(gamepad1.right_stick_x > 0.05 || gamepad1.right_stick_x < -0.05)
+            ServoRotire.setPosition(PosInitial + 0.135 * gamepad1.right_stick_x);
     }
+
+    /**
+     void Roteste()
+     {
+     RotireStanga.readValue();
+     RotireDreapta.readValue();
+     double PosInitial = ServoRotire.getPosition();
+     if(RotireStanga.wasJustPressed())
+     ServoRotire.setPosition(PosInitial - 0.125);
+     if(RotireDreapta.wasJustPressed())
+     ServoRotire.setPosition(PosInitial + 0.125);
+     }*/
 }

@@ -23,15 +23,10 @@ android {
     }
 }
 
-repositories {
-    maven {
-        url = 'https://maven.brott.dev/'
-    }
-}
-
 dependencies {
     implementation project(':FtcRobotController')
-<<<<<<< HEAD
+    annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
+    implementation 'com.acmerobotics.roadrunner:core:0.5.2'
     annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
 
     implementation "com.acmerobotics.roadrunner:ftc:0.1.13"
@@ -43,6 +38,8 @@ dependencies {
     implementation 'org.ftclib.ftclib:vision:2.1.0'
     implementation 'org.ftclib.ftclib:core:2.1.1'
     implementation 'com.acmerobotics.dashboard:dashboard:0.4.15'
-=======
->>>>>>> FTC-official/master
+
+    implementation 'org.firstinspires.ftc.robotcore:dashboard:7.2.0'
+    implementation 'org.firstinspires.ftc.robotcore:hardware:7.2.0'
+
 }

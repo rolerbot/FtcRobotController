@@ -27,13 +27,17 @@ public class TeleOp extends GlobalScope
             SliderExtend();
             SliderBaza();
             Roteste();
-            Cleste();
-            Intake();
-            Outake();
+            //Intake();
+            //Outake();
+            ActiuneAuto();
             telemetry.update();
             telemetry.addData("Stanga ", BazaStanga.getPosition());
             telemetry.addData("Dreapta ", BazaDreapta.getPosition());
             telemetry.addData("Rotire", ServoRotire.getPosition());
+
+            telemetry.addData("GhearaOutake", ServoGhearaOutake.getPosition());
+            telemetry.addData("OutakeStanga", OutakeStanga.getPosition());
+
             /**IntakeSus.readValue();
             IntakeJos.readValue();
             if(IntakeSus.wasJustPressed()){

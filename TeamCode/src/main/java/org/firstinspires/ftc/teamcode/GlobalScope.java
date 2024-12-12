@@ -11,14 +11,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-/**
- git status (vezi daca e rosu)
- git add . (adaugi toate fiesiere schimbate)
- git status (veifici daca e verde)
- (cand e verde) git commit -m Mesaj(sau scrii tu un mesaj)
- Apesi pe butonul de sus de push (sa ai net)
- */
-
 public abstract class GlobalScope extends LinearOpMode
 {
     public DcMotorEx MotorFS = null; /// Fata stanga

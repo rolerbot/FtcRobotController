@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.util.Log;
+
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
@@ -27,17 +29,16 @@ public class TeleOp extends GlobalScope
             SliderExtend();
             SliderBaza();
             Roteste();
+            OutakeRotire();
+            //SliderPoz();
             //Cleste();
             //Intake();
             //Outake();
             ActiuneAuto();
             telemetry.update();
-            telemetry.addData("Stanga ", BazaStanga.getPosition());
-            telemetry.addData("Dreapta ", BazaDreapta.getPosition());
             telemetry.addData("Rotire", ServoRotire.getPosition());
-
-            telemetry.addData("GhearaOutake", ServoGhearaOutake.getPosition());
-            telemetry.addData("OutakeStanga", OutakeStanga.getPosition());
+            telemetry.addData("OutakeRotire", OutakeDreapta.getPosition());
+            telemetry.addData("SLider", Slider.getCurrentPosition());
 
             /**IntakeSus.readValue();
             IntakeJos.readValue();

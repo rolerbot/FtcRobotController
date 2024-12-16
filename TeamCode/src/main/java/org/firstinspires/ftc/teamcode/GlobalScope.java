@@ -92,8 +92,8 @@ public abstract class GlobalScope extends LinearOpMode
 
         BazaDreapta.setPosition(0.04);
         BazaStanga.setPosition(0.08);
-        IntakeStanga.setPosition(0.088);
-        IntakeDreapta.setPosition(0.0905);
+        IntakeStanga.setPosition(0.649);
+        IntakeDreapta.setPosition(0.6505);
         OutakeStanga.setPosition(0.3405);
         OutakeDreapta.setPosition(0.37);
         ServoGhearaIntake.setPosition(0);
@@ -111,31 +111,34 @@ public abstract class GlobalScope extends LinearOpMode
         Viteza  = new ButtonReader(ct1, GamepadKeys.Button.B);
         IntakeSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
         IntakeJos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
-        GhearaIntake = new ButtonReader(ct1, GamepadKeys.Button.X);
-        GhearaOutake = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
+        //GhearaIntake = new ButtonReader(ct1, GamepadKeys.Button.X);
+        //GhearaOutake = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
         RotireStanga = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
         RotireDreapta = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         OutakeJos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
         OutakeSus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
-        ///OutakeJosDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
-        ///OutakeSusDREAPTA = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
+        RotireSus = new ButtonReader(ct2, GamepadKeys.Button.B);
+        RotireJos = new ButtonReader(ct2, GamepadKeys.Button.X);
+        //SLiderJos = new ButtonReader(ct2, GamepadKeys.Button.A);
+        //SliderSus = new ButtonReader(ct2, GamepadKeys.Button.Y);
     }
 
     /// TELEOP
     double drive, strafe, twist;
     double[] speeds = new double[4];
     double schimbator = 0.4;
-    int cnt = 8000;
     double vit = 1; //Viteza
-    int cleste1 = 0, cleste2 = 0, pozitieIntake = 0;
+    int cleste1 = 0, cleste2 = 0, pozitieIntake = 2, pozitieOutake = 0;
     double PozIntakeSt[] = {0.088, 0.168, 0.649 ,1};
     double PozIntakeDr[] = {0.0905, 0.1705, 0.6505 ,1};
+    int PozSlider[] = {0, 1000, 2000};
     GamepadEx ct1, ct2;
     ButtonReader Viteza; /// cautator de viteze
-    ButtonReader RotireStanga, RotireDreapta;
+    ButtonReader RotireStanga, RotireDreapta, RotireSus, RotireJos;
     ButtonReader IntakeSus, IntakeJos, GhearaIntake;
     TriggerReader GhearaOutake;
     ButtonReader OutakeJos, OutakeSus;
+    ButtonReader SliderSus, SLiderJos;
 
     void MiscareBaza()
     {
@@ -185,22 +188,47 @@ public abstract class GlobalScope extends LinearOpMode
         }*/
     }
 
+    /*void SliderPoz(){
+        SliderSus.readValue();
+        SLiderJos.readValue();
+        if(SliderSus.wasJustPressed() && pozitieOutake < 1){
+            pozitieOutake++;
+            Slider.setTargetPosition(PozSlider[pozitieOutake]);
+            Slider.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+        if(SLiderJos.wasJustPressed() && pozitieOutake > 0){
+            pozitieOutake--;
+            Slider.setTargetPosition(PozSlider[pozitieOutake]);
+            Slider.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            Slider.setPower(1);
+        }
+    }*/
+
+    void OutakeRotire(){
+        RotireSus.readValue();
+        RotireJos.readValue();
+        if(RotireSus.wasJustPressed())
+            OutakeDreapta.setPosition(OutakeDreapta.getPosition() - 0.0015);
+        if(RotireJos.wasJustPressed())
+            OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.0015);
+    }
+
     void SliderBaza()
     {
         double Controler = 0.005;
-        if (gamepad1.right_stick_x > Controler && BazaDreapta.getPosition() < 0.32 ||
-            gamepad1.right_stick_x < -Controler && BazaStanga.getPosition() > 0.07)
+        if (gamepad1.right_stick_y > Controler && BazaDreapta.getPosition() < 0.32 ||
+            gamepad1.right_stick_y < -Controler && BazaStanga.getPosition() > 0.07)
         {
-            BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.0025 * gamepad1.right_stick_x);
-            BazaStanga.setPosition(BazaStanga.getPosition() + 0.0025 * gamepad1.right_stick_x);
+            BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.0015 * gamepad1.right_stick_y);
+            BazaStanga.setPosition(BazaStanga.getPosition() + 0.0015 * gamepad1.right_stick_y); //0.0025
         }
     }
 
     void Roteste()
     {
         double PosInitial = ServoRotire.getPosition();
-        if(gamepad1.right_stick_y > 0.005 || gamepad1.right_stick_y < -0.005)
-            ServoRotire.setPosition(PosInitial + 0.001 * gamepad1.right_stick_y);
+        if(gamepad1.right_stick_x > 0.005 || gamepad1.right_stick_x < -0.005)
+            ServoRotire.setPosition(PosInitial + 0.001 * gamepad1.right_stick_x);
     }
 
     /**void SliderBaza()

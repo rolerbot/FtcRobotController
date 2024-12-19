@@ -23,28 +23,24 @@ public class TeleOp extends GlobalScope
             SliderBaza();
             Roteste();
             OutakeRotire();
-            //SlidePoz();
+            SliderAutoPoz();
             ActiuneAuto();
-            //Cleste();
+            BazaExt();
+            //SlidePoz();
+            Cleste();
             //Intake();
             //Outake();
             telemetry.update();
             telemetry.addData("Rotire", ServoRotire.getPosition());
-            telemetry.addData("OutakeRotire", OutakeDreapta.getPosition());
             telemetry.addData("SLider", SliderS.getCurrentPosition());
-            telemetry.addData("OutakeSlide", PozSlider[pozitieOutake]);
-            telemetry.addData("poz",Poz);
-
-            /**IntakeSus.readValue();
-            IntakeJos.readValue();
-            if(IntakeSus.wasJustPressed()){
-                BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.01);
-                BazaStanga.setPosition(BazaStanga.getPosition() + 0.01);
-            }
-            if(IntakeJos.wasJustPressed()){
-                BazaDreapta.setPosition(BazaDreapta.getPosition() - 0.01);
-                BazaStanga.setPosition(BazaStanga.getPosition() - 0.01);
-            }*/
+            telemetry.addData("GhearaOutake", ServoGhearaIntake.getPosition());
+            telemetry.addData("pozitieOutake", pozitieOutake);
+            sus.readValue();
+            jos.readValue();
+            if(sus.wasJustPressed())
+                ServoGhearaIntake.setPosition(ServoGhearaIntake.getPosition() + 0.001);
+            if(jos.wasJustPressed())
+                ServoGhearaIntake.setPosition(ServoGhearaIntake.getPosition() - 0.001);
         }
     }
 }

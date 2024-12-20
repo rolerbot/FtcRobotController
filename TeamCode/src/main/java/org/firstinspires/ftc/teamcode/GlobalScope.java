@@ -193,12 +193,12 @@ public abstract class GlobalScope extends LinearOpMode
     void SliderExtend()
     {
         double Controler = 0.05;
-        if (gamepad2.left_stick_y > Controler && SliderS.getCurrentPosition() > 0) {
+        if (gamepad2.right_stick_y > Controler && SliderS.getCurrentPosition() > 0) {
             // Coboara && Slider.getCurrentPosition() > cnta
             SliderD.setPower(-1);
             SliderS.setPower(-1);
         }
-        else if (gamepad2.left_stick_y < -Controler && SliderS.getCurrentPosition() < 2400) {
+        else if (gamepad2.right_stick_y < -Controler && SliderS.getCurrentPosition() < 2400) {
             //Urca && Slider.getCurrentPosition() < cnt
             SliderS.setPower(1);
             SliderD.setPower(1);
@@ -290,8 +290,8 @@ public abstract class GlobalScope extends LinearOpMode
         if(RotireJos.wasJustPressed())
             OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.002);
 
-        if(gamepad2.right_stick_y > 0.05 || gamepad2.right_stick_y < -0.05)
-            OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.0003 * gamepad2.right_stick_y);
+        //if(gamepad2.right_stick_y > 0.05 || gamepad2.right_stick_y < -0.05)
+            //OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.0003 * gamepad2.right_stick_y);
     }
 
     void SliderBaza()
@@ -309,7 +309,7 @@ public abstract class GlobalScope extends LinearOpMode
     {
         double PosInitial = ServoRotire.getPosition();
         if(gamepad1.right_stick_x > 0.005 || gamepad1.right_stick_x < -0.005)
-            ServoRotire.setPosition(PosInitial + 0.002 * gamepad1.right_stick_x);
+            ServoRotire.setPosition(PosInitial + 0.0023 * gamepad1.right_stick_x);
     }
 
     /**void SliderBaza()

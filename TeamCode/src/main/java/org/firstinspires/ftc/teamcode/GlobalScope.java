@@ -101,8 +101,8 @@ public abstract class GlobalScope extends LinearOpMode
         BazaStanga.setPosition(0.08);
         IntakeStanga.setPosition(0.649);
         IntakeDreapta.setPosition(0.6505);
-        OutakeStanga.setPosition(0.3405);
-        OutakeDreapta.setPosition(0.4461);
+        OutakeStanga.setPosition(0.4685);
+        OutakeDreapta.setPosition(0.5717);
         ServoGhearaIntake.setPosition(0);
         ServoGhearaOutake.setPosition(0);
         ServoRotire.setPosition(0.5);
@@ -142,7 +142,7 @@ public abstract class GlobalScope extends LinearOpMode
     double drive, strafe, twist;
     double[] speeds = new double[4];
     double schimbator = 0.4;//Viteza
-    int pozitieIntake = 2, pozitieOutake = 1;
+    int pozitieIntake = 2, pozitieOutake = 0;
     double PozIntakeSt[] = {0.088, 0.168, 0.649 ,1};
     double PozIntakeDr[] = {0.0905, 0.1705, 0.6505 ,1};
     //int PozSlider[] = {0, 1000, 2000};
@@ -199,6 +199,32 @@ public abstract class GlobalScope extends LinearOpMode
             SliderS.setPower(-1);
         }
         else if (gamepad2.right_stick_y < -Controler && SliderS.getCurrentPosition() < 2400) {
+            //Urca && Slider.getCurrentPosition() < cnt
+            SliderS.setPower(1);
+            SliderD.setPower(1);
+        }
+        else if (gamepad2.left_stick_y > Controler ) {
+            // Coboara && Slider.getCurrentPosition() > cnta
+            SliderD.setPower(-1);
+            SliderS.setPower(-1);
+        }
+        else if (gamepad2.left_stick_y < -Controler) {
+            //Urca && Slider.getCurrentPosition() < cnt
+            SliderS.setPower(1);
+            SliderD.setPower(1);
+        }
+        else{
+            SliderS.setPower(0);
+            SliderD.setPower(0);
+            //Slider.setTargetPosition(Slider.getCurrentPosition());
+        }
+
+      /**  if (gamepad2.left_stick_y > Controler) {
+            // Coboara && Slider.getCurrentPosition() > cnta
+            SliderD.setPower(-1);
+            SliderS.setPower(-1);
+        }
+        else if (gamepad2.left_stick_y < -Controler) {
             //Urca && Slider.getCurrentPosition() < cnt
             SliderS.setPower(1);
             SliderD.setPower(1);

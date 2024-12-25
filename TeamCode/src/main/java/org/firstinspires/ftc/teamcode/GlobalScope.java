@@ -131,7 +131,6 @@ public abstract class GlobalScope extends LinearOpMode
     int pozitieIntake = 2, pozitieOutake = 0;
     double PozIntakeSt[] = {0.088, 0.168, 0.649 ,1};
     double PozIntakeDr[] = {0.0905, 0.1705, 0.6505 ,1};
-    //int PozSlider[] = {0, 1000, 2000};
     double PozOutakeDreapta[] = {0.5717, 0.4461, 0.375, 0.335, 0.2656};
     double PozOutakeStanga[] = {0.4685, 0.3405, 0.3405, 0.3405, 0.2183};
     int cnt = 0;
@@ -201,29 +200,6 @@ public abstract class GlobalScope extends LinearOpMode
             SliderS.setPower(0);
             SliderD.setPower(0);
         }
-
-
-    }
-
-    void SliderAutoPoz(){
-        SliderMin.readValue();
-        SliderMax.readValue();
-        if(SliderMin.wasJustPressed()){
-            while(SliderS.getCurrentPosition() > 5){
-                SliderD.setPower(-1);
-                SliderS.setPower(-1);
-            }
-            SliderS.setPower(0);
-            SliderD.setPower(0);
-        }
-        if(SliderMax.wasJustPressed()){
-            while(SliderS.getCurrentPosition() < 2400){
-                SliderS.setPower(1);
-                SliderD.setPower(1);
-            }
-            SliderD.setPower(0);
-            SliderS.setPower(0);
-        }
     }
 
     void OutakeRotire(){
@@ -260,20 +236,6 @@ public abstract class GlobalScope extends LinearOpMode
             ServoGhearaOutake.setPosition(0.022);
         else if(GhearaOutake.wasJustPressed() && ServoGhearaOutake.getPosition() != 0)
             ServoGhearaOutake.setPosition(0);
-    }
-
-    void Intake()
-    {
-        IntakeSus.readValue();
-        IntakeJos.readValue();
-
-        if(IntakeSus.wasJustPressed() && pozitieIntake < 3)
-            pozitieIntake++;
-        if(IntakeJos.wasJustPressed() && pozitieIntake > 0)
-            pozitieIntake--;
-        IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
-        IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
-
     }
 
     void BazaExt(){
@@ -349,23 +311,5 @@ public abstract class GlobalScope extends LinearOpMode
         }
         IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
         IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
-    }
-
-    void Outake(){
-
-     OutakeSus.readValue();
-     OutakeJos.readValue();
-
-     if(OutakeSus.wasJustPressed())
-     {
-         OutakeStanga.setPosition(0.3405);
-         OutakeDreapta.setPosition(0.37);
-
-     }
-     if(OutakeJos.wasJustPressed())
-     {
-         OutakeStanga.setPosition(0.467);
-         OutakeDreapta.setPosition(0.55);
-     }
     }
 }

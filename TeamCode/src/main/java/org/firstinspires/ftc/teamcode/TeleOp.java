@@ -25,13 +25,9 @@ public class TeleOp extends GlobalScope
             SliderBaza();
             Roteste();
             OutakeRotire();
-            SliderAutoPoz();
             ActiuneAuto();
             BazaExt();
-            //SlidePoz();
             Cleste();
-            //Intake();
-            //Outake();
             telemetry.update();
             telemetry.addData("Rotire", ServoRotire.getPosition());
             telemetry.addData("SLider", SliderS.getCurrentPosition());

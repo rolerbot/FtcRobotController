@@ -201,6 +201,8 @@ public abstract class GlobalScope extends LinearOpMode
             SliderS.setPower(0);
             SliderD.setPower(0);
         }
+
+
     }
 
     void SliderAutoPoz(){
@@ -260,6 +262,20 @@ public abstract class GlobalScope extends LinearOpMode
             ServoGhearaOutake.setPosition(0);
     }
 
+    void Intake()
+    {
+        IntakeSus.readValue();
+        IntakeJos.readValue();
+
+        if(IntakeSus.wasJustPressed() && pozitieIntake < 3)
+            pozitieIntake++;
+        if(IntakeJos.wasJustPressed() && pozitieIntake > 0)
+            pozitieIntake--;
+        IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
+        IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
+
+    }
+
     void BazaExt(){
         Auto.readValue();
         NoAuto.readValue();
@@ -312,7 +328,6 @@ public abstract class GlobalScope extends LinearOpMode
                 BazaStanga.setPosition(0.08);
             }
         }
-
         if(IntakeJos.wasJustPressed() && pozitieIntake > 0){
             pozitieIntake--;
             if(pozitieIntake == 0){
@@ -334,5 +349,23 @@ public abstract class GlobalScope extends LinearOpMode
         }
         IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
         IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
+    }
+
+    void Outake(){
+
+     OutakeSus.readValue();
+     OutakeJos.readValue();
+
+     if(OutakeSus.wasJustPressed())
+     {
+         OutakeStanga.setPosition(0.3405);
+         OutakeDreapta.setPosition(0.37);
+
+     }
+     if(OutakeJos.wasJustPressed())
+     {
+         OutakeStanga.setPosition(0.467);
+         OutakeDreapta.setPosition(0.55);
+     }
     }
 }

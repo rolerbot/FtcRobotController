@@ -3,19 +3,15 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.parts.Lift;
+import org.firstinspires.ftc.teamcode.parts.PrindereAuto;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
 public class TeleOp extends GlobalScope
 {
     private ElapsedTime runtime = new ElapsedTime();
 
-    private Lift lift;
-
     public void runOpMode()
     {
-        lift = new Lift(hardwareMap);
-        lift.pressedButton(gamepad1.a);
-
         Initialise();
 
         waitForStart();

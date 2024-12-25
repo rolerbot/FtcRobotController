@@ -195,7 +195,6 @@ public class AutoCV extends GlobalScope {
                  .waitSeconds(3);*/
                 //.strafeTo(new Vector2d(15, 18))
                 //.strafeTo(new Vector2d(20.5, 0))
-                .waitSeconds(26)
                 .strafeTo(new Vector2d(10, -75));
                // .turn(Math.toRadians(-45));
 

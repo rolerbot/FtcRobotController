@@ -5,8 +5,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Lift {
-    private DcMotor liftMotor1;
-    private DcMotor liftMotor2;
+    private DcMotor SLiderStanga;
+    private DcMotor SliderDreapta;
 
     private enum Positions{
         RESET,
@@ -17,38 +17,43 @@ public class Lift {
     private Positions position;
 
     public Lift(HardwareMap hardwareMap){
-        liftMotor1 = hardwareMap.get(DcMotor.class, "lm1");
-        liftMotor2 = hardwareMap.get(DcMotor.class, "lm2");
-        DcMotor[] m = {liftMotor1,liftMotor2};
+        SLiderStanga = hardwareMap.get(DcMotor.class, "SliderS");
+        SliderDreapta = hardwareMap.get(DcMotor.class, "SliderD");
+        DcMotor[] m = {SLiderStanga, SliderDreapta};
         for(DcMotor motor : m){
             motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             motor.setPower(1);
         }
-        liftMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
+        SliderDreapta.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     private void ChangePos(Positions position)
     {
         switch (position){
             case RESET:
-                liftMotor1.setTargetPosition(0);
-                liftMotor2.setTargetPosition(0);
+                SLiderStanga.setTargetPosition(0);
+                SliderDreapta.setTargetPosition(0);
                 break;
             case MIDDLE:
-                liftMotor1.setTargetPosition(500);
-                liftMotor2.setTargetPosition(500);
+                SLiderStanga.setTargetPosition(500);
+                SliderDreapta.setTargetPosition(500);
                 break;
             case TOP:
-                liftMotor1.setTargetPosition(1000);
-                liftMotor2.setTargetPosition(1000);
+                SLiderStanga.setTargetPosition(1000);
+                SliderDreapta.setTargetPosition(1000);
                 break;
         }
     }
 
-    public void pressedButton(boolean a){
-       if(a && position == Positions.MIDDLE)
+    public void pressedButton(boolean y){
+       if(y && position == Positions.MIDDLE)
            position = Positions.TOP;
+        return;
+    }
+    public void PressedButton(boolean a){
+        if(a && position == Positions.MIDDLE)
+            position = Positions.RESET;
         return;
     }
 }

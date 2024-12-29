@@ -312,4 +312,91 @@ public abstract class GlobalScope extends LinearOpMode
         IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
         IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
     }
+
+    void ActiuneAuto2(){
+
+        OutakeSus.readValue();
+        OutakeJos.readValue();
+
+        IntakeSus.readValue();
+        IntakeJos.readValue();
+
+        if(OutakeSus.wasJustPressed() && pozitieOutake < 4)
+        {
+            pozitieOutake++;
+            if(pozitieIntake == 1)
+            {
+
+            }
+            else if(pozitieIntake == 2)
+            {
+
+            }
+            else if(pozitieIntake == 3)
+            {
+
+            }
+            else
+            {
+
+            }
+        }
+        if(OutakeJos.wasJustPressed() && pozitieOutake > 0)
+        {
+          pozitieOutake--;
+          if(pozitieOutake == 3)
+          {
+
+          }
+          else if(pozitieOutake == 2)
+          {
+
+          }
+          else if(pozitieOutake == 1)
+          {
+
+          }
+          else
+          {
+
+          }
+        }
+        ///--------------------Intake-------------------------
+        if(IntakeSus.wasJustPressed() && pozitieIntake < 3)
+        {
+            pozitieIntake++;
+            if(pozitieIntake == 1)
+            {
+
+            }
+            else if(pozitieIntake == 2)
+            {
+
+            }
+            else
+            {
+
+            }
+
+        }
+        if(IntakeJos.wasJustPressed() && pozitieIntake > 0)
+        {
+            pozitieIntake--;
+            if(pozitieOutake == 2)
+            {
+
+            }
+            else if(pozitieOutake == 1)
+            {
+
+            }
+            else
+            {
+
+            }
+        }
+
+        IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
+        IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
+    }
 }

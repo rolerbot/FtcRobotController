@@ -134,8 +134,8 @@ public abstract class GlobalScope extends LinearOpMode {
     double drive, strafe, twist;
     double[] speeds = new double[4];
     double schimbator = 0.4;//Viteza
-    int pozitieIntake = 2, pozitieOutake = 0;
-    int PozSlideExt[] = {0, 500, 2400};
+    int pozitieIntake = 2, pozitieOutake = 0, pozitieSlide = 0;
+    int PozSlideExt[] = {0, 700, 2400};
     double PozIntakeSt[] = {0.088, 0.168, 0.649, 1};
     double PozIntakeDr[] = {0.0905, 0.1705, 0.6505, 1};
     double PozOutakeDreapta[] = {0.5717, 0.4461, 0.375, 0.335, 0.2656};
@@ -203,13 +203,34 @@ public abstract class GlobalScope extends LinearOpMode {
         }
     }
 
+    void SliderPoz(){
+        SliderSus.readValue();
+        SLiderJos.readValue();
+        if(SliderSus.wasJustPressed() && pozitieSlide < 2){
+            pozitieSlide++;
+            SliderS.setTargetPosition(PozSlideExt[pozitieSlide]);
+            SliderD.setTargetPosition(PozSlideExt[pozitieSlide]);
+            SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setPower(1);
+            SliderD.setPower(1);
+        }
+        if(SLiderJos.wasJustPressed() && pozitieSlide > 0){
+            pozitieSlide--;
+            SliderS.setTargetPosition(PozSlideExt[pozitieOutake]);
+            SliderD.setTargetPosition(PozSlideExt[pozitieOutake]);
+            SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+    }
+
     void OutakeRotire() {
         RotireSus.readValue();
         RotireJos.readValue();
         if (RotireSus.wasJustPressed())
-            OutakeDreapta.setPosition(OutakeDreapta.getPosition() - 0.002);
+            OutakeDreapta.setPosition(OutakeDreapta.getPosition() - 0.0027);
         if (RotireJos.wasJustPressed())
-            OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.002);
+            OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.0027);
     }
 
     void SliderBaza() {

@@ -25,7 +25,6 @@ public class Lift {
             motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             motor.setPower(1);
         }
-        SliderDreapta.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     private void ChangePos(Positions position)

@@ -14,7 +14,7 @@ public class Lift {
         TOP
     };
 
-    private Positions position;
+    private Positions position = Positions.RESET;
 
     public Lift(HardwareMap hardwareMap){
         SLiderStanga = hardwareMap.get(DcMotor.class, "SliderS");
@@ -22,37 +22,54 @@ public class Lift {
         DcMotor[] m = {SLiderStanga, SliderDreapta};
         for(DcMotor motor : m){
             motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            //motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             motor.setPower(1);
         }
     }
 
-    private void ChangePos(Positions position)
+    private void ChangePos(Positions altceva)
     {
-        switch (position){
+        switch (altceva){
             case RESET:
                 SLiderStanga.setTargetPosition(0);
                 SliderDreapta.setTargetPosition(0);
+                SliderDreapta.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SLiderStanga.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 break;
             case MIDDLE:
-                SLiderStanga.setTargetPosition(500);
-                SliderDreapta.setTargetPosition(500);
+                SLiderStanga.setTargetPosition(700);
+                SliderDreapta.setTargetPosition(700);
+                SliderDreapta.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SLiderStanga.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 break;
             case TOP:
-                SLiderStanga.setTargetPosition(1000);
-                SliderDreapta.setTargetPosition(1000);
+                SLiderStanga.setTargetPosition(2400);
+                SliderDreapta.setTargetPosition(2400);
+                SliderDreapta.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SLiderStanga.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 break;
         }
     }
 
     public void pressedButton(boolean y){
-       if(y && position == Positions.MIDDLE)
+       if(y && position == Positions.RESET && SLiderStanga.getCurrentPosition() < 10){
+            position = Positions.MIDDLE;
+            ChangePos(position);
+        }
+       else if(y && position == Positions.MIDDLE && SLiderStanga.getCurrentPosition() > 600){
            position = Positions.TOP;
-        return;
+            ChangePos(position);
+       }
     }
+
     public void PressedButton(boolean a){
-        if(a && position == Positions.MIDDLE)
+        if(a){
             position = Positions.RESET;
-        return;
+            ChangePos(position);
+        }
+        //else if(a && position == Positions.TOP && SLiderStanga.getCurrentPosition() > 2300){
+          //  position = Positions.MIDDLE;
+        //    ChangePos(position);
+       // }
     }
 }

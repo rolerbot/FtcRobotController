@@ -10,7 +10,7 @@ public class TeleOp extends GlobalScope
 {
     private ElapsedTime runtime = new ElapsedTime();
 
-    //private Lift SLider1, SLider2;
+    private Lift SLider1, SLider2;
 
     public void runOpMode()
     {
@@ -27,8 +27,9 @@ public class TeleOp extends GlobalScope
             //SLider1.pressedButton(gamepad2.y);
             //SLider2.PressedButton(gamepad2.a);
             MiscareBaza();
-            SliderPoz();
+            //SliderPoz();
             //SliderExtend();
+            SliderPoz2();
             SliderBaza();
             Roteste();
             OutakeRotire();
@@ -36,10 +37,16 @@ public class TeleOp extends GlobalScope
             BazaExt();
             Cleste();
             telemetry.update();
-            telemetry.addData("Rotire", ServoRotire.getPosition());
-            telemetry.addData("SLider", SliderS.getCurrentPosition());
-            telemetry.addData("GhearaOutake", ServoGhearaOutake.getPosition());
+            telemetry.addData("OutakeDr", OutakeDreapta.getPosition());
+            telemetry.addData("Slider", SliderS.getCurrentPosition());
+            telemetry.addData("OutakeSt", OutakeStanga.getPosition());
             telemetry.addData("pozitieSlide", pozitieSlide);
+            sus.readValue();
+            jos.readValue();
+            if(sus.wasJustPressed())
+                OutakeStanga.setPosition(OutakeStanga.getPosition() + 0.015);
+            if(jos.wasJustPressed())
+                OutakeStanga.setPosition(OutakeStanga.getPosition() - 0.015);
         }
     }
 }

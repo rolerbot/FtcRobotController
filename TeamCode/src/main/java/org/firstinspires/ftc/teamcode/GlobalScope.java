@@ -98,7 +98,7 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeStanga.setPosition(0.4685);
         OutakeDreapta.setPosition(0.5717);
         ServoGhearaIntake.setPosition(0);
-        ServoGhearaOutake.setPosition(0.02);
+        ServoGhearaOutake.setPosition(0.0056);
         ServoRotire.setPosition(0.5);
 
     }
@@ -395,15 +395,15 @@ public abstract class GlobalScope extends LinearOpMode {
             pozitieOutake--;
             OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
             OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
-            if (pozitieOutake < 2) ServoGhearaOutake.setPosition(ClesteDeschis);/// 0.022
-            else ServoGhearaOutake.setPosition(CLesteInchis);
+            if (pozitieOutake < 2) ServoGhearaOutake.setPosition(CLesteInchis);/// 0.022
+            else ServoGhearaOutake.setPosition(ClesteDeschis);
             pozitieIntake = 1;
         }
         if (OutakeSus.wasJustPressed() && pozitieOutake < 4) {
             pozitieOutake++;
             OutakeStanga.setPosition(0.48);
-            if (pozitieOutake < 4) ServoGhearaOutake.setPosition(CLesteInchis);
-            else ServoGhearaOutake.setPosition(ClesteDeschis);//Deschis
+            if (pozitieOutake < 4) ServoGhearaOutake.setPosition(ClesteDeschis);
+            else ServoGhearaOutake.setPosition(CLesteInchis);//Deschis
             OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
             OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);//0.3405, 0.3517
         }

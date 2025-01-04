@@ -2,15 +2,12 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.parts.Lift;
-import org.firstinspires.ftc.teamcode.parts.PrindereAuto;
-
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
 public class TeleOp extends GlobalScope
 {
     private ElapsedTime runtime = new ElapsedTime();
 
-    private Lift SLider1, SLider2;
+    //private Lift SLider1, SLider2;
 
     public void runOpMode()
     {
@@ -33,14 +30,15 @@ public class TeleOp extends GlobalScope
             SliderBaza();
             Roteste();
             OutakeRotire();
-            ActiuneAuto3();
+            ActiuneAuto();
             BazaExt();
+            //Cleste();
             Cleste();
             telemetry.update();
-            telemetry.addData("OutakeDr", OutakeDreapta.getPosition());
-            telemetry.addData("Slider", SliderS.getCurrentPosition());
-            telemetry.addData("OutakeSt", OutakeStanga.getPosition());
-            telemetry.addData("pozitieSlide", pozitieSlide);
+            telemetry.addData("INtakeSt", IntakeStanga.getPosition());
+            telemetry.addData("IntakeDr", IntakeDreapta.getPosition());
+            telemetry.addData("BazaSt", BazaStanga.getPosition());
+            telemetry.addData("BazaDr", BazaDreapta.getPosition());
             sus.readValue();
             jos.readValue();
             if(sus.wasJustPressed())

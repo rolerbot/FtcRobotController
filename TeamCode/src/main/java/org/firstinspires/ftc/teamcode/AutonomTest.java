@@ -12,8 +12,6 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-
 
 @Config
 @Autonomous(name = "BlueTest", group = "Autonomous")
@@ -68,16 +66,21 @@ public class AutonomTest extends GlobalScope {
             {
                 if (!initialized)
                 {
-                    OutakeStanga.setPosition(PozOutakeStanga[0]);
-                    OutakeDreapta.setPosition(PozOutakeDreapta[0]);
+                    OutakeStanga.setPosition(PozOutakeStanga[1]);
+                    OutakeDreapta.setPosition(PozOutakeDreapta[1]);
+                    BazaStanga.setPosition(0.2489);
+                    BazaDreapta.setPosition(0.2044);
                     SliderS.setTargetPosition(0);
                     SliderD.setTargetPosition(0);
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     initialized = true;
+                    ServoGhearaIntake.setPosition(0.02);
                 }
                 timerBrat.reset();
                 timerPoz.reset();
+                IntakeStanga.setPosition(PozIntakeSt[1]);
+                IntakeDreapta.setPosition(PozIntakeDr[1]);
                 double pos = SliderS.getCurrentPosition();
                 packet.put("liftPos", pos);
                 if (pos > 30)
@@ -97,11 +100,52 @@ public class AutonomTest extends GlobalScope {
         {
             return new LiftDown();
         }
+
+
+        public class LiftDown2 implements Action
+        {
+            private boolean initialized = false;
+
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                if (!initialized)
+                {
+                    OutakeStanga.setPosition(PozOutakeStanga[1]);
+                    OutakeDreapta.setPosition(PozOutakeDreapta[1]);
+                    SliderS.setTargetPosition(0);
+                    SliderD.setTargetPosition(0);
+                    SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    initialized = true;
+                    ServoGhearaIntake.setPosition(0.02);
+                }
+                timerBrat.reset();
+                timerPoz.reset();
+                double pos = SliderS.getCurrentPosition();
+                packet.put("liftPos", pos);
+                if (pos > 30)
+                    return true;
+                else
+                {
+                    //SliderS.setPower(0);
+                    //SliderD.setPower(0);
+                    timerPoz.startTime();
+                    timerBrat.startTime();
+                    return false;
+                }
+            }
+        }
+
+        public Action liftDown2()
+        {
+            return new LiftDown2();
+        }
     }
 
     public class Cleste
     {
-        public class CloseClaw implements Action
+        public class CloseClawOutake implements Action
         {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
@@ -115,26 +159,79 @@ public class AutonomTest extends GlobalScope {
             }
         }
 
-        public Action closeClaw()
+        public Action closeClawOutake()
         {
-            return new CloseClaw();
+            return new CloseClawOutake();
         }
 
-        public class OpenClaw implements Action
+        public class OpenClawOutake implements Action
         {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                ServoGhearaOutake.setPosition(0.2);
-                if(timerBrat.seconds() > 9.2)
+                ServoGhearaOutake.setPosition(0.15);
+                if(timerBrat.seconds() > 8)
                     return false;
                 else return true;
             }
         }
-        public Action openClaw()
+
+        public Action openClawOutake()
         {
-            return new OpenClaw();
+            return new OpenClawOutake();
         }
+
+        public class OpenClawOutake2 implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                ServoGhearaOutake.setPosition(0.15);
+                if(timerBrat.seconds() > 4.5)
+                    return false;
+                else return true;
+            }
+        }
+        public Action openClawOutake2()
+        {
+            return new OpenClawOutake2();
+        }
+
+        public class CloseClawIntake implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                timerBrat.reset();
+                timerPoz.reset();
+                timerPoz.startTime();
+                timerBrat.startTime();
+                ServoGhearaOutake.setPosition(0.0056);
+                return false;
+            }
+        }
+
+        public Action closeClawIntake()
+        {
+            return new CloseClawIntake();
+        }
+
+        public class OpenClawIntake implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                ServoGhearaIntake.setPosition(0.2);
+                if(timerPoz.seconds() > 4)
+                    return false;
+                else return true;
+            }
+        }
+        public Action openClawIntake()
+        {
+            return new OpenClawIntake();
+        }
+
     }
 
     public class BratOutake
@@ -148,7 +245,7 @@ public class AutonomTest extends GlobalScope {
                 OutakeDreapta.setPosition(PozOutakeDreapta[2]);
                 //if(timerBrat.seconds() > 8)
                 //ServoGhearaOutake.setPosition(0.02);
-                if (timerBrat.seconds() > 7.7)
+                if(timerBrat.seconds() > 7)
                     return false;
                 else return true;
             }
@@ -159,22 +256,63 @@ public class AutonomTest extends GlobalScope {
             return new Poz2();
         }
 
-        public class Poz0 implements Action
+    }
+
+    public class IntakeBrat
+    {
+        public class IntakePrindere implements Action
         {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                OutakeStanga.setPosition(PozOutakeStanga[0]);
-                OutakeDreapta.setPosition(PozOutakeDreapta[0]);
-                if(timerPoz.seconds() > 9.5)
-                    return false;
-                else return true;
+                if(timerPoz.seconds() < 1){
+                    IntakeStanga.setPosition(PozIntakeSt[0]);
+                    IntakeDreapta.setPosition(PozIntakeDr[0]);
+                }
+                if(timerPoz.seconds() > 1.2)
+                   ServoGhearaIntake.setPosition(0);
+                if(timerPoz.seconds() > 1.4)
+                {
+                    IntakeStanga.setPosition(PozIntakeSt[3]);
+                    IntakeDreapta.setPosition(PozIntakeDr[3]);
+                    BazaDreapta.setPosition(0.04);
+                    BazaStanga.setPosition(0.08);
+                }
+                if(timerPoz.seconds() < 2.8)
+                    return true;
+                else return false;
             }
         }
-
-        public Action doPoz0()
+        public Action Intake()
         {
-            return new Poz0();
+            return new IntakePrindere();
+        }
+    }
+
+    public class IntakeBrat2
+    {
+        public class IntakePrindere2 implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                ServoGhearaIntake.setPosition(0.02);
+                if(timerPoz.seconds() > 3){
+                    IntakeStanga.setPosition(PozIntakeSt[2]);
+                    IntakeDreapta.setPosition(PozIntakeDr[2]);
+                }
+                if(timerPoz.seconds() > 3.2){
+                    OutakeStanga.setPosition(PozOutakeStanga[0]);
+                    OutakeDreapta.setPosition(PozOutakeDreapta[0]);
+                }
+                if(timerPoz.seconds() < 4.2)
+                    return true;
+                else return false;
+            }
+        }
+        public Action Intake2()
+        {
+            return new IntakePrindere2();
         }
     }
 
@@ -185,9 +323,11 @@ public class AutonomTest extends GlobalScope {
         Lift lift = new Lift();
         Cleste claw = new Cleste();
         BratOutake bratoutake = new BratOutake();
+        IntakeBrat prindereintake = new IntakeBrat();
+        IntakeBrat2 prindereintake2 = new IntakeBrat2();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(13.5, 55))
+                .strafeTo(new Vector2d(11.7, 55))
                 .turn(Math.toRadians(-45));
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
@@ -199,8 +339,27 @@ public class AutonomTest extends GlobalScope {
 
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(2, 0))
-                .turn(Math.toRadians(28));
+                .turn(Math.toRadians(30.7));
 
+        TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(-3, 0))
+                .turn(Math.toRadians(-30.7));
+
+        TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(3.5, 0))
+                .turn(Math.toRadians(45));
+        ///--------------Parcare
+        ///Robot alianta nu se misca
+        TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(0, -120))
+                .strafeTo(new Vector2d(-10, -120));
+        ///PArcare directa, robot din aliana parcat la perete
+        TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(-10, -120));
+        ///Parcare langa perete, robot din alianta parcat diff de perete
+        TrajectoryActionBuilder tab7 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(0, -130))
+                .strafeTo(new Vector2d(-10, -130));
 
 
         waitForStart();
@@ -219,16 +378,34 @@ public class AutonomTest extends GlobalScope {
         BazaStanga.setPosition(0.08);
         IntakeStanga.setPosition(0.649);
         IntakeDreapta.setPosition(0.6505);
+        ///Doar parcare mai jos
+        /*Actions.runBlocking(
+                new SequentialAction(
+                        tab1.build()
+                )
+        );*/
+        ///Auto doua sample + parcare
         Actions.runBlocking(
                 new SequentialAction(
-                        claw.closeClaw(),
+                        claw.closeClawOutake(),
                         tab.build(),
                         lift.liftUp(),
                         bratoutake.doPoz2(),
-                        claw.openClaw(),
+                        claw.openClawOutake(),
                         tab2.build(),
-                        //bratoutake.doPoz0(),
-                        lift.liftDown()
+                        lift.liftDown(),
+                        prindereintake.Intake(),
+                        prindereintake2.Intake2(),
+                        claw.closeClawOutake(),
+                        tab3.build(),
+                        lift.liftUp(),
+                        bratoutake.doPoz2(),
+                        claw.openClawOutake2(),
+                        tab4.build(),
+                        lift.liftDown2(),
+                        tab5.build()
+                        /// ,tab6.build()
+                        /// ,tab7.build()
                 )
         );
     }

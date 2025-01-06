@@ -1,4 +1,19 @@
 package org.firstinspires.ftc.teamcode;
+
+import androidx.annotation.NonNull;
+
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
+import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -12,10 +27,12 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.checkerframework.checker.units.qual.A;
+
 
 @Config
-@Autonomous(name = "BlueTest", group = "Autonomous")
-public class AutonomTest extends GlobalScope {
+@Autonomous(name = "Samples", group = "Autonomous")
+public class AutoTest extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
     private ElapsedTime timerBrat = new ElapsedTime();
@@ -187,7 +204,7 @@ public class AutonomTest extends GlobalScope {
             public boolean run(@NonNull TelemetryPacket packet)
             {
                 ServoGhearaOutake.setPosition(0.15);
-                if(timerBrat.seconds() > 4.5)
+                if(timerBrat.seconds() > 4.6)
                     return false;
                 else return true;
             }
@@ -256,6 +273,26 @@ public class AutonomTest extends GlobalScope {
             return new Poz2();
         }
 
+        public class Poz22 implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                OutakeStanga.setPosition(PozOutakeStanga[2]);
+                OutakeDreapta.setPosition(PozOutakeDreapta[2]);
+                //if(timerBrat.seconds() > 8)
+                //ServoGhearaOutake.setPosition(0.02);
+                if(timerBrat.seconds() > 4.3)
+                    return false;
+                else return true;
+            }
+        }
+
+        public Action doPoz22()
+        {
+            return new Poz22();
+        }
+
     }
 
     public class IntakeBrat
@@ -270,7 +307,7 @@ public class AutonomTest extends GlobalScope {
                     IntakeDreapta.setPosition(PozIntakeDr[0]);
                 }
                 if(timerPoz.seconds() > 1.2)
-                   ServoGhearaIntake.setPosition(0);
+                    ServoGhearaIntake.setPosition(0);
                 if(timerPoz.seconds() > 1.4)
                 {
                     IntakeStanga.setPosition(PozIntakeSt[3]);
@@ -338,28 +375,28 @@ public class AutonomTest extends GlobalScope {
                 .waitSeconds(4);
 
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(2, 0))
-                .turn(Math.toRadians(30.7));
+                .strafeTo(new Vector2d(4, 0))
+                .turn(Math.toRadians(28.5));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-3, 0))
-                .turn(Math.toRadians(-30.7));
+                .strafeTo(new Vector2d(-6, 0))
+                .turn(Math.toRadians(-28.5));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(3.5, 0))
+                .strafeTo(new Vector2d(8.3, 0))
                 .turn(Math.toRadians(45));
         ///--------------Parcare
         ///Robot alianta nu se misca
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(0, -120))
-                .strafeTo(new Vector2d(-10, -120));
+                .strafeTo(new Vector2d(-12, -120));
         ///PArcare directa, robot din aliana parcat la perete
         TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-10, -120));
+                .strafeTo(new Vector2d(-10.5, -120));
         ///Parcare langa perete, robot din alianta parcat diff de perete
         TrajectoryActionBuilder tab7 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(0, -130))
-                .strafeTo(new Vector2d(-10, -130));
+                .strafeTo(new Vector2d(0, -131))
+                .strafeTo(new Vector2d(-10.5, -131));
 
 
         waitForStart();
@@ -399,14 +436,13 @@ public class AutonomTest extends GlobalScope {
                         claw.closeClawOutake(),
                         tab3.build(),
                         lift.liftUp(),
-                        bratoutake.doPoz2(),
+                        bratoutake.doPoz22(),
                         claw.openClawOutake2(),
                         tab4.build(),
                         lift.liftDown2(),
                         tab5.build()
-                        /// ,tab6.build()
-                        /// ,tab7.build()
                 )
         );
     }
 }
+

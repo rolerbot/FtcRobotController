@@ -26,6 +26,7 @@ public abstract class GlobalScope extends LinearOpMode {
     /// Spate dreapta
     public DcMotorEx SliderS = null;//Stanga
     public DcMotorEx SliderD = null;
+    public Servo Parcare = null;
     public Servo ServoRotire = null;
     public Servo OutakeStanga = null;
     public Servo OutakeDreapta = null;
@@ -52,6 +53,7 @@ public abstract class GlobalScope extends LinearOpMode {
         BazaStanga = hardwareMap.get(Servo.class, "BazaStanga");
         OutakeStanga = hardwareMap.get(Servo.class, "OutakeStanga");
         OutakeDreapta = hardwareMap.get(Servo.class, "OutakeDreapta");
+        Parcare = hardwareMap.get(Servo.class, "Parcare");
     }
 
     void Initialise() {
@@ -89,6 +91,7 @@ public abstract class GlobalScope extends LinearOpMode {
         IntakeDreapta.setDirection(Servo.Direction.REVERSE);
         OutakeStanga.setDirection(Servo.Direction.REVERSE);
         OutakeDreapta.setDirection(Servo.Direction.FORWARD);
+        Parcare.setDirection(Servo.Direction.FORWARD);
     }
 
     void InitComponente() {
@@ -102,7 +105,7 @@ public abstract class GlobalScope extends LinearOpMode {
         ServoGhearaIntake.setPosition(0);
         ServoGhearaOutake.setPosition(0.006);
         ServoRotire.setPosition(0.5);
-
+        Parcare.setPosition(0.515);
     }
 
     void Controler() {
@@ -122,8 +125,7 @@ public abstract class GlobalScope extends LinearOpMode {
         RotireJos = new ButtonReader(ct2, GamepadKeys.Button.X);
         SLiderJos = new ButtonReader(ct2, GamepadKeys.Button.A);
         SliderSus = new ButtonReader(ct2, GamepadKeys.Button.Y);
-        //SliderMin = new ButtonReader(ct2, GamepadKeys.Button.LEFT_STICK_BUTTON);
-        //SliderMax = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_STICK_BUTTON);
+        Park = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_BUMPER);
         Auto = new ButtonReader(ct1, GamepadKeys.Button.Y);
         NoAuto = new ButtonReader(ct1, GamepadKeys.Button.A);
         GhearaOutake = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
@@ -139,9 +141,9 @@ public abstract class GlobalScope extends LinearOpMode {
     double schimbator = 0.4;//Viteza
     int pozitieIntake = 2, pozitieOutake = 0, pozitieSlide = 0;
     int PozSlideExt[] = {0, 900, 2400};
-    double PozIntakeSt[] = {0.088, 0.168, 0.649, 1}; //0.737
-    double PozIntakeDr[] = {0.0905, 0.1705, 0.6505, 1};//0.73715
-    double PozOutakeDreapta[] = {0.5717, 0.4461, 0.375, 0.335, 0.2656};
+    double PozIntakeSt[] = {0.088, 0.168, 0.73, 1}; //0.649
+    double PozIntakeDr[] = {0.0905, 0.1705, 0.732, 1};//0.6505
+    double PozOutakeDreapta[] = {0.5717, 0.4461, 0.3628, 0.335, 0.2656};
     double PozOutakeStanga[] = {0.4685, 0.3405, 0.3405, 0.3405, 0.2183};
     int cnt = 0, timecounter = 1, secondtimer = 1;
     double CLesteInchis = 0.02 , ClesteDeschis = 0.006;
@@ -151,8 +153,7 @@ public abstract class GlobalScope extends LinearOpMode {
     ButtonReader RotireStanga, RotireDreapta, RotireSus, RotireJos;
     ButtonReader IntakeSus, IntakeJos;
     ButtonReader OutakeJos, OutakeSus;
-    ButtonReader SliderSus, SLiderJos;
-    ButtonReader SliderMin, SliderMax;
+    ButtonReader SliderSus, SLiderJos, Park;
     ButtonReader Auto, NoAuto;
     TriggerReader GhearaOutake;
 
@@ -263,6 +264,13 @@ public abstract class GlobalScope extends LinearOpMode {
                 SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             }
         }
+    }
+    void ParkButton(){
+        Park.readValue();
+        if(Park.wasJustPressed() && Parcare.getPosition() != 0.515)
+           Parcare.setPosition(0.515);
+        else if(Park.wasJustPressed() && Parcare.getPosition() == 0.515)
+            Parcare.setPosition(0.61);
     }
 
     void OutakeRotire() {

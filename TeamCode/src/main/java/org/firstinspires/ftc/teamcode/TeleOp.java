@@ -16,35 +16,31 @@ public class TeleOp extends GlobalScope
         waitForStart();
 
         Controler();
-        //SLider1 = new Lift(hardwareMap);
-        //SLider2 = new Lift(hardwareMap);
 
         while (opModeIsActive())
         {
-            //SLider1.pressedButton(gamepad2.y);
-            //SLider2.PressedButton(gamepad2.a);
+
             MiscareBaza();
-            //SliderPoz();
-            //SliderExtend();
             SliderPoz2();
             SliderBaza();
             Roteste();
             OutakeRotire();
             ActiuneAuto();
             BazaExt();
+            ParkButton();
             //Cleste();
             Cleste();
             telemetry.update();
-            telemetry.addData("INtakeSt", IntakeStanga.getPosition());
+            telemetry.addData("Parcare", Parcare.getPosition());
             telemetry.addData("IntakeDr", IntakeDreapta.getPosition());
             telemetry.addData("BazaSt", BazaStanga.getPosition());
             telemetry.addData("BazaDr", BazaDreapta.getPosition());
             sus.readValue();
             jos.readValue();
             if(sus.wasJustPressed())
-                OutakeStanga.setPosition(OutakeStanga.getPosition() + 0.015);
+                Parcare.setPosition(Parcare.getPosition() + 0.007);
             if(jos.wasJustPressed())
-                OutakeStanga.setPosition(OutakeStanga.getPosition() - 0.015);
+                Parcare.setPosition(Parcare.getPosition() - 0.007);
         }
     }
 }

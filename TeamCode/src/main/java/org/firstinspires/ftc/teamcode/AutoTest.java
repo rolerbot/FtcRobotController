@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.config.Config;
@@ -110,6 +112,7 @@ public class AutoTest extends GlobalScope {
                 {
                     //SliderS.setPower(0);
                     //SliderD.setPower(0);
+                    Count++;
                     timerPoz.startTime();
                     return false;
                 }
@@ -149,7 +152,6 @@ public class AutoTest extends GlobalScope {
                 {
                     //SliderS.setPower(0);
                     //SliderD.setPower(0);
-                    Count++;
                     timerPoz.startTime();
                     return false;
                 }
@@ -336,7 +338,8 @@ public class AutoTest extends GlobalScope {
                 return false;
             }
         }
-        public Action ParcareNiv1()
+
+        public Action ParcareNiv()
         {
             return new ParcareNiv1.Parkauto();
         }
@@ -436,7 +439,7 @@ public class AutoTest extends GlobalScope {
                         claw.openClawOutake(),
                         tab2.build(),
                         new ParallelAction(
-                            lift.liftDown2(),
+                            lift.liftDown(),
                             tabSampleMijl1.build()
                         ),
                         prindereintake.Intake(),
@@ -454,9 +457,8 @@ public class AutoTest extends GlobalScope {
                         ),
                         new ParallelAction(
                                 tab3.build(),
-                                parcare.ParcareNiv1()
+                                parcare.ParcareNiv()
                         )
-
                 )
         );
     }

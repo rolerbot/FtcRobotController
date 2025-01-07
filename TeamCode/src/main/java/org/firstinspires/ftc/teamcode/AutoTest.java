@@ -36,8 +36,7 @@ import org.checkerframework.checker.units.qual.A;
 public class AutoTest extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
-    private ElapsedTime timerBrat = new ElapsedTime();
-    double ArraySecondsCleste[] = {8, 4.6}, BratOutake[] = {7, 4.3};
+    double ArraySecondsCleste[] = {3.2, 1.2, 1.2}, BratOutake[] = {3, 1, 1};
     int Count  = 0, CountBrat = 0;
     public class Lift
     {
@@ -57,9 +56,10 @@ public class AutoTest extends GlobalScope {
                     SliderD.setPower(1);
                     SliderS.setPower(1);
                     initialized = true;
+                    OutakeStanga.setPosition(PozOutakeStanga[1]);
+                    OutakeDreapta.setPosition(PozOutakeDreapta[1]);
                 }
                 timerPoz.reset();
-                timerBrat.reset();
                 double pos = SliderS.getCurrentPosition();
                 packet.put("liftPos", pos);
                 if (pos < 2400)
@@ -69,7 +69,6 @@ public class AutoTest extends GlobalScope {
                     //SliderS.setPower(0);
                     //SliderD.setPower(0);
                     timerPoz.startTime();
-                    timerBrat.startTime();
                     return false;
                 }
             }
@@ -98,9 +97,8 @@ public class AutoTest extends GlobalScope {
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     initialized = true;
-                    ServoGhearaIntake.setPosition(0.02);
+                    ServoGhearaIntake.setPosition(0.027);
                 }
-                timerBrat.reset();
                 timerPoz.reset();
                 IntakeStanga.setPosition(PozIntakeSt[1]);
                 IntakeDreapta.setPosition(PozIntakeDr[1]);
@@ -112,9 +110,7 @@ public class AutoTest extends GlobalScope {
                 {
                     //SliderS.setPower(0);
                     //SliderD.setPower(0);
-                    Count++;
                     timerPoz.startTime();
-                    timerBrat.startTime();
                     return false;
                 }
             }
@@ -142,9 +138,8 @@ public class AutoTest extends GlobalScope {
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     initialized = true;
-                    ServoGhearaIntake.setPosition(0.02);
+                    ServoGhearaIntake.setPosition(0.027);
                 }
-                timerBrat.reset();
                 timerPoz.reset();
                 double pos = SliderS.getCurrentPosition();
                 packet.put("liftPos", pos);
@@ -154,8 +149,8 @@ public class AutoTest extends GlobalScope {
                 {
                     //SliderS.setPower(0);
                     //SliderD.setPower(0);
+                    Count++;
                     timerPoz.startTime();
-                    timerBrat.startTime();
                     return false;
                 }
             }
@@ -175,12 +170,14 @@ public class AutoTest extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                timerBrat.reset();
-                timerPoz.reset();
-                timerPoz.startTime();
-                timerBrat.startTime();
                 ServoGhearaOutake.setPosition(0.0056);
-                return false;
+                if(timerPoz.seconds() < 4.3)
+                    return true;
+                else {
+                    timerPoz.reset();
+                    timerPoz.startTime();
+                    return false;
+                }
             }
         }
 
@@ -195,7 +192,7 @@ public class AutoTest extends GlobalScope {
             public boolean run(@NonNull TelemetryPacket packet)
             {
                 ServoGhearaOutake.setPosition(0.15);
-                if(timerBrat.seconds() > ArraySecondsCleste[Count])
+                if(timerPoz.seconds() > ArraySecondsCleste[Count])
                     return false;
                 else return true;
             }
@@ -211,11 +208,8 @@ public class AutoTest extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                CountBrat++;
-                timerBrat.reset();
                 timerPoz.reset();
                 timerPoz.startTime();
-                timerBrat.startTime();
                 ServoGhearaIntake.setPosition(0);
                 return false;
             }
@@ -231,7 +225,7 @@ public class AutoTest extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                ServoGhearaIntake.setPosition(0.2);
+                ServoGhearaIntake.setPosition(0.27);
                 if(timerPoz.seconds() > 4)
                     return false;
                 else return true;
@@ -253,9 +247,12 @@ public class AutoTest extends GlobalScope {
             {
                 OutakeStanga.setPosition(PozOutakeStanga[2]);
                 OutakeDreapta.setPosition(PozOutakeDreapta[2]);
-                if(timerBrat.seconds() > BratOutake[0])
+                if(timerPoz.seconds() > BratOutake[CountBrat]){
+                    CountBrat++;
                     return false;
+                }
                 else return true;
+
             }
         }
 
@@ -304,7 +301,7 @@ public class AutoTest extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                ServoGhearaIntake.setPosition(0.02);
+                ServoGhearaIntake.setPosition(0.027);
                 if(timerPoz.seconds() > 3){
                     IntakeStanga.setPosition(PozIntakeSt[2]);
                     IntakeDreapta.setPosition(PozIntakeDr[2]);
@@ -313,7 +310,9 @@ public class AutoTest extends GlobalScope {
                     OutakeStanga.setPosition(PozOutakeStanga[0]);
                     OutakeDreapta.setPosition(PozOutakeDreapta[0]);
                 }
-                if(timerPoz.seconds() < 4.2)
+                if(timerPoz.seconds() > 4.2)
+                    ServoGhearaOutake.setPosition(0.0056);
+                if(timerPoz.seconds() < 4.5)
                     return true;
                 else return false;
             }
@@ -324,6 +323,24 @@ public class AutoTest extends GlobalScope {
         }
     }
 
+    public class ParcareNiv1
+    {
+        public class Parkauto implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                Parcare.setPosition(0.61);
+                if(timerPoz.seconds() < 5)
+                    return true;
+                return false;
+            }
+        }
+        public Action ParcareNiv1()
+        {
+            return new ParcareNiv1.Parkauto();
+        }
+    }
 
     @Override
     public void runOpMode() {
@@ -334,25 +351,34 @@ public class AutoTest extends GlobalScope {
         BratOutake bratoutake = new BratOutake();
         IntakeBrat prindereintake = new IntakeBrat();
         IntakeBrat2 prindereintake2 = new IntakeBrat2();
+        ParcareNiv1 parcare = new ParcareNiv1();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(11.7, 55))
+                .strafeTo(new Vector2d(10.5, 56))
                 .turn(Math.toRadians(-45));
 
-        TrajectoryActionBuilder tabWait = drive.actionBuilder(initialPose)
-                .waitSeconds(4);
-
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(4, 0))
-                .turn(Math.toRadians(28.5));
+                .strafeTo(new Vector2d(4.5, 0))
+                .turn(Math.toRadians(39.5));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-4, 0))
-                .turn(Math.toRadians(-28.5));
+                .turn(Math.toRadians(-41.5))
+                .strafeTo(new Vector2d(-6.3, 0));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(10, 0))
                 .turn(Math.toRadians(45));
+
+        TrajectoryActionBuilder tabSampleMijl1 = drive.actionBuilder(initialPose)
+                .turn(Math.toRadians(60));
+
+        TrajectoryActionBuilder tabSampleMijl2 = drive.actionBuilder(initialPose)
+                .turn(Math.toRadians(-60));
+
+        TrajectoryActionBuilder tabPark = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(30, -10))
+                .turn(Math.toRadians(45));
+
         ///--------------Parcare
         ///Robot alianta nu se misca
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
@@ -360,11 +386,11 @@ public class AutoTest extends GlobalScope {
                 .strafeTo(new Vector2d(-12, -120));
         ///PArcare directa, robot din aliana parcat la perete
         TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-10.5, -120));
+                .strafeTo(new Vector2d(-12, -120));
         ///Parcare langa perete, robot din alianta parcat diff de perete
         TrajectoryActionBuilder tab7 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(0, -131))
-                .strafeTo(new Vector2d(-10.5, -131));
+                .strafeTo(new Vector2d(-12, -131));
 
 
         waitForStart();
@@ -375,7 +401,6 @@ public class AutoTest extends GlobalScope {
 
         telemetry.addData("pozitia brat", SliderS.getCurrentPosition());
         telemetry.addData("pozitia brat2", SliderD.getCurrentPosition());
-        telemetry.addData("timpBratOutake", timerBrat);
         telemetry.addData("timpBratOutake0", timerPoz);
         telemetry.update();
 
@@ -387,10 +412,10 @@ public class AutoTest extends GlobalScope {
         IntakeDreapta.setPosition(0.6505);
         ServoRotire.setPosition(0.5);
         Parcare.setPosition(0.515);
+        ServoGhearaOutake.setPosition(0.0056);
 
         Actions.runBlocking(
                 new SequentialAction(
-                        claw.closeClawOutake(),
                         new ParallelAction(
                             tab.build(),
                             lift.liftUp()
@@ -403,18 +428,35 @@ public class AutoTest extends GlobalScope {
                         ),
                         prindereintake.Intake(),
                         prindereintake2.Intake2(),
-                        claw.closeClawOutake(),
                         new ParallelAction(
                             tab3.build(),
                             lift.liftUp()
                         ),
                         bratoutake.doPoz2(),
                         claw.openClawOutake(),
-                        tab4.build(),
+                        tab2.build(),
                         new ParallelAction(
                             lift.liftDown2(),
-                            tab6.build()
+                            tabSampleMijl1.build()
+                        ),
+                        prindereintake.Intake(),
+                        prindereintake2.Intake2(),
+                        tabSampleMijl2.build(),
+                        new ParallelAction(
+                                tab3.build(),
+                                lift.liftUp()
+                        ),
+                        bratoutake.doPoz2(),
+                        claw.openClawOutake(),
+                        new ParallelAction(
+                             tabPark.build(),
+                             lift.liftDown()
+                        ),
+                        new ParallelAction(
+                                tab3.build(),
+                                parcare.ParcareNiv1()
                         )
+
                 )
         );
     }

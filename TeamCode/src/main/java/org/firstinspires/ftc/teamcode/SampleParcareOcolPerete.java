@@ -77,7 +77,7 @@ public class SampleParcareOcolPerete extends GlobalScope {
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     initialized = true;
-                    ServoGhearaIntake.setPosition(0.02);
+                    ServoGhearaIntake.setPosition(0.027);
                 }
                 timerBrat.reset();
                 timerPoz.reset();
@@ -120,7 +120,7 @@ public class SampleParcareOcolPerete extends GlobalScope {
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     initialized = true;
-                    ServoGhearaIntake.setPosition(0.02);
+                    ServoGhearaIntake.setPosition(0.027);
                 }
                 timerBrat.reset();
                 timerPoz.reset();
@@ -223,7 +223,7 @@ public class SampleParcareOcolPerete extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                ServoGhearaIntake.setPosition(0.2);
+                ServoGhearaIntake.setPosition(0.27);
                 if(timerPoz.seconds() > 4)
                     return false;
                 else return true;
@@ -318,7 +318,7 @@ public class SampleParcareOcolPerete extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                ServoGhearaIntake.setPosition(0.02);
+                ServoGhearaIntake.setPosition(0.027);
                 if(timerPoz.seconds() > 3){
                     IntakeStanga.setPosition(PozIntakeSt[2]);
                     IntakeDreapta.setPosition(PozIntakeDr[2]);
@@ -364,7 +364,7 @@ public class SampleParcareOcolPerete extends GlobalScope {
                 .turn(Math.toRadians(28.5));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-4, 0))
+                .strafeTo(new Vector2d(-5, 0))
                 .turn(Math.toRadians(-28.5));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)

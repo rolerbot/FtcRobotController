@@ -14,8 +14,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 @Config
-@Autonomous(name = "Doar_Parcare", group = "Autonomous")
-public class ParcareSimpla extends GlobalScope {
+@Autonomous(name = "2Sample", group = "Autonomous")
+public class Sample2 extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
     private ElapsedTime timerBrat = new ElapsedTime();
@@ -187,7 +187,7 @@ public class ParcareSimpla extends GlobalScope {
             public boolean run(@NonNull TelemetryPacket packet)
             {
                 ServoGhearaOutake.setPosition(0.15);
-                if(timerBrat.seconds() > 4.5)
+                if(timerBrat.seconds() > 4.6)
                     return false;
                 else return true;
             }
@@ -256,6 +256,26 @@ public class ParcareSimpla extends GlobalScope {
             return new Poz2();
         }
 
+        public class Poz22 implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                OutakeStanga.setPosition(PozOutakeStanga[2]);
+                OutakeDreapta.setPosition(PozOutakeDreapta[2]);
+                //if(timerBrat.seconds() > 8)
+                //ServoGhearaOutake.setPosition(0.02);
+                if(timerBrat.seconds() > 4.3)
+                    return false;
+                else return true;
+            }
+        }
+
+        public Action doPoz22()
+        {
+            return new Poz22();
+        }
+
     }
 
     public class IntakeBrat
@@ -270,7 +290,7 @@ public class ParcareSimpla extends GlobalScope {
                     IntakeDreapta.setPosition(PozIntakeDr[0]);
                 }
                 if(timerPoz.seconds() > 1.2)
-                   ServoGhearaIntake.setPosition(0);
+                    ServoGhearaIntake.setPosition(0);
                 if(timerPoz.seconds() > 1.4)
                 {
                     IntakeStanga.setPosition(PozIntakeSt[3]);
@@ -326,46 +346,40 @@ public class ParcareSimpla extends GlobalScope {
         IntakeBrat prindereintake = new IntakeBrat();
         IntakeBrat2 prindereintake2 = new IntakeBrat2();
 
-     /*   TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
+        TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(11.7, 55))
-                .turn(Math.toRadians(-45));*/
+                .turn(Math.toRadians(-45));
 
-/**
+        TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(10, -75));
+
+
         TrajectoryActionBuilder tabWait = drive.actionBuilder(initialPose)
                 .waitSeconds(4);
 
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(2, 0))
-                .turn(Math.toRadians(30.7));
+                .strafeTo(new Vector2d(4, 0))
+                .turn(Math.toRadians(28.5));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-3, 0))
-                .turn(Math.toRadians(-30.7));
+                .strafeTo(new Vector2d(-4, 0))
+                .turn(Math.toRadians(-28.5));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(3.5, 0))
-                .turn(Math.toRadians(45));*/
-
+                .strafeTo(new Vector2d(10, 0))
+                .turn(Math.toRadians(45));
         ///--------------Parcare
-
-        ///Parcare simpla - doar parcare
-
-        TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
-                //.waitSeconds(20)
-                .strafeTo(new Vector2d(10, -75));
-
         ///Robot alianta nu se misca
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(0, -124))
-                .strafeTo(new Vector2d(-10, -124));
-        ///Parcare directa, robot din aliana parcat la perete
+                .strafeTo(new Vector2d(0, -120))
+                .strafeTo(new Vector2d(-12, -120));
+        ///PArcare directa, robot din aliana parcat la perete
         TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-10, -124));
-                //.waitSeconds(15);
+                .strafeTo(new Vector2d(-10.5, -120));
         ///Parcare langa perete, robot din alianta parcat diff de perete
         TrajectoryActionBuilder tab7 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(0, -134))
-                .strafeTo(new Vector2d(-10, -134));
+                .strafeTo(new Vector2d(0, -131))
+                .strafeTo(new Vector2d(-10.5, -131));
 
 
         waitForStart();
@@ -384,16 +398,16 @@ public class ParcareSimpla extends GlobalScope {
         BazaStanga.setPosition(0.08);
         IntakeStanga.setPosition(0.649);
         IntakeDreapta.setPosition(0.6505);
+        ServoRotire.setPosition(0.5);
+        Parcare.setPosition(0.515);
         ///Doar parcare mai jos
-        Actions.runBlocking(
-                new SequentialAction(
-                        //tab1.build()
-                        tab6.build()
-
-                )
-        );
-        ///Auto doua sample + parcare
         /*Actions.runBlocking(
+                new SequentialAction(
+                        tab1.build()
+                )
+        );*/
+        ///Auto doua sample + parcare
+        Actions.runBlocking(
                 new SequentialAction(
                         claw.closeClawOutake(),
                         tab.build(),
@@ -407,14 +421,12 @@ public class ParcareSimpla extends GlobalScope {
                         claw.closeClawOutake(),
                         tab3.build(),
                         lift.liftUp(),
-                        bratoutake.doPoz2(),
+                        bratoutake.doPoz22(),
                         claw.openClawOutake2(),
                         tab4.build(),
                         lift.liftDown2(),
-                        tab5.build()
-                        /// ,tab6.build()
-                        /// ,tab7.build()
+                        tab6.build()
                 )
-        );*/
+        );
     }
 }

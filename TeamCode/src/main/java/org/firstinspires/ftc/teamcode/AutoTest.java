@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
@@ -36,6 +37,8 @@ public class AutoTest extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
     private ElapsedTime timerBrat = new ElapsedTime();
+    double ArraySecondsCleste[] = {8, 4.6}, BratOutake[] = {7, 4.3};
+    int Count  = 0, CountBrat = 0;
     public class Lift
     {
         public class LiftUp implements Action
@@ -54,8 +57,9 @@ public class AutoTest extends GlobalScope {
                     SliderD.setPower(1);
                     SliderS.setPower(1);
                     initialized = true;
-
                 }
+                timerPoz.reset();
+                timerBrat.reset();
                 double pos = SliderS.getCurrentPosition();
                 packet.put("liftPos", pos);
                 if (pos < 2400)
@@ -64,6 +68,8 @@ public class AutoTest extends GlobalScope {
                 {
                     //SliderS.setPower(0);
                     //SliderD.setPower(0);
+                    timerPoz.startTime();
+                    timerBrat.startTime();
                     return false;
                 }
             }
@@ -71,7 +77,7 @@ public class AutoTest extends GlobalScope {
 
         public Action liftUp()
         {
-            return new LiftUp();
+            return new Lift.LiftUp();
         }
 
         public class LiftDown implements Action
@@ -106,6 +112,7 @@ public class AutoTest extends GlobalScope {
                 {
                     //SliderS.setPower(0);
                     //SliderD.setPower(0);
+                    Count++;
                     timerPoz.startTime();
                     timerBrat.startTime();
                     return false;
@@ -115,7 +122,7 @@ public class AutoTest extends GlobalScope {
 
         public Action liftDown()
         {
-            return new LiftDown();
+            return new Lift.LiftDown();
         }
 
 
@@ -156,7 +163,8 @@ public class AutoTest extends GlobalScope {
 
         public Action liftDown2()
         {
-            return new LiftDown2();
+
+            return new Lift.LiftDown2();
         }
     }
 
@@ -178,7 +186,7 @@ public class AutoTest extends GlobalScope {
 
         public Action closeClawOutake()
         {
-            return new CloseClawOutake();
+            return new Cleste.CloseClawOutake();
         }
 
         public class OpenClawOutake implements Action
@@ -187,7 +195,7 @@ public class AutoTest extends GlobalScope {
             public boolean run(@NonNull TelemetryPacket packet)
             {
                 ServoGhearaOutake.setPosition(0.15);
-                if(timerBrat.seconds() > 8)
+                if(timerBrat.seconds() > ArraySecondsCleste[Count])
                     return false;
                 else return true;
             }
@@ -195,23 +203,7 @@ public class AutoTest extends GlobalScope {
 
         public Action openClawOutake()
         {
-            return new OpenClawOutake();
-        }
-
-        public class OpenClawOutake2 implements Action
-        {
-            @Override
-            public boolean run(@NonNull TelemetryPacket packet)
-            {
-                ServoGhearaOutake.setPosition(0.15);
-                if(timerBrat.seconds() > 4.6)
-                    return false;
-                else return true;
-            }
-        }
-        public Action openClawOutake2()
-        {
-            return new OpenClawOutake2();
+            return new Cleste.OpenClawOutake();
         }
 
         public class CloseClawIntake implements Action
@@ -219,18 +211,19 @@ public class AutoTest extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
+                CountBrat++;
                 timerBrat.reset();
                 timerPoz.reset();
                 timerPoz.startTime();
                 timerBrat.startTime();
-                ServoGhearaOutake.setPosition(0.0056);
+                ServoGhearaIntake.setPosition(0);
                 return false;
             }
         }
 
         public Action closeClawIntake()
         {
-            return new CloseClawIntake();
+            return new Cleste.CloseClawIntake();
         }
 
         public class OpenClawIntake implements Action
@@ -246,7 +239,7 @@ public class AutoTest extends GlobalScope {
         }
         public Action openClawIntake()
         {
-            return new OpenClawIntake();
+            return new Cleste.OpenClawIntake();
         }
 
     }
@@ -260,9 +253,7 @@ public class AutoTest extends GlobalScope {
             {
                 OutakeStanga.setPosition(PozOutakeStanga[2]);
                 OutakeDreapta.setPosition(PozOutakeDreapta[2]);
-                //if(timerBrat.seconds() > 8)
-                //ServoGhearaOutake.setPosition(0.02);
-                if(timerBrat.seconds() > 7)
+                if(timerBrat.seconds() > BratOutake[0])
                     return false;
                 else return true;
             }
@@ -270,27 +261,7 @@ public class AutoTest extends GlobalScope {
 
         public Action doPoz2()
         {
-            return new Poz2();
-        }
-
-        public class Poz22 implements Action
-        {
-            @Override
-            public boolean run(@NonNull TelemetryPacket packet)
-            {
-                OutakeStanga.setPosition(PozOutakeStanga[2]);
-                OutakeDreapta.setPosition(PozOutakeDreapta[2]);
-                //if(timerBrat.seconds() > 8)
-                //ServoGhearaOutake.setPosition(0.02);
-                if(timerBrat.seconds() > 4.3)
-                    return false;
-                else return true;
-            }
-        }
-
-        public Action doPoz22()
-        {
-            return new Poz22();
+            return new BratOutake.Poz2();
         }
 
     }
@@ -322,7 +293,7 @@ public class AutoTest extends GlobalScope {
         }
         public Action Intake()
         {
-            return new IntakePrindere();
+            return new IntakeBrat.IntakePrindere();
         }
     }
 
@@ -349,9 +320,10 @@ public class AutoTest extends GlobalScope {
         }
         public Action Intake2()
         {
-            return new IntakePrindere2();
+            return new IntakeBrat2.IntakePrindere2();
         }
     }
+
 
     @Override
     public void runOpMode() {
@@ -367,10 +339,6 @@ public class AutoTest extends GlobalScope {
                 .strafeTo(new Vector2d(11.7, 55))
                 .turn(Math.toRadians(-45));
 
-        TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(10, -75));
-
-
         TrajectoryActionBuilder tabWait = drive.actionBuilder(initialPose)
                 .waitSeconds(4);
 
@@ -379,11 +347,11 @@ public class AutoTest extends GlobalScope {
                 .turn(Math.toRadians(28.5));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-6, 0))
+                .strafeTo(new Vector2d(-4, 0))
                 .turn(Math.toRadians(-28.5));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(8.3, 0))
+                .strafeTo(new Vector2d(10, 0))
                 .turn(Math.toRadians(45));
         ///--------------Parcare
         ///Robot alianta nu se misca
@@ -404,45 +372,50 @@ public class AutoTest extends GlobalScope {
         if (isStopRequested()) return;
 
         Initialise();
+
         telemetry.addData("pozitia brat", SliderS.getCurrentPosition());
         telemetry.addData("pozitia brat2", SliderD.getCurrentPosition());
         telemetry.addData("timpBratOutake", timerBrat);
         telemetry.addData("timpBratOutake0", timerPoz);
         telemetry.update();
+
         OutakeStanga.setPosition(PozOutakeStanga[0]);
         OutakeDreapta.setPosition(PozOutakeDreapta[0]);
         BazaDreapta.setPosition(0.04);
         BazaStanga.setPosition(0.08);
         IntakeStanga.setPosition(0.649);
         IntakeDreapta.setPosition(0.6505);
-        ///Doar parcare mai jos
-        /*Actions.runBlocking(
-                new SequentialAction(
-                        tab1.build()
-                )
-        );*/
-        ///Auto doua sample + parcare
+        ServoRotire.setPosition(0.5);
+        Parcare.setPosition(0.515);
+
         Actions.runBlocking(
                 new SequentialAction(
                         claw.closeClawOutake(),
-                        tab.build(),
-                        lift.liftUp(),
+                        new ParallelAction(
+                            tab.build(),
+                            lift.liftUp()
+                        ),
                         bratoutake.doPoz2(),
                         claw.openClawOutake(),
-                        tab2.build(),
-                        lift.liftDown(),
+                        new ParallelAction(
+                            tab2.build(),
+                            lift.liftDown()
+                        ),
                         prindereintake.Intake(),
                         prindereintake2.Intake2(),
                         claw.closeClawOutake(),
-                        tab3.build(),
-                        lift.liftUp(),
-                        bratoutake.doPoz22(),
-                        claw.openClawOutake2(),
+                        new ParallelAction(
+                            tab3.build(),
+                            lift.liftUp()
+                        ),
+                        bratoutake.doPoz2(),
+                        claw.openClawOutake(),
                         tab4.build(),
-                        lift.liftDown2(),
-                        tab5.build()
+                        new ParallelAction(
+                            lift.liftDown2(),
+                            tab6.build()
+                        )
                 )
         );
     }
 }
-

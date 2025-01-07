@@ -12,12 +12,10 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.checkerframework.checker.units.qual.A;
-
 
 @Config
 @Autonomous(name = "2Sample", group = "Autonomous")
-public class SampleParcareOcolPerete extends GlobalScope {
+public class Sample2 extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
     private ElapsedTime timerBrat = new ElapsedTime();
@@ -400,6 +398,8 @@ public class SampleParcareOcolPerete extends GlobalScope {
         BazaStanga.setPosition(0.08);
         IntakeStanga.setPosition(0.649);
         IntakeDreapta.setPosition(0.6505);
+        ServoRotire.setPosition(0.5);
+        Parcare.setPosition(0.515);
         ///Doar parcare mai jos
         /*Actions.runBlocking(
                 new SequentialAction(

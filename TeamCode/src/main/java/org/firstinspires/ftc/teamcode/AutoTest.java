@@ -34,7 +34,7 @@ import org.checkerframework.checker.units.qual.A;
 
 
 @Config
-@Autonomous(name = "Samples", group = "Autonomous")
+@Autonomous(name = "3Samples", group = "Autonomous")
 public class AutoTest extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
@@ -90,10 +90,19 @@ public class AutoTest extends GlobalScope {
             {
                 if (!initialized)
                 {
+                    if(Count == 0)
+                    {
+                        BazaStanga.setPosition(0.2489);
+                        BazaDreapta.setPosition(0.2044);
+                    }
+                    else if (Count == 1)
+                    {
+                        BazaStanga.setPosition(0.2939);
+                        BazaDreapta.setPosition(0.2322);
+                        ServoRotire.setPosition(0.4289);
+                    }
                     OutakeStanga.setPosition(PozOutakeStanga[1]);
                     OutakeDreapta.setPosition(PozOutakeDreapta[1]);
-                    BazaStanga.setPosition(0.2489);
-                    BazaDreapta.setPosition(0.2044);
                     SliderS.setTargetPosition(0);
                     SliderD.setTargetPosition(0);
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -102,8 +111,10 @@ public class AutoTest extends GlobalScope {
                     ServoGhearaIntake.setPosition(0.027);
                 }
                 timerPoz.reset();
-                IntakeStanga.setPosition(PozIntakeSt[1]);
-                IntakeDreapta.setPosition(PozIntakeDr[1]);
+                if(Count < 2){
+                    IntakeStanga.setPosition(PozIntakeSt[1]);
+                    IntakeDreapta.setPosition(PozIntakeDr[1]);
+                }
                 double pos = SliderS.getCurrentPosition();
                 packet.put("liftPos", pos);
                 if (pos > 30)
@@ -134,8 +145,12 @@ public class AutoTest extends GlobalScope {
             {
                 if (!initialized)
                 {
+
                     OutakeStanga.setPosition(PozOutakeStanga[1]);
                     OutakeDreapta.setPosition(PozOutakeDreapta[1]);
+                    BazaStanga.setPosition(0.2939);
+                    BazaDreapta.setPosition(0.2322);
+                    ServoRotire.setPosition(0.4289);
                     SliderS.setTargetPosition(0);
                     SliderD.setTargetPosition(0);
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -163,6 +178,7 @@ public class AutoTest extends GlobalScope {
 
             return new Lift.LiftDown2();
         }
+
     }
 
     public class Cleste
@@ -280,6 +296,7 @@ public class AutoTest extends GlobalScope {
                     ServoGhearaIntake.setPosition(0);
                 if(timerPoz.seconds() > 1.4)
                 {
+                    ServoRotire.setPosition(0.5);
                     IntakeStanga.setPosition(PozIntakeSt[3]);
                     IntakeDreapta.setPosition(PozIntakeDr[3]);
                     BazaDreapta.setPosition(0.04);
@@ -366,21 +383,26 @@ public class AutoTest extends GlobalScope {
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(-41.5))
-                .strafeTo(new Vector2d(-6.3, 0));
+                .strafeTo(new Vector2d(-6.8, 0));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(10, 0))
-                .turn(Math.toRadians(45));
+                .turn(Math.toRadians(-40))
+                .strafeTo(new Vector2d(-6.4, 6));
 
         TrajectoryActionBuilder tabSampleMijl1 = drive.actionBuilder(initialPose)
-                .turn(Math.toRadians(60));
+                .turn(Math.toRadians(65.3));//64.3
 
         TrajectoryActionBuilder tabSampleMijl2 = drive.actionBuilder(initialPose)
-                .turn(Math.toRadians(-60));
+                .turn(Math.toRadians(-42));
 
         TrajectoryActionBuilder tabPark = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(30, -10))
-                .turn(Math.toRadians(45));
+                .strafeTo(new Vector2d(4, 0))
+                .turn(Math.toRadians(30))
+                .strafeTo(new Vector2d(40, 10))
+                .turn(Math.toRadians(120));
+
+        TrajectoryActionBuilder tabPark2 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(-6, 0));
 
         ///--------------Parcare
         ///Robot alianta nu se misca
@@ -446,7 +468,7 @@ public class AutoTest extends GlobalScope {
                         prindereintake2.Intake2(),
                         tabSampleMijl2.build(),
                         new ParallelAction(
-                                tab3.build(),
+                                tab4.build(),
                                 lift.liftUp()
                         ),
                         bratoutake.doPoz2(),
@@ -458,7 +480,8 @@ public class AutoTest extends GlobalScope {
                         new ParallelAction(
                                 tab3.build(),
                                 parcare.ParcareNiv()
-                        )
+                        ),
+                        tabPark2.build()
                 )
         );
     }

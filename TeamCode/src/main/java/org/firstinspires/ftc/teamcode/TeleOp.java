@@ -35,6 +35,7 @@ public class TeleOp extends GlobalScope
             telemetry.addData("IntakeDr", IntakeDreapta.getPosition());
             telemetry.addData("BazaSt", BazaStanga.getPosition());
             telemetry.addData("BazaDr", BazaDreapta.getPosition());
+            telemetry.addData("Rotire", ServoRotire.getPosition());
             sus.readValue();
             jos.readValue();
             if(sus.wasJustPressed())

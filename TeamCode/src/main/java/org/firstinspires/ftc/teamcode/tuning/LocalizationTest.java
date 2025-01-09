@@ -33,14 +33,25 @@ public class LocalizationTest extends LinearOpMode {
 
                 drive.updatePoseEstimate();
 
+<<<<<<< HEAD
                 telemetry.addData("x", drive.pose.position.x);
                 telemetry.addData("y", drive.pose.position.y);
                 telemetry.addData("heading (deg)", Math.toDegrees(drive.pose.heading.toDouble()));
+=======
+                Pose2d pose = drive.localizer.getPose();
+                telemetry.addData("x", pose.position.x);
+                telemetry.addData("y", pose.position.y);
+                telemetry.addData("heading (deg)", Math.toDegrees(pose.heading.toDouble()));
+>>>>>>> FTCRoadrunner/master
                 telemetry.update();
 
                 TelemetryPacket packet = new TelemetryPacket();
                 packet.fieldOverlay().setStroke("#3F51B5");
+<<<<<<< HEAD
                 Drawing.drawRobot(packet.fieldOverlay(), drive.pose);
+=======
+                Drawing.drawRobot(packet.fieldOverlay(), pose);
+>>>>>>> FTCRoadrunner/master
                 FtcDashboard.getInstance().sendTelemetryPacket(packet);
             }
         } else if (TuningOpModes.DRIVE_CLASS.equals(TankDrive.class)) {
@@ -59,14 +70,25 @@ public class LocalizationTest extends LinearOpMode {
 
                 drive.updatePoseEstimate();
 
+<<<<<<< HEAD
                 telemetry.addData("x", drive.pose.position.x);
                 telemetry.addData("y", drive.pose.position.y);
                 telemetry.addData("heading (deg)", Math.toDegrees(drive.pose.heading.toDouble()));
+=======
+                Pose2d pose = drive.localizer.getPose();
+                telemetry.addData("x", pose.position.x);
+                telemetry.addData("y", pose.position.y);
+                telemetry.addData("heading (deg)", Math.toDegrees(pose.heading.toDouble()));
+>>>>>>> FTCRoadrunner/master
                 telemetry.update();
 
                 TelemetryPacket packet = new TelemetryPacket();
                 packet.fieldOverlay().setStroke("#3F51B5");
+<<<<<<< HEAD
                 Drawing.drawRobot(packet.fieldOverlay(), drive.pose);
+=======
+                Drawing.drawRobot(packet.fieldOverlay(), pose);
+>>>>>>> FTCRoadrunner/master
                 FtcDashboard.getInstance().sendTelemetryPacket(packet);
             }
         } else {

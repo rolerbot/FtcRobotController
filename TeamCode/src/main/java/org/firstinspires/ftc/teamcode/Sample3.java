@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.annotation.SuppressLint;
-
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.config.Config;
@@ -17,25 +15,10 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import androidx.annotation.NonNull;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.SequentialAction;
-import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
-import com.acmerobotics.roadrunner.Vector2d;
-import com.acmerobotics.roadrunner.ftc.Actions;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.checkerframework.checker.units.qual.A;
-
 
 @Config
 @Autonomous(name = "3Samples", group = "Autonomous")
-public class AutoTest extends GlobalScope {
+public class Sample3 extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
     double ArraySecondsCleste[] = {3.2, 1.2, 1.2}, BratOutake[] = {3, 1, 1};
@@ -403,20 +386,6 @@ public class AutoTest extends GlobalScope {
 
         TrajectoryActionBuilder tabPark2 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(-6, 0));
-
-        ///--------------Parcare
-        ///Robot alianta nu se misca
-        TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(0, -120))
-                .strafeTo(new Vector2d(-12, -120));
-        ///PArcare directa, robot din aliana parcat la perete
-        TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-12, -120));
-        ///Parcare langa perete, robot din alianta parcat diff de perete
-        TrajectoryActionBuilder tab7 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(0, -131))
-                .strafeTo(new Vector2d(-12, -131));
-
 
         waitForStart();
 

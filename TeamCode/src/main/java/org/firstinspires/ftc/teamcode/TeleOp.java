@@ -7,8 +7,6 @@ public class TeleOp extends GlobalScope
 {
     private ElapsedTime runtime = new ElapsedTime();
 
-    //private Lift SLider1, SLider2;
-
     public void runOpMode()
     {
         Initialise();
@@ -19,7 +17,7 @@ public class TeleOp extends GlobalScope
 
         while (opModeIsActive())
         {
-
+            SliderExtend();
             MiscareBaza();
             SliderPoz2();
             SliderBaza();
@@ -28,20 +26,17 @@ public class TeleOp extends GlobalScope
             ActiuneAuto();
             BazaExt();
             ParkButton();
-            //Cleste();
             Cleste();
             telemetry.update();
-            telemetry.addData("Parcare", Parcare.getPosition());
-            telemetry.addData("IntakeDr", IntakeDreapta.getPosition());
-            telemetry.addData("BazaSt", BazaStanga.getPosition());
-            telemetry.addData("BazaDr", BazaDreapta.getPosition());
-            telemetry.addData("Rotire", ServoRotire.getPosition());
+            telemetry.addData("OutakeSt", OutakeStanga.getPosition());
+            telemetry.addData("OutakeDr", OutakeDreapta.getPosition());
+            telemetry.addData("SliderSt", SliderS.getCurrentPosition());
             sus.readValue();
             jos.readValue();
             if(sus.wasJustPressed())
-                Parcare.setPosition(Parcare.getPosition() + 0.007);
+                OutakeStanga.setPosition(OutakeStanga.getPosition() + 0.007);
             if(jos.wasJustPressed())
-                Parcare.setPosition(Parcare.getPosition() - 0.007);
+                OutakeStanga.setPosition(OutakeStanga.getPosition() - 0.007);
         }
     }
 }

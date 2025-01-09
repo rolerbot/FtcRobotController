@@ -80,8 +80,8 @@ public class Sample3 extends GlobalScope {
                     }
                     else if (Count == 1)
                     {
-                        BazaStanga.setPosition(0.2939);
-                        BazaDreapta.setPosition(0.2322);
+                        BazaStanga.setPosition(0.3);
+                        BazaDreapta.setPosition(0.242);
                         ServoRotire.setPosition(0.4289);
                     }
                     OutakeStanga.setPosition(PozOutakeStanga[1]);
@@ -370,7 +370,7 @@ public class Sample3 extends GlobalScope {
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(-40))
-                .strafeTo(new Vector2d(-6.4, 6));
+                .strafeTo(new Vector2d(-6, 7.7));
 
         TrajectoryActionBuilder tabSampleMijl1 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(65.3));//64.3

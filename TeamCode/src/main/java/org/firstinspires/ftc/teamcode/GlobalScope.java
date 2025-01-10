@@ -129,6 +129,7 @@ public abstract class GlobalScope extends LinearOpMode {
         Auto = new ButtonReader(ct1, GamepadKeys.Button.Y);
         NoAuto = new ButtonReader(ct1, GamepadKeys.Button.A);
         GhearaOutake = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
+        Specimen = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);
 
         sus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
         jos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
@@ -154,7 +155,7 @@ public abstract class GlobalScope extends LinearOpMode {
     ButtonReader IntakeSus, IntakeJos;
     ButtonReader OutakeJos, OutakeSus;
     ButtonReader SliderSus, SLiderJos, Park;
-    ButtonReader Auto, NoAuto;
+    ButtonReader Auto, NoAuto, Specimen;
     TriggerReader GhearaOutake;
 
     ButtonReader sus, jos;
@@ -205,6 +206,36 @@ public abstract class GlobalScope extends LinearOpMode {
         } else {
             SliderS.setPower(0);
             SliderD.setPower(0);
+        }
+    }
+
+    void Specimen(){
+        Specimen.readValue();
+        if(Specimen.wasJustPressed() && SliderS.getCurrentPosition() < 5){
+            SliderS.setTargetPosition(630);
+            SliderD.setTargetPosition(630);
+            SliderS.setPower(1);
+            SliderD.setPower(1);
+            SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            OutakeStanga.setPosition(PozOutakeStanga[2]);
+            OutakeDreapta.setPosition(PozOutakeDreapta[2]);
+        }
+        else if(Specimen.wasJustPressed() && SliderS.getCurrentPosition() < 700){
+            SliderS.setTargetPosition(1200);
+            SliderD.setTargetPosition(1200);
+            SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            OutakeStanga.setPosition(PozOutakeStanga[2]);
+            OutakeDreapta.setPosition(PozOutakeDreapta[2]);
+        }
+        else if(Specimen.wasJustPressed() && SliderS.getCurrentPosition() > 1100){
+            SliderS.setTargetPosition(0);
+            SliderD.setTargetPosition(0);
+            SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            OutakeStanga.setPosition(PozOutakeStanga[1]);
+            OutakeDreapta.setPosition(PozOutakeDreapta[1]);
         }
     }
 

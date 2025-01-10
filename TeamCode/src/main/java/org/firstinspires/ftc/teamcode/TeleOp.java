@@ -27,6 +27,7 @@ public class TeleOp extends GlobalScope
             BazaExt();
             ParkButton();
             Cleste();
+            Specimen();
             telemetry.update();
             telemetry.addData("OutakeSt", OutakeStanga.getPosition());
             telemetry.addData("OutakeDr", OutakeDreapta.getPosition());

@@ -172,6 +172,7 @@ public class Specimene extends GlobalScope {
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(0, 60))
                 .strafeTo(new Vector2d(-30, 75))
+                .turn(Math.toRadians(-30))
                 .strafeTo(new Vector2d(30, 75));
 
         waitForStart();

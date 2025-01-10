@@ -21,7 +21,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Sample3 extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
-    double ArraySecondsCleste[] = {3, 1.4, 1.5}, BratOutake[] = {2.7, 1.2, 1.2};
+    double ArraySecondsCleste[] = {2.7, 1.6, 1.6}, BratOutake[] = {2.5, 1.3, 1.2};
     int Count  = 0, CountBrat = 0;
     public class Lift
     {
@@ -370,7 +370,7 @@ public class Sample3 extends GlobalScope {
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(-35))//-40
-                .strafeTo(new Vector2d(-11.7, -1));//12
+                .strafeTo(new Vector2d(-9.7, -1));//12
 
         TrajectoryActionBuilder tabSampleMijl1 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(65.3));//64.3
@@ -380,12 +380,12 @@ public class Sample3 extends GlobalScope {
 
         TrajectoryActionBuilder tabPark = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(4, 0))
-                .turn(Math.toRadians(45))
-                .strafeTo(new Vector2d(50, 10))
-                .turn(Math.toRadians(120));
+                .turn(Math.toRadians(48))
+                .strafeTo(new Vector2d(45, 10))
+                .turn(Math.toRadians(110));
 
         TrajectoryActionBuilder tabPark2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-6, 0));
+                .strafeTo(new Vector2d(-8, 0));
 
         waitForStart();
 

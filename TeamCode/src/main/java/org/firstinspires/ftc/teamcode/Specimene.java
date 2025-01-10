@@ -19,7 +19,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Specimene extends GlobalScope {
 
     private ElapsedTime timer = new ElapsedTime();
-    int SLiderUp1 = 610, SliderUp2 = 1200;
+    int SLiderUp1 = 530, SliderUp2 = 1080;
     public class Lift
     {
         public class LiftUp1 implements Action {
@@ -163,17 +163,14 @@ public class Specimene extends GlobalScope {
         Cleste cleste = new Cleste();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-32.6, -33));
+                .strafeTo(new Vector2d(-33, -33));
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(5, 0));
                 //.splineToLinearHeading(new Pose2d(30, 30, Math.toRadians(180)), Math.toRadians(0));
 
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(0, 60))
-                .strafeTo(new Vector2d(-30, 60))
-                .lineToXLinearHeading(80, Math.toRadians(-90))
-                .strafeTo(new Vector2d(-30, 120));
+                .strafeTo(new Vector2d(20, 86));
 
         waitForStart();
 

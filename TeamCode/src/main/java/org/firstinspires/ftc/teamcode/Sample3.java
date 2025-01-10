@@ -21,7 +21,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Sample3 extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
-    double ArraySecondsCleste[] = {3.2, 1.2, 1.2}, BratOutake[] = {3, 1, 1};
+    double ArraySecondsCleste[] = {3, 1.4, 1.5}, BratOutake[] = {2.7, 1.2, 1.2};
     int Count  = 0, CountBrat = 0;
     public class Lift
     {
@@ -192,7 +192,7 @@ public class Sample3 extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                ServoGhearaOutake.setPosition(0.15);
+                ServoGhearaOutake.setPosition(0.019);
                 if(timerPoz.seconds() > ArraySecondsCleste[Count])
                     return false;
                 else return true;
@@ -362,15 +362,15 @@ public class Sample3 extends GlobalScope {
 
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(4.5, 0))
-                .turn(Math.toRadians(39.5));
+                .turn(Math.toRadians(34.5));//39.5
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(-41.5))
                 .strafeTo(new Vector2d(-6.8, 0));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
-                .turn(Math.toRadians(-40))
-                .strafeTo(new Vector2d(-6.4, 6));
+                .turn(Math.toRadians(-35))//-40
+                .strafeTo(new Vector2d(-11.7, -1));//12
 
         TrajectoryActionBuilder tabSampleMijl1 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(65.3));//64.3
@@ -380,8 +380,8 @@ public class Sample3 extends GlobalScope {
 
         TrajectoryActionBuilder tabPark = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(4, 0))
-                .turn(Math.toRadians(30))
-                .strafeTo(new Vector2d(40, 10))
+                .turn(Math.toRadians(45))
+                .strafeTo(new Vector2d(50, 10))
                 .turn(Math.toRadians(120));
 
         TrajectoryActionBuilder tabPark2 = drive.actionBuilder(initialPose)

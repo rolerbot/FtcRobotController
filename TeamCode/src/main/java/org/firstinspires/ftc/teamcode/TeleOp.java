@@ -17,7 +17,6 @@ public class TeleOp extends GlobalScope
 
         while (opModeIsActive())
         {
-            SliderExtend();
             MiscareBaza();
             SliderPoz2();
             SliderBaza();

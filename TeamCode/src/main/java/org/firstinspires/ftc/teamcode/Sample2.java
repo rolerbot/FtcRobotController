@@ -372,7 +372,7 @@ public class Sample2 extends GlobalScope {
         ///Robot alianta nu se misca
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(0, -120))
-                .strafeTo(new Vector2d(-12, -120));
+                .strafeTo(new Vector2d(-18, -120));
         ///PArcare directa, robot din aliana parcat la perete
         TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(-10.5, -120));
@@ -425,7 +425,7 @@ public class Sample2 extends GlobalScope {
                         claw.openClawOutake2(),
                         tab4.build(),
                         lift.liftDown2(),
-                        tab6.build()
+                        tab5.build()
                 )
         );
     }

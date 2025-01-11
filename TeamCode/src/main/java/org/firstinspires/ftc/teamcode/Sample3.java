@@ -80,8 +80,8 @@ public class Sample3 extends GlobalScope {
                     }
                     else if (Count == 1)
                     {
-                        BazaStanga.setPosition(0.2939);
-                        BazaDreapta.setPosition(0.2322);
+                        BazaStanga.setPosition(0.305);//0.2939
+                        BazaDreapta.setPosition(0.2433);//0.2322
                         ServoRotire.setPosition(0.4289);
                     }
                     OutakeStanga.setPosition(PozOutakeStanga[1]);
@@ -332,7 +332,7 @@ public class Sample3 extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                Parcare.setPosition(0.61);
+                Parcare.setPosition(0.613);
                 if(timerPoz.seconds() < 5)
                     return true;
                 return false;

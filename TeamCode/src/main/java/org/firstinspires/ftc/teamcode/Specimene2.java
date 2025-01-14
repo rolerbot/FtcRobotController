@@ -16,10 +16,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
 @Autonomous(name = "Specimene", group = "Autonomous")
-public class Specimene extends GlobalScope {
+public class Specimene2 extends GlobalScope {
 
     private ElapsedTime timer = new ElapsedTime();
-    int SLiderUp1 = 530, SliderUp2 = 1080;
+    int SLiderUp1 = 530, SliderUp2 = 1155, cnt;
+    private double ArrayForSeconds[] = {2.2, 7};
     public class Lift
     {
         public class LiftUp1 implements Action {
@@ -68,11 +69,14 @@ public class Specimene extends GlobalScope {
                 }
                 telemetry.addData("Brat", SliderS.getCurrentPosition());
                 telemetry.addData("timp", timer.seconds());
-                if(timer.seconds() > 2)
+                if(timer.seconds() > ArrayForSeconds[cnt])
                     ServoGhearaOutake.setPosition(0.24);
-                if(timer.seconds() < 2.2)
+                if(timer.seconds() < ArrayForSeconds[cnt] + 0.2)
                     return true;
-                else return false;
+                else{
+                    cnt++;
+                    return false;
+                }
             }
         }
 
@@ -95,7 +99,7 @@ public class Specimene extends GlobalScope {
                     SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     initialized = true;
                     OutakeStanga.setPosition(PozOutakeStanga[1]);
-                    OutakeDreapta.setPosition(0.3361);
+                    OutakeDreapta.setPosition(PozOutakeDreapta[1]);
                 }
                 timer.reset();
                 double pos = SliderS.getCurrentPosition();
@@ -122,8 +126,9 @@ public class Specimene extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                ServoGhearaOutake.setPosition(0.0056);
-                if(timer.seconds() < 4.3)
+                OutakeDreapta.setPosition(PozOutakeDreapta[4]);
+                OutakeStanga.setPosition(PozOutakeStanga[4]);
+                if(timer.seconds() < 4)
                     return true;
                 else return false;
 
@@ -141,7 +146,7 @@ public class Specimene extends GlobalScope {
             public boolean run(@NonNull TelemetryPacket packet)
             {
                 ServoGhearaOutake.setPosition(0.15);
-                if(timer.seconds() < 2)
+                if(timer.seconds() < 3.5)
                     return true;
                 else return false;
 
@@ -154,6 +159,28 @@ public class Specimene extends GlobalScope {
         }
     }
 
+    public class BratOutake
+    {
+        public class Brat implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                OutakeDreapta.setPosition(PozOutakeDreapta[4]);
+                OutakeStanga.setPosition(PozOutakeStanga[4]);
+                if(timer.seconds() < 7)
+                    return true;
+                else return false;
+
+            }
+        }
+
+        public Action brat()
+        {
+            return new BratOutake.Brat();
+        }
+
+    }
 
     @Override
     public void runOpMode() {
@@ -161,16 +188,37 @@ public class Specimene extends GlobalScope {
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
         Lift lift = new Lift();
         Cleste cleste = new Cleste();
+        BratOutake bratoutake = new BratOutake();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(-33, -33));
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(5, 0));
-                //.splineToLinearHeading(new Pose2d(30, 30, Math.toRadians(180)), Math.toRadians(0));
+                .strafeTo(new Vector2d(5.5, 0));
+
+        TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(8, 60))
+                .turn(Math.toRadians(180))
+                .strafeTo(new Vector2d(23.7, 60));
+
+        TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(25, 65));
+
+        TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(25, 40))
+                .turn(Math.toRadians(175))
+                .strafeTo(new Vector2d(28.3, 40));
 
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(20, 86));
+                .strafeTo(new Vector2d(0, 56))//93
+                .turn(Math.toRadians(-10))
+                .strafeTo(new Vector2d(-25, 80))//135 56.36
+                .strafeTo(new Vector2d(17, 90)) //-54.89
+                .strafeTo(new Vector2d(-25, 90))//
+                .strafeTo(new Vector2d(-25, 105))
+                .strafeTo(new Vector2d(17, 105))
+                .turn(Math.toRadians(-10))
+                .strafeTo(new Vector2d(7, 56));
 
         waitForStart();
 
@@ -202,9 +250,17 @@ public class Specimene extends GlobalScope {
                         lift.liftUp2(),
                         new ParallelAction(
                                 lift.liftDown(),
+                                tab3.build()
+                        ),
+                        cleste.closeClawOutake(),
+                        lift.liftUp1(),
+                        tab4.build(),
+                        lift.liftUp2(),
+                        new ParallelAction(
+                                lift.liftDown(),
                                 tab1.build()
                         ),
-                        tab2.build()
+                        tab5.build()
                 )
         );
     }

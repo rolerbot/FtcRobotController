@@ -101,7 +101,7 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeStanga.setPosition(0.4685);
         OutakeDreapta.setPosition(0.5717);
         ServoGhearaIntake.setPosition(0);
-        ServoGhearaOutake.setPosition(0.006);
+        ServoGhearaOutake.setPosition(0.006);//0.006
         ServoRotire.setPosition(0.5);
         Parcare.setPosition(0.515);
     }
@@ -121,7 +121,7 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeSus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
         RotireSus = new ButtonReader(ct2, GamepadKeys.Button.B);
         RotireJos = new ButtonReader(ct2, GamepadKeys.Button.X);
-        SLiderJos = new ButtonReader(ct2, GamepadKeys.Button.A);
+        SliderJos = new ButtonReader(ct2, GamepadKeys.Button.A);
         SliderSus = new ButtonReader(ct2, GamepadKeys.Button.Y);
         Park = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_BUMPER);
         Auto = new ButtonReader(ct1, GamepadKeys.Button.Y);
@@ -154,7 +154,7 @@ public abstract class GlobalScope extends LinearOpMode {
     ButtonReader RotireStanga, RotireDreapta, RotireSus, RotireJos;
     ButtonReader IntakeSus, IntakeJos;
     ButtonReader OutakeJos, OutakeSus;
-    ButtonReader SliderSus, SLiderJos, Park;
+    ButtonReader SliderSus, SliderJos, Park;
     ButtonReader Auto, NoAuto, Specimen;
     TriggerReader GhearaOutakeDeschide, GhearaOutakeInchide;
 
@@ -234,7 +234,7 @@ public abstract class GlobalScope extends LinearOpMode {
 
     void SliderPoz(){
         SliderSus.readValue();
-        SLiderJos.readValue();
+        SliderJos.readValue();
         if(SliderSus.wasJustPressed() && pozitieSlide < 2){
             pozitieSlide++;
             SliderS.setTargetPosition(PozSlideExt[pozitieSlide]);
@@ -244,7 +244,7 @@ public abstract class GlobalScope extends LinearOpMode {
             SliderS.setPower(1);
             SliderD.setPower(1);
         }
-        if(SLiderJos.wasJustPressed() && pozitieSlide > 0){
+        if(SliderJos.wasJustPressed() && pozitieSlide > 0){
             pozitieSlide--;
             SliderS.setTargetPosition(PozSlideExt[pozitieOutake]);
             SliderD.setTargetPosition(PozSlideExt[pozitieOutake]);
@@ -255,7 +255,7 @@ public abstract class GlobalScope extends LinearOpMode {
 
     void SliderPoz2(){
         SliderSus.readValue();
-        SLiderJos.readValue();
+        SliderJos.readValue();
 
         if(SliderSus.wasJustPressed()){
             if(SliderS.getCurrentPosition() < 300){
@@ -274,7 +274,7 @@ public abstract class GlobalScope extends LinearOpMode {
             }
         }
 ///-----------Jos---------------------------
-        if(SLiderJos.wasJustPressed()){
+        if(SliderJos.wasJustPressed()){
             if(SliderS.getCurrentPosition() > 2300){
                 SliderS.setTargetPosition(PozSlideExt[1]);
                 SliderD.setTargetPosition(PozSlideExt[1]);

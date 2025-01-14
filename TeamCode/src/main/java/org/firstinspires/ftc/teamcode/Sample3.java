@@ -347,7 +347,7 @@ public class Sample3 extends GlobalScope {
 
     @Override
     public void runOpMode() {
-        Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(0)); //11.8, 61.7
+        Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(0));
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
         Lift lift = new Lift();
         Cleste claw = new Cleste();
@@ -366,14 +366,17 @@ public class Sample3 extends GlobalScope {
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(-41.5))
-                .strafeTo(new Vector2d(-6.8, 0));
+                .strafeTo(new Vector2d(-6.5, -2));// -6.8, 0
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(-35))//-40
                 .strafeTo(new Vector2d(-9.7, -1));//12
 
         TrajectoryActionBuilder tabSampleMijl1 = drive.actionBuilder(initialPose)
-                .turn(Math.toRadians(65.3));//64.3
+                .turn(Math.toRadians(62.3));//63.3
+
+        TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(1, -1.3));
 
         TrajectoryActionBuilder tabSampleMijl2 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(-42));
@@ -381,11 +384,11 @@ public class Sample3 extends GlobalScope {
         TrajectoryActionBuilder tabPark = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(4, 0))
                 .turn(Math.toRadians(48))
-                .strafeTo(new Vector2d(45, 10))
-                .turn(Math.toRadians(110));
+                .strafeTo(new Vector2d(42, 7))//23
+                .turn(Math.toRadians(90));//110
 
         TrajectoryActionBuilder tabPark2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-8, 0));
+                .strafeTo(new Vector2d(-10, 0));
 
         waitForStart();
 
@@ -433,6 +436,7 @@ public class Sample3 extends GlobalScope {
                             lift.liftDown(),
                             tabSampleMijl1.build()
                         ),
+                        tab5.build(),
                         prindereintake.Intake(),
                         prindereintake2.Intake2(),
                         tabSampleMijl2.build(),

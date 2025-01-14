@@ -35,20 +35,13 @@ public class TeleOp extends GlobalScope
             Cleste();
             Specimen();
             telemetry.update();
-            telemetry.addData("OutakeSt", OutakeStanga.getPosition());
-            telemetry.addData("OutakeDr", OutakeDreapta.getPosition());
-            telemetry.addData("SliderSt", SliderS.getCurrentPosition());
             sus.readValue();
             jos.readValue();
             if(sus.wasJustPressed())
-                OutakeStanga.setPosition(OutakeStanga.getPosition() + 0.007);
+                Parcare.setPosition(Parcare.getPosition() + 0.001);
             if(jos.wasJustPressed())
-                OutakeStanga.setPosition(OutakeStanga.getPosition() - 0.007);
-            telemetry.addData("MotorulImaginar", imaginar.getCurrentPosition() );
-            telemetry.addData("MotorFS", MotorFS.getCurrentPosition());
-            telemetry.addData("MotorSD", MotorSD.getCurrentPosition());
-            
-
+                Parcare.setPosition(Parcare.getPosition() - 0.001);
+            telemetry.addData("Parcare", Parcare.getPosition());
         }
     }
 }

@@ -38,10 +38,11 @@ public class TeleOp extends GlobalScope
             sus.readValue();
             jos.readValue();
             if(sus.wasJustPressed())
-                Parcare.setPosition(Parcare.getPosition() + 0.001);
+                OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.001);
             if(jos.wasJustPressed())
-                Parcare.setPosition(Parcare.getPosition() - 0.001);
+                OutakeDreapta.setPosition(OutakeDreapta.getPosition() - 0.001);
             telemetry.addData("Parcare", Parcare.getPosition());
+            telemetry.addData("OutakeDr", OutakeDreapta.getPosition());
         }
     }
 }

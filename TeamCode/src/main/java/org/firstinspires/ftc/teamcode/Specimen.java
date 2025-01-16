@@ -15,12 +15,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 @Config
-@Autonomous(name = "Dreapta2", group = "Autonomous")
-public class Specimene2 extends GlobalScope {
+@Autonomous(name = "Dreapta", group = "Autonomous")
+public class Specimen extends GlobalScope {
 
     private ElapsedTime timer = new ElapsedTime();
-    int SLiderUp1 = 530, SliderUp2 = 1157, cnt, contorSlider;
-    private int ArraySlider[] = {1157, 1162};
+    int SLiderUp1 = 530, SliderUp2 = 1157, cnt;
     private double ArrayForSeconds[] = {2.2, 7};
     public class Lift
     {
@@ -63,8 +62,8 @@ public class Specimene2 extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 if(timer.seconds() > 1){
-                    SliderS.setTargetPosition(ArraySlider[contorSlider]);
-                    SliderD.setTargetPosition(ArraySlider[contorSlider]);
+                    SliderS.setTargetPosition(SliderUp2);
+                    SliderD.setTargetPosition(SliderUp2);
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 }
@@ -75,7 +74,6 @@ public class Specimene2 extends GlobalScope {
                 if(timer.seconds() < ArrayForSeconds[cnt] + 0.2)
                     return true;
                 else{
-                    contorSlider++;
                     cnt++;
                     return false;
                 }
@@ -121,79 +119,21 @@ public class Specimene2 extends GlobalScope {
         }
     }
 
-    public class Cleste
-    {
-        public class CloseClawOutake implements Action
-        {
-            @Override
-            public boolean run(@NonNull TelemetryPacket packet)
-            {
-                ServoGhearaOutake.setPosition(CLesteInchis);
-                if(timer.seconds() < 7)
-                    return true;
-                else return false;
-
-            }
-        }
-
-        public Action closeClawOutake()
-        {
-            return new Cleste.CloseClawOutake();
-        }
-
-    }
-
-    public class BratOutake
-    {
-        public class Brat implements Action
-        {
-            @Override
-            public boolean run(@NonNull TelemetryPacket packet)
-            {
-                OutakeDreapta.setPosition(PozOutakeDreapta[4]);
-                OutakeStanga.setPosition(PozOutakeStanga[4]);
-                if(timer.seconds() < 6)
-                    return true;
-                else return false;
-
-            }
-        }
-
-        public Action brat()
-        {
-            return new BratOutake.Brat();
-        }
-
-    }
 
     @Override
     public void runOpMode() {
         Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(0)); //11.8, 61.7
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
         Lift lift = new Lift();
-        Cleste cleste = new Cleste();
-        BratOutake bratoutake = new BratOutake();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(-33, -33));
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(5.5, 0));
-
-        TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(8, 70));
 
-        TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
-                .turn(Math.toRadians(170))
-                .strafeTo(new Vector2d(16, 0));
-
-        TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
+        TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(28, 57));
-
-        TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(25, 50))
-                .turn(Math.toRadians(170))
-                .strafeTo(new Vector2d(28.7, 40));
 
         waitForStart();
 
@@ -225,21 +165,9 @@ public class Specimene2 extends GlobalScope {
                         lift.liftUp2(),
                         new ParallelAction(
                                 lift.liftDown(),
-                                tab3.build()
-                        ),
-                        new ParallelAction(
-                                tab6.build(),
-                                bratoutake.brat()
-                        ),
-                        cleste.closeClawOutake(),
-                        lift.liftUp1(),
-                        tab4.build(),
-                        lift.liftUp2(),
-                        new ParallelAction(
-                                lift.liftDown(),
                                 tab1.build()
                         ),
-                        tab5.build()
+                        tab2.build()
                 )
         );
     }

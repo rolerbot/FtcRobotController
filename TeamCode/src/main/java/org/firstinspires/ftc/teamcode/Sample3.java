@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 @Config
-@Autonomous(name = "3Samples", group = "Autonomous")
+@Autonomous(name = "Stanga3", group = "Autonomous")
 public class Sample3 extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();
@@ -332,7 +332,7 @@ public class Sample3 extends GlobalScope {
             @Override
             public boolean run(@NonNull TelemetryPacket packet)
             {
-                Parcare.setPosition(0.613);
+                Parcare.setPosition(0.6172);
                 if(timerPoz.seconds() < 5)
                     return true;
                 return false;
@@ -362,21 +362,21 @@ public class Sample3 extends GlobalScope {
 
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(4.5, 0))
-                .turn(Math.toRadians(34.5));//39.5
+                .turn(Math.toRadians(34.5));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
-                .turn(Math.toRadians(-41.5))
-                .strafeTo(new Vector2d(-6.5, -2));// -6.8, 0
+                .turn(Math.toRadians(-43))//-41.5
+                .strafeTo(new Vector2d(-10, 0));//-2
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
-                .turn(Math.toRadians(-35))//-40
-                .strafeTo(new Vector2d(-9.7, -1));//12
+                .turn(Math.toRadians(-35))
+                .strafeTo(new Vector2d(-10.5, -2));
 
         TrajectoryActionBuilder tabSampleMijl1 = drive.actionBuilder(initialPose)
-                .turn(Math.toRadians(62.3));//63.3
+                .turn(Math.toRadians(64.3));
 
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(1, -1.3));
+                .strafeTo(new Vector2d(1, 0.8));
 
         TrajectoryActionBuilder tabSampleMijl2 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(-42));
@@ -385,10 +385,10 @@ public class Sample3 extends GlobalScope {
                 .strafeTo(new Vector2d(4, 0))
                 .turn(Math.toRadians(48))
                 .strafeTo(new Vector2d(42, 7))//23
-                .turn(Math.toRadians(90));//110
+                .turn(Math.toRadians(100));
 
         TrajectoryActionBuilder tabPark2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-10, 0));
+                .strafeTo(new Vector2d(-13, 0));
 
         waitForStart();
 

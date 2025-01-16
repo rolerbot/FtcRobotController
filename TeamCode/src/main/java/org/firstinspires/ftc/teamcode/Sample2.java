@@ -14,7 +14,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 @Config
-@Autonomous(name = "2Sample", group = "Autonomous")
+@Autonomous(name = "Stanga2", group = "Autonomous")
 public class Sample2 extends GlobalScope {
 
     private ElapsedTime timerPoz = new ElapsedTime();

@@ -3,6 +3,7 @@ import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
@@ -336,6 +337,26 @@ public class Sample2 extends GlobalScope {
         }
     }
 
+    public class ParcareNiv1
+    {
+        public class Parkauto implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                Parcare.setPosition(0.6172);
+                if(timerPoz.seconds() < 5)
+                    return true;
+                return false;
+            }
+        }
+
+        public Action ParcareNiv()
+        {
+            return new ParcareNiv1.Parkauto();
+        }
+    }
+
     @Override
     public void runOpMode() {
         Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(0)); //11.8, 61.7
@@ -345,6 +366,7 @@ public class Sample2 extends GlobalScope {
         BratOutake bratoutake = new BratOutake();
         IntakeBrat prindereintake = new IntakeBrat();
         IntakeBrat2 prindereintake2 = new IntakeBrat2();
+        ParcareNiv1 parcare = new ParcareNiv1();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(11.7, 55))
@@ -358,16 +380,24 @@ public class Sample2 extends GlobalScope {
                 .waitSeconds(4);
 
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(4, 0))
-                .turn(Math.toRadians(28.5));
+                .strafeTo(new Vector2d(4, 1.7))
+                .turn(Math.toRadians(18.2));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-5, 0))
-                .turn(Math.toRadians(-28.5));
+                .strafeTo(new Vector2d(-6, 1))
+                .turn(Math.toRadians(-18.2));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(10, 0))
-                .turn(Math.toRadians(45));
+                .turn(Math.toRadians(20));
+
+        TrajectoryActionBuilder tab8 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(27, -15));//-9
+
+        TrajectoryActionBuilder tab9 = drive.actionBuilder(initialPose)
+                .turn(Math.toRadians(90))
+                .strafeTo(new Vector2d(0, -20));//-2
+
         ///--------------Parcare
         ///Robot alianta nu se misca
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
@@ -424,8 +454,13 @@ public class Sample2 extends GlobalScope {
                         bratoutake.doPoz22(),
                         claw.openClawOutake2(),
                         tab4.build(),
-                        lift.liftDown2(),
-                        tab5.build()
+                        new ParallelAction(
+                                parcare.ParcareNiv(),
+                                lift.liftDown2(),
+                                tab8.build()
+                        ),
+                        tab9.build()
+
                 )
         );
     }

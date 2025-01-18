@@ -20,7 +20,7 @@ public class Specimene2 extends GlobalScope {
 
     private ElapsedTime timer = new ElapsedTime();
     int SLiderUp1 = 530, SliderUp2 = 1157, cnt, contorSlider;
-    private int ArraySlider[] = {1157, 1162};
+    private int ArraySlider[] = {1157, 1167};
     private double ArrayForSeconds[] = {2.2, 7};
     public class Lift
     {
@@ -140,7 +140,6 @@ public class Specimene2 extends GlobalScope {
         {
             return new Cleste.CloseClawOutake();
         }
-
     }
 
     public class BratOutake
@@ -178,7 +177,7 @@ public class Specimene2 extends GlobalScope {
                 .strafeTo(new Vector2d(-33, -33));
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(5.5, 0));
+                .strafeTo(new Vector2d(7, 0));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(8, 70));
@@ -188,12 +187,12 @@ public class Specimene2 extends GlobalScope {
                 .strafeTo(new Vector2d(16, 0));
 
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(28, 57));
+                .strafeTo(new Vector2d(30, 60));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(25, 50))
                 .turn(Math.toRadians(170))
-                .strafeTo(new Vector2d(28.7, 40));
+                .strafeTo(new Vector2d(33, 50));
 
         waitForStart();
 

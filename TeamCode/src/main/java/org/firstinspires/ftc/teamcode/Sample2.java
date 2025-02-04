@@ -369,8 +369,8 @@ public class Sample2 extends GlobalScope {
         ParcareNiv1 parcare = new ParcareNiv1();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(11.7, 55))
-                .turn(Math.toRadians(-45));
+                .strafeTo(new Vector2d(12, 57))// 6.4818, 40.456
+                .turn(Math.toRadians(-66));
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(10, -75));
@@ -381,11 +381,11 @@ public class Sample2 extends GlobalScope {
 
         TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(4, 1.7))
-                .turn(Math.toRadians(18.2));
+                .turn(Math.toRadians(17.8));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(-6, 1))
-                .turn(Math.toRadians(-18.2));
+                .turn(Math.toRadians(-17.8));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(10, 0))

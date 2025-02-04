@@ -22,6 +22,7 @@ public abstract class GlobalScope extends LinearOpMode {
     /// Spate stanga
     public DcMotorEx MotorSD = null;
     /// Spate dreapta
+    public DcMotorEx MotorIntake = null;
     public DcMotorEx SliderS = null;//Stanga
     public DcMotorEx SliderD = null;
     public Servo Parcare = null;
@@ -35,6 +36,7 @@ public abstract class GlobalScope extends LinearOpMode {
     public Servo ServoGhearaIntake = null; //Cleste Stanga
     public Servo ServoGhearaOutake = null;//Cleste Dreapta
 
+
     void LinkComponents() {
         MotorFS = hardwareMap.get(DcMotorEx.class, "MotorFS");
         MotorFD = hardwareMap.get(DcMotorEx.class, "MotorFD");
@@ -42,6 +44,7 @@ public abstract class GlobalScope extends LinearOpMode {
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
         SliderS = hardwareMap.get(DcMotorEx.class, "SliderS");
         SliderD = hardwareMap.get(DcMotorEx.class, "SliderD");
+        MotorIntake = hardwareMap.get(DcMotorEx.class, "MotorIntake");
         ServoGhearaOutake = hardwareMap.get(Servo.class, "ServoGhearaOutake");
         ServoGhearaIntake = hardwareMap.get(Servo.class, "ServoGhearaIntake");
         ServoRotire = hardwareMap.get(Servo.class, "ServoRotire");
@@ -61,12 +64,15 @@ public abstract class GlobalScope extends LinearOpMode {
         MotorFD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorSS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorSD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorFS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorFD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorSS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorSD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorFS.setDirection(DcMotorSimple.Direction.REVERSE);
         MotorSS.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         //--------------------------SLIDE-------------
         SliderS.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -129,9 +135,11 @@ public abstract class GlobalScope extends LinearOpMode {
         GhearaOutakeDeschide = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
         GhearaOutakeInchide = new ButtonReader(ct2, GamepadKeys.Button.LEFT_STICK_BUTTON);
         Specimen = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);
-
+        Pornesteintake = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
+        opresteitake = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
         sus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
         jos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
+
 
     }
 
@@ -159,8 +167,9 @@ public abstract class GlobalScope extends LinearOpMode {
     ButtonReader SliderSus, SliderJos, Park;
     ButtonReader Auto, NoAuto, Specimen, GhearaOutakeInchide;
     TriggerReader GhearaOutakeDeschide;
-
+    ButtonReader Pornesteintake, opresteitake;
     ButtonReader sus, jos;
+    int fata = 0, spate = 0;
 
 
     void MiscareBaza() {
@@ -661,5 +670,34 @@ public abstract class GlobalScope extends LinearOpMode {
 
         IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
         IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
+    }
+    void Activeintake()
+    {
+
+        Pornesteintake.readValue();
+        opresteitake.readValue();
+        if(Pornesteintake.wasJustPressed() && fata == 0)
+        {
+            MotorIntake.setPower(1);
+            fata = 1;
+        }
+
+        else if(Pornesteintake.wasJustPressed() && fata == 1)
+        {
+            MotorIntake.setPower(0);
+            fata = 0;
+        }
+        if(opresteitake.wasJustPressed() && spate == 0)
+        {
+            MotorIntake.setPower(-1);
+            spate = 1;
+        }
+
+        else if(opresteitake.wasJustPressed() && spate == 1)
+        {
+            MotorIntake.setPower(0);
+            spate = 0;
+        }
+
     }
 }

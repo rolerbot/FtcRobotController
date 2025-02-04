@@ -37,6 +37,7 @@ public abstract class GlobalScope extends LinearOpMode {
     public Servo IntakeDreapta = null;
     public Servo ServoGhearaIntake = null; //Cleste Stanga
     public Servo ServoGhearaOutake = null;//Cleste Dreapta
+    public ColorSensor colorSensor;
 
 
     void LinkComponents() {
@@ -57,6 +58,7 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeStanga = hardwareMap.get(Servo.class, "OutakeStanga");
         OutakeDreapta = hardwareMap.get(Servo.class, "OutakeDreapta");
         Parcare = hardwareMap.get(Servo.class, "Parcare");
+        colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
     }
 
     void Initialise() {
@@ -146,8 +148,6 @@ public abstract class GlobalScope extends LinearOpMode {
     }
 
     /// TELEOP
-
-    ColorSensor colorSensor;
 
     public ElapsedTime timpMiscare = new ElapsedTime();
     public ElapsedTime timpSlide = new ElapsedTime();

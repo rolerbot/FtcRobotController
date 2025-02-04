@@ -6,6 +6,8 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.gamepad.TriggerReader;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.HardwareDevice;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -144,6 +146,9 @@ public abstract class GlobalScope extends LinearOpMode {
     }
 
     /// TELEOP
+
+    ColorSensor colorSensor;
+
     public ElapsedTime timpMiscare = new ElapsedTime();
     public ElapsedTime timpSlide = new ElapsedTime();
     double drive, strafe, twist;
@@ -671,6 +676,8 @@ public abstract class GlobalScope extends LinearOpMode {
         IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
         IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
     }
+
+
     void Activeintake()
     {
 
@@ -697,6 +704,18 @@ public abstract class GlobalScope extends LinearOpMode {
         {
             MotorIntake.setPower(0);
             spate = 0;
+        }
+
+        if(fata == 1)
+        {
+            if(colorSensor.blue() >= 200){
+                MotorIntake.setPower(0.1);
+                fata = 0;
+            }
+            if(colorSensor.red() >= 200){
+                MotorIntake.setPower(-1);
+            }
+            else MotorIntake.setPower(1);
         }
 
     }

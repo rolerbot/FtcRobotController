@@ -44,6 +44,10 @@ public class TeleOp extends GlobalScope
                 OutakeDreapta.setPosition(OutakeDreapta.getPosition() - 0.001);
             telemetry.addData("Parcare", Parcare.getPosition());
             telemetry.addData("OutakeDr", OutakeDreapta.getPosition());
+
+            telemetry.addData("Red  ", colorSensor.red());
+            telemetry.addData("Green", colorSensor.green());
+            telemetry.addData("Blue ", colorSensor.blue());
         }
     }
 }

@@ -709,14 +709,14 @@ public abstract class GlobalScope extends LinearOpMode {
         if(fata == 1)
         {
             if(colorSensor.blue() >= 200){
-                MotorIntake.setPower(0.1);
-                fata = 0;
+                MotorIntake.setPower(0);
             }
-            if(colorSensor.red() >= 200){
+            if(colorSensor.red() >= 380){
                 MotorIntake.setPower(-1);
             }
-            else MotorIntake.setPower(1);
+
         }
 
     }
+
 }

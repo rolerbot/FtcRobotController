@@ -680,7 +680,10 @@ public abstract class GlobalScope extends LinearOpMode {
 
     void Activeintake()
     {
-
+        int statussenzor = 0;
+        int s_rosu = 1;
+        int s_albastru = 2;
+        int s_galben = 3;
         Pornesteintake.readValue();
         opresteitake.readValue();
         if(Pornesteintake.wasJustPressed() && fata == 0)
@@ -708,15 +711,19 @@ public abstract class GlobalScope extends LinearOpMode {
 
         if(fata == 1)
         {
-            if(colorSensor.blue() >= 200){
+            if(colorSensor.blue() >= 90 && colorSensor.blue() <= 110 && colorSensor.green() >=115 && colorSensor.green() <= 130 && colorSensor.red() >=130 && colorSensor.red() <= 168)
+                statussenzor = s_rosu;
+           if(colorSensor.blue() >= 100 && colorSensor.blue() <= 120 && colorSensor.green() >=120 && colorSensor.green() <= 135 && colorSensor.red() >=100 && colorSensor.red() <= 110)
+                statussenzor = s_albastru;
+            if(colorSensor.blue() >= 100 && colorSensor.blue() <= 120 && colorSensor.green() >=145 && colorSensor.green() <= 185 && colorSensor.red() >=155 && colorSensor.red() <= 200)
+                statussenzor = s_galben;
+            if(statussenzor == s_albastru)
                 MotorIntake.setPower(0);
-            }
-            if(colorSensor.red() >= 380){
+            if(statussenzor == s_rosu)
                 MotorIntake.setPower(-1);
-            }
-
+            if(statussenzor == s_galben)
+                MotorIntake.setPower(-1);
         }
-
     }
 
 }

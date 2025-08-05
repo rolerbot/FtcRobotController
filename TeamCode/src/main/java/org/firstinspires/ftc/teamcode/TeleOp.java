@@ -43,12 +43,11 @@ public class TeleOp extends GlobalScope
             GasirePozitii(IntakeSus, IntakeJos, IntakeDreapta);
             GasirePozitii(OutakeSus, OutakeJos, OutakeDreapta);
             GasirePozitii(OutakeSus, OutakeJos, OutakeStanga);
-            telemetry.addData("Parcare", Parcare.getPosition());
-            telemetry.addData("OutakeDr", OutakeDreapta.getPosition());
-
-            telemetry.addData("Red  ", colorSensor.red());
-            telemetry.addData("Green", colorSensor.green());
-            telemetry.addData("Blue ", colorSensor.blue());
+            telemetry.addData("IntakeStanga:", IntakeStanga.getPosition());
+            telemetry.addData("IntakeDr:", IntakeDreapta.getPosition());
+            telemetry.addData("Otakedr:", OutakeDreapta.getPosition());
+            telemetry.addData("OutakeSt:", OutakeStanga.getPosition());
+            telemetry.addData("Pivot", PivotIntake.getPosition());
         }
     }
 }

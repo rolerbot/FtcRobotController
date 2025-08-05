@@ -1,25 +1,23 @@
 repositories {
     mavenCentral()
     google() // Needed for androidx
-    maven { url = 'https://jitpack.io'
-            url = 'https://maven.brott.dev/'
-    }
+    maven { url = 'https://maven.brott.dev/' }
+    maven { url = 'https://jitpack.io' }
+    maven { url = 'https://maven.ftc-lib.org/' }  // Updated FTC re
+    maven { url = 'https://maven.firstinspires.org/' }
 }
 
 dependencies {
+    implementation (name: 'Inspection-10.3.0', ext: 'aar')
+    implementation (name: 'Blocks-10.3.0', ext: 'aar')
+    implementation (name: 'RobotCore-10.3.0', ext: 'aar')
+    implementation (name: 'RobotServer-10.3.0', ext: 'aar')
+    implementation (name: 'OnBotJava-10.3.0', ext: 'aar')
+    implementation (name: 'Hardware-10.3.0', ext: 'aar')
+    implementation (name: 'FtcCommon-10.3.0', ext: 'aar')
+    implementation (name: 'Vision-10.3.0', ext: 'aar')
+    implementation (name: 'Tfod-10.3.0', ext: 'aar')
 
-    implementation 'org.firstinspires.ftc:Inspection:10.3.0'
-    implementation 'org.firstinspires.ftc:Blocks:10.3.0'
-    implementation 'org.firstinspires.ftc:RobotServer:10.3.0'
-    implementation 'org.firstinspires.ftc:OnBotJava:10.3.0'
-    implementation 'org.firstinspires.ftc:Hardware:10.3.0'
-    implementation 'org.firstinspires.ftc:FtcCommon:10.3.0'
-    implementation 'org.firstinspires.ftc:Vision:10.3.0'
-
-    implementation 'org.firstinspires.ftc:RobotCore:10.3.0'
-    implementation 'org.firstinspires.ftc:Tfod:10.3.0'
-    implementation 'com.arcrobotics:ftclib:2.1.0'
-
+    implementation 'com.github.FTCLib:FTCLib:2.1.1'
     implementation 'androidx.appcompat:appcompat:1.7.1'
 }
-

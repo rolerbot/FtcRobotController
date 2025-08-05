@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
-public class            TeleOp extends GlobalScope
+public class TeleOp extends GlobalScope
 {
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -29,7 +29,7 @@ public class            TeleOp extends GlobalScope
             SliderBaza();
             Roteste();
             OutakeRotire();
-            ActiuneAuto();
+            //ActiuneAuto();
             BazaExt();
             ParkButton();
             Cleste();
@@ -38,10 +38,11 @@ public class            TeleOp extends GlobalScope
             telemetry.update();
             sus.readValue();
             jos.readValue();
-            if(sus.wasJustPressed())
-                OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.001);
-            if(jos.wasJustPressed())
-                OutakeDreapta.setPosition(OutakeDreapta.getPosition() - 0.001);
+            GasirePozitii(sus, jos, PivotIntake);
+            GasirePozitii(IntakeSus, IntakeJos, IntakeStanga);
+            GasirePozitii(IntakeSus, IntakeJos, IntakeDreapta);
+            GasirePozitii(OutakeSus, OutakeJos, OutakeDreapta);
+            GasirePozitii(OutakeSus, OutakeJos, OutakeStanga);
             telemetry.addData("Parcare", Parcare.getPosition());
             telemetry.addData("OutakeDr", OutakeDreapta.getPosition());
 

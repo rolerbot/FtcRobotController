@@ -60,6 +60,7 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeDreapta = hardwareMap.get(Servo.class, "OutakeDreapta");
         Parcare = hardwareMap.get(Servo.class, "Parcare");
         colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
+        PivotIntake = hardwareMap.get(Servo.class, "PivotIntake");
     }
 
     void Initialise() {
@@ -101,10 +102,11 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeStanga.setDirection(Servo.Direction.REVERSE);
         OutakeDreapta.setDirection(Servo.Direction.FORWARD);
         Parcare.setDirection(Servo.Direction.FORWARD);
+        PivotIntake.setDirection(Servo.Direction.FORWARD);
     }
 
-    void InitComponente() {
-
+    void InitComponente()
+    {
         BazaDreapta.setPosition(0.04);
         BazaStanga.setPosition(0.08);
         IntakeStanga.setPosition(0.737);//cv cu 0.6
@@ -115,6 +117,7 @@ public abstract class GlobalScope extends LinearOpMode {
         ServoGhearaOutake.setPosition(0.006);//0.006
         ServoRotire.setPosition(0.5);
         Parcare.setPosition(0.515);
+        PivotIntake.setPosition(0.2);
     }
 
     void Controler() {
@@ -279,6 +282,16 @@ public abstract class GlobalScope extends LinearOpMode {
             }
         }
     }
+
+    void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test)
+    {
+        x.readValue();
+        y.readValue();
+        double  pozitie = Test.getPosition();
+        if(x.wasJustPressed()) Test.setPosition(pozitie + 0.001);
+        if(y.wasJustPressed()) Test.setPosition(pozitie - 0.001);
+    }
+
     void ParkButton(){
         Park.readValue();
         if(Park.wasJustPressed()){
@@ -306,13 +319,15 @@ public abstract class GlobalScope extends LinearOpMode {
         }// < 0.32
     }
 
-    void Roteste() {
+    void Roteste()
+    {
         double PosInitial = ServoRotire.getPosition();
         if (gamepad1.right_stick_x > 0.005 || gamepad1.right_stick_x < -0.005)
             ServoRotire.setPosition(PosInitial + 0.03 * gamepad1.right_stick_x);
     }
 
-    void Cleste() {
+    void Cleste()
+    {
         GhearaOutakeDeschide.readValue();
         GhearaOutakeInchide.readValue();
         if(GhearaOutakeDeschide.wasJustPressed())
@@ -321,14 +336,16 @@ public abstract class GlobalScope extends LinearOpMode {
             ServoGhearaOutake.setPosition(CLesteInchis);
     }
 
-    void Cleste2() {
+    void Cleste2()
+    {
         if(gamepad2.right_trigger > 0.05 && ServoGhearaOutake.getPosition() == CLesteInchis)
             ServoGhearaOutake.setPosition(ClesteDeschis);
         else if (gamepad2.right_trigger > 0.05 && ServoGhearaOutake.getPosition() != CLesteInchis)
             ServoGhearaOutake.setPosition(CLesteInchis);
     }
 
-    void BazaExt() {
+    void BazaExt()
+    {
         Auto.readValue();
         NoAuto.readValue();
         if (Auto.wasJustPressed())
@@ -337,7 +354,8 @@ public abstract class GlobalScope extends LinearOpMode {
             cnt = 1;
     }
 
-    void ActiuneAuto() {
+    void ActiuneAuto()
+    {
         OutakeSus.readValue();
         OutakeJos.readValue();
 

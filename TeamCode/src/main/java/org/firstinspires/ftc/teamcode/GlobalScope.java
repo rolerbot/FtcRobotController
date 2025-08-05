@@ -351,7 +351,7 @@ public abstract class GlobalScope extends LinearOpMode {
     void Roteste() {
         double PosInitial = ServoRotire.getPosition();
         if (gamepad1.right_stick_x > 0.005 || gamepad1.right_stick_x < -0.005)
-            ServoRotire.setPosition(PosInitial + 0.0034 * gamepad1.right_stick_x);
+            ServoRotire.setPosition(PosInitial + 0.03 * gamepad1.right_stick_x);
     }
 
     void Cleste() {

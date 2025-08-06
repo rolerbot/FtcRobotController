@@ -30,25 +30,20 @@ public class TeleOp extends GlobalScope
             MiscareBaza();
             SliderPoz2();
             SliderBaza();
-            //Roteste();
+            Roteste();
             //OutakeRotire();
             //ActiuneAuto();
             //ActiuneAuto3();
             ActiuneAuto2();
             BazaExt();
-            //ParkButton();
+            ParkButton();
             Cleste();
             //Specimen();
-            //Activeintake();
+            GasirePozitii(cLESTE1, cLESTE2, PivotIntake);
             telemetry.update();
-            telemetry.addData("IntakeStanga:", IntakeStanga.getPosition());
-            telemetry.addData("OutakeSt:", OutakeStanga.getPosition());
-            telemetry.addData("Pivot", PivotIntake.getPosition());
-            telemetry.addData("pozitieint", pozitieIntake);
-            telemetry.addData("secunde", Timer.seconds());
-            telemetry.addData("Numarator", Numarator);
-            telemetry.addData("nr", nr);
-
+            telemetry.addData("Slider", SliderS.getCurrentPosition());
+            telemetry.addData("Secunde", Timer.seconds());
+            telemetry.addData("PivotIntake", PivotIntake.getPosition());
         }
     }
 }

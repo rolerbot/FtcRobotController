@@ -31,7 +31,7 @@ public class TeleOp extends GlobalScope
             SliderBaza();
             //Roteste();
             //OutakeRotire();
-            //ActiuneAuto();
+            ActiuneAuto();
             BazaExt();
             //ParkButton();
             Cleste();

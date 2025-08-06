@@ -168,6 +168,10 @@ public abstract class GlobalScope extends LinearOpMode {
     double PozIntakeDr[] = {0.0905, 0.1705, 0.732, 1};//0.6505
     double PozOutakeDreapta[] = {0.5717, 0.4461, 0.3628, 0.335, 0.3078};//0.3361
     double PozOutakeStanga[] = {0.4685, 0.3405, 0.3405, 0.3405, 0.2872};
+    double PozitiiIntake[][] ={ {0, 0, 0, 0}, {0, 0, 0, 0} };
+    double PozitiiOutake[][] ={ {0, 0, 0, 0}, {0, 0, 0, 0} };
+
+    double Pivot[] = {0, 0, 0, 0};
     int cnt = 0, timecounter = 1, secondtimer = 1;
     double CLesteInchis = 0.0056 , ClesteDeschis = 0.0185;
     GamepadEx ct1, ct2;
@@ -406,78 +410,6 @@ public abstract class GlobalScope extends LinearOpMode {
             cnt = 1;
     }
 
-    void ActiuneAutoOriginal(){
-        OutakeSus.readValue();
-        OutakeJos.readValue();
-
-        IntakeSus.readValue();
-        IntakeJos.readValue();
-
-        if(OutakeJos.wasJustPressed() && pozitieOutake > 0)
-        {
-            // && OutakeStanga.getPosition() != PozOutakeStanga[0]
-            pozitieOutake--;
-            OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
-            OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
-            if(pozitieOutake < 2) ServoGhearaOutake.setPosition(CLesteInchis);/// 0.022
-            else ServoGhearaOutake.setPosition(ClesteDeschis);
-            pozitieIntake = 1;
-        }
-        if(OutakeSus.wasJustPressed() && pozitieOutake < 4)
-        {
-            pozitieOutake++;
-            OutakeStanga.setPosition(0.48);
-            if(pozitieOutake < 4) ServoGhearaOutake.setPosition(ClesteDeschis);
-            else ServoGhearaOutake.setPosition(CLesteInchis);//Deschis
-            OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
-            OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);//0.3405, 0.3517
-        }
-
-        if(IntakeSus.wasJustPressed() && pozitieIntake < 3){
-            pozitieIntake++;
-            if(pozitieIntake > 1){
-                OutakeStanga.setPosition(PozOutakeStanga[1]);
-                OutakeDreapta.setPosition(PozOutakeDreapta[1]);
-            }
-            else ServoGhearaIntake.setPosition(0);
-
-            if(pozitieIntake == 1 && cnt == 0){
-                BazaDreapta.setPosition(0.3);
-                BazaStanga.setPosition(0.34);
-            }
-            if(pozitieIntake == 3){
-                BazaDreapta.setPosition(0.04);
-                BazaStanga.setPosition(0.08);
-            }
-        }
-        if(IntakeJos.wasJustPressed() && pozitieIntake > 0){
-            pozitieIntake--;
-            if(pozitieIntake == 0){
-                OutakeStanga.setPosition(PozOutakeStanga[1]);
-                OutakeDreapta.setPosition(PozOutakeDreapta[1]);
-                ServoGhearaIntake.setPosition(0.022);
-            }
-            else if(pozitieIntake == 2 || pozitieIntake == 1) ServoGhearaIntake.setPosition(0.022);
-            else ServoGhearaIntake.setPosition(0);
-
-            if(pozitieIntake == 1 && cnt == 0){
-                BazaDreapta.setPosition(0.32);
-                BazaStanga.setPosition(0.36);
-            }
-            if(pozitieIntake == 3){
-                BazaDreapta.setPosition(0.04);
-                BazaStanga.setPosition(0.08);
-            }
-        }
-        //if(pozitieOutake == 2){
-        // OutakeStanga.setPosition(0.2928);
-        //OutakeDreapta.setPosition(0.2928);
-        //}
-        IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
-        IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
-    }
-
-
     void ActiuneAuto() {
         OutakeSus.readValue();
         OutakeJos.readValue();
@@ -558,7 +490,7 @@ public abstract class GlobalScope extends LinearOpMode {
         }
     }
 
-    void ActiuneAuto3() {
+    void ActiuneAuto2() {
         OutakeSus.readValue();
         OutakeJos.readValue();
 
@@ -569,27 +501,39 @@ public abstract class GlobalScope extends LinearOpMode {
             pozitieOutake--;
             OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
             OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
-            if (pozitieOutake < 2) ServoGhearaOutake.setPosition(CLesteInchis);/// 0.022
-            else ServoGhearaOutake.setPosition(ClesteDeschis);
+            if (pozitieOutake < 2) ServoGhearaOutake.setPosition(ClesteDeschis);/// 0.022
+            else ServoGhearaOutake.setPosition(CLesteInchis);
             pozitieIntake = 1;
+            timecounter = 1;
+            secondtimer = 1;
         }
         if (OutakeSus.wasJustPressed() && pozitieOutake < 4) {
             pozitieOutake++;
-            OutakeStanga.setPosition(0.48);
-            if (pozitieOutake < 4) ServoGhearaOutake.setPosition(ClesteDeschis);
-            else ServoGhearaOutake.setPosition(CLesteInchis);//Deschis
-            OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
-            OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);//0.3405, 0.3517
+            if (pozitieOutake == 1 && secondtimer > 0) {
+                secondtimer = 0;
+                ServoGhearaOutake.setPosition(CLesteInchis);
+                timpMiscare.reset();
+                timpMiscare.startTime();
+            }
+            if (pozitieOutake < 4) ServoGhearaOutake.setPosition(CLesteInchis);
+            else ServoGhearaOutake.setPosition(ClesteDeschis);//Deschis
+            if (pozitieOutake > 1) {
+                OutakeStanga.setPosition(0.48);
+                OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+                OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);//0.3405, 0.3517
+            }
         }
+
         if (IntakeSus.wasJustPressed() && pozitieIntake < 3) {
             pozitieIntake++;
             if (pozitieIntake > 1) {
                 OutakeStanga.setPosition(PozOutakeStanga[1]);
                 OutakeDreapta.setPosition(PozOutakeDreapta[1]);
             } else ServoGhearaIntake.setPosition(0);
+
             if (pozitieIntake == 1 && cnt == 0) {
-                BazaDreapta.setPosition(0.32);
-                BazaStanga.setPosition(0.36);
+                BazaDreapta.setPosition(0.3);
+                BazaStanga.setPosition(0.34);
             }
             if (pozitieIntake == 3) {
                 BazaDreapta.setPosition(0.04);
@@ -602,11 +546,13 @@ public abstract class GlobalScope extends LinearOpMode {
                 OutakeStanga.setPosition(PozOutakeStanga[1]);
                 OutakeDreapta.setPosition(PozOutakeDreapta[1]);
                 ServoGhearaIntake.setPosition(0.022);
-            } else if (pozitieIntake == 2 || pozitieIntake == 1) ServoGhearaIntake.setPosition(0.022);
+            } else if (pozitieIntake == 2 || pozitieIntake == 1)
+                ServoGhearaIntake.setPosition(0.022);
             else ServoGhearaIntake.setPosition(0);
+
             if (pozitieIntake == 1 && cnt == 0) {
-                BazaDreapta.setPosition(0.32);
-                BazaStanga.setPosition(0.36);
+                BazaDreapta.setPosition(0.3);
+                BazaStanga.setPosition(0.34);
             }
             if (pozitieIntake == 3) {
                 BazaDreapta.setPosition(0.04);
@@ -615,135 +561,97 @@ public abstract class GlobalScope extends LinearOpMode {
         }
         IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
         IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
+
+        if(timpMiscare.seconds() > 0.2 && timecounter > 0 && pozitieOutake == 1) {
+            timecounter = 0;
+            OutakeStanga.setPosition(0.48);
+            OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+            OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);//0.3405, 0.3517
+        }
     }
 
-    void ActiuneAuto2(){
+    void ActiuneAuto3()
+    {
+      OutakeSus.readValue();
+      OutakeJos.readValue();
+      IntakeSus.readValue();
+      IntakeJos.readValue();
+      if(IntakeJos.wasJustPressed() && pozitieIntake > 0) //poz 0
+      {
+          if(pozitieOutake == 0) ServoGhearaOutake.setPosition(ClesteDeschis);
+          IntakeStanga.setPosition(PozitiiIntake[0][pozitieIntake]);
+          IntakeDreapta.setPosition(PozitiiIntake[1][pozitieIntake]);
+          PivotIntake.setPosition(Pivot[pozitieIntake]);
+          if(pozitieIntake == 1) ServoGhearaIntake.setPosition(ClesteDeschis);
+          else ServoGhearaIntake.setPosition(CLesteInchis);
+          pozitieIntake--;
+      }
+      if(IntakeSus.wasJustPressed() && pozitieIntake < 2) //poz 1
+      {
+          IntakeStanga.setPosition(PozitiiIntake[0][pozitieIntake]);
+          IntakeDreapta.setPosition(PozitiiIntake[1][pozitieIntake]);
+          PivotIntake.setPosition(Pivot[pozitieIntake]);
+          ServoGhearaIntake.setPosition(CLesteInchis);
+          pozitieIntake++;
+      }
+      if(IntakeSus.wasJustPressed() && pozitieIntake == 2) //poz 3
+      {
+          ElapsedTime Timer = new ElapsedTime();
+          pozitieOutake = 0;
+          OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+          OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
+          ServoGhearaOutake.setPosition(ClesteDeschis);
+          PivotIntake.setPosition(Pivot[pozitieIntake]);
+          if(Timer.seconds() > 0.5 && Timer.seconds() < 1)
+          {
+              OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+              OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
+          }
+          else if(Timer.seconds() > 1.5 && Timer.seconds() < 2)
+              ServoGhearaOutake.setPosition(CLesteInchis);
+          ServoGhearaIntake.setPosition(ClesteDeschis);
+          pozitieOutake++;
+          OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
+          OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+          PivotIntake.setPosition(Pivot[pozitieIntake]);
+          pozitieIntake++;
+      }
 
-        OutakeSus.readValue();
-        OutakeJos.readValue();
-
-        IntakeSus.readValue();
-        IntakeJos.readValue();
-
-        if(OutakeSus.wasJustPressed() && pozitieOutake < 4)
+        if(OutakeSus.wasJustPressed() && pozitieOutake == 0)
         {
+            ElapsedTime Timer = new ElapsedTime();
+            pozitieOutake = 0;
+            OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+            OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
+            ServoGhearaOutake.setPosition(ClesteDeschis);
+            PivotIntake.setPosition(Pivot[pozitieIntake]);
+            if(Timer.seconds() > 0.5 && Timer.seconds() < 1)
+            {
+                OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+                OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
+            }
+            else if(Timer.seconds() > 1.5 && Timer.seconds() < 2)
+                ServoGhearaOutake.setPosition(CLesteInchis);
+            ServoGhearaIntake.setPosition(ClesteDeschis);
             pozitieOutake++;
-            if(pozitieIntake == 1)
-            {
-
+            OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
+            OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+            PivotIntake.setPosition(Pivot[pozitieIntake]);
+            pozitieIntake++;
             }
-            else if(pozitieIntake == 2)
-            {
 
-            }
-            else if(pozitieIntake == 3)
-            {
-
-            }
-            else
-            {
-
-            }
-        }
         if(OutakeJos.wasJustPressed() && pozitieOutake > 0)
         {
-          pozitieOutake--;
-          if(pozitieOutake == 3)
-          {
-
-          }
-          else if(pozitieOutake == 2)
-          {
-
-          }
-          else if(pozitieOutake == 1)
-          {
-
-          }
-          else
-          {
-
-          }
-        }
-        ///--------------------Intake-------------------------
-        if(IntakeSus.wasJustPressed() && pozitieIntake < 3)
-        {
-            pozitieIntake++;
-            if(pozitieIntake == 1)
-            {
-
-            }
-            else if(pozitieIntake == 2)
-            {
-
-            }
-            else
-            {
-
-            }
-
-        }
-        if(IntakeJos.wasJustPressed() && pozitieIntake > 0)
-        {
-            pozitieIntake--;
-            if(pozitieOutake == 2)
-            {
-
-            }
-            else if(pozitieOutake == 1)
-            {
-
-            }
-            else
-            {
-
-            }
-        }
-
-        IntakeStanga.setPosition(PozIntakeSt[pozitieIntake]);
-        IntakeDreapta.setPosition(PozIntakeDr[pozitieIntake]);
-    }
-
-
-    void Activeintake()
-    {
-
-        Pornesteintake.readValue();
-        opresteitake.readValue();
-        if(Pornesteintake.wasJustPressed() && fata == 0)
-        {
-            MotorIntake.setPower(1);
-            fata = 1;
-        }
-
-        else if(Pornesteintake.wasJustPressed() && fata == 1)
-        {
-            MotorIntake.setPower(0);
-            fata = 0;
-        }
-        if(opresteitake.wasJustPressed() && spate == 0)
-        {
-            MotorIntake.setPower(-1);
-            spate = 1;
-        }
-
-        else if(opresteitake.wasJustPressed() && spate == 1)
-        {
-            MotorIntake.setPower(0);
-            spate = 0;
-        }
-
-        if(fata == 1)
-        {
-            if(colorSensor.blue() >= 200){
-                MotorIntake.setPower(0);
-            }
-            if(colorSensor.red() >= 380){
-                MotorIntake.setPower(-1);
-            }
-
+            OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+            OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
+            pozitieOutake--;
+            if(pozitieOutake == 0) ServoGhearaOutake.setPosition(ClesteDeschis);
         }
 
     }
-
+    //poz 1 --intake jos
+    //poz 2 --intake mai sus
+    //poz 3 -- inainte de transfer
+    //poz 4-- tranfer
+    //poz 5 -- actiune auto spate, deschide, poz
 }

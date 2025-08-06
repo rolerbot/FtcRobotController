@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.arcrobotics.ftclib.gamepad.ButtonReader;
+import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -27,27 +29,63 @@ public class TeleOp extends GlobalScope
             MiscareBaza();
             SliderPoz2();
             SliderBaza();
-            Roteste();
-            OutakeRotire();
-            ActiuneAuto();
+            //Roteste();
+            //OutakeRotire();
+            //ActiuneAuto();
             BazaExt();
-            ParkButton();
+            //ParkButton();
             Cleste();
-            Specimen();
-            Activeintake();
+            //Specimen();
+            //Activeintake();
             telemetry.update();
             sus.readValue();
             jos.readValue();
-            if(sus.wasJustPressed())
+            OuttakeSus2.readValue();
+            OuttakeJos2.readValue();
+            IntakeSus.readValue();
+            IntakeJos.readValue();
+            OutakeSus.readValue();
+            OutakeJos.readValue();
+            cLESTE1.readValue();
+            cLESTE2.readValue();
+            if(cLESTE1.wasJustPressed())
+                ServoGhearaIntake.setPosition(ServoGhearaIntake.getPosition() + 0.001);
+            if(cLESTE2.wasJustPressed())
+                ServoGhearaIntake.setPosition(ServoGhearaIntake.getPosition() - 0.001);
+            if(sus.wasJustPressed()) PivotIntake.setPosition(PivotIntake.getPosition() + 0.001);
+            if(jos.wasJustPressed()) PivotIntake.setPosition(PivotIntake.getPosition() - 0.001);
+            if(IntakeSus.wasJustPressed())
+            {
+                IntakeDreapta.setPosition(IntakeDreapta.getPosition() + 0.001);
+                IntakeStanga.setPosition(IntakeStanga.getPosition() + 0.001);
+            }
+            if(IntakeJos.wasJustPressed())
+            {
+                IntakeDreapta.setPosition(IntakeDreapta.getPosition() - 0.001);
+                IntakeStanga.setPosition(IntakeStanga.getPosition() - 0.001);
+            }
+            if(OutakeSus.wasJustPressed())
+            {
                 OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.001);
-            if(jos.wasJustPressed())
+            }
+            if(OutakeJos.wasJustPressed())
+            {
                 OutakeDreapta.setPosition(OutakeDreapta.getPosition() - 0.001);
-            telemetry.addData("Parcare", Parcare.getPosition());
-            telemetry.addData("OutakeDr", OutakeDreapta.getPosition());
-
-            telemetry.addData("Red  ", colorSensor.red());
-            telemetry.addData("Green", colorSensor.green());
-            telemetry.addData("Blue ", colorSensor.blue());
+            }
+            if(OuttakeSus2.wasJustPressed())
+            {
+                OutakeStanga.setPosition(OutakeStanga.getPosition() + 0.001);
+            }
+            if(OuttakeJos2.wasJustPressed())
+            {
+                OutakeStanga.setPosition(OutakeStanga.getPosition() - 0.001);
+            }
+            telemetry.addData("IntakeStanga:", IntakeStanga.getPosition());
+            telemetry.addData("IntakeDr:", IntakeDreapta.getPosition());
+            telemetry.addData("Otakedr:", OutakeDreapta.getPosition());
+            telemetry.addData("OutakeSt:", OutakeStanga.getPosition());
+            telemetry.addData("Pivot", PivotIntake.getPosition());
+            telemetry.addData("Slider", SliderS.getCurrentPosition());
         }
     }
 }

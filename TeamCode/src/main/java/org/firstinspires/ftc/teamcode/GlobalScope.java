@@ -37,6 +37,7 @@ public abstract class GlobalScope extends LinearOpMode {
     public Servo IntakeDreapta = null;
     public Servo ServoGhearaIntake = null; //Cleste Stanga
     public Servo ServoGhearaOutake = null;//Cleste Dreapta
+    public  Servo PivotIntake = null;
     public ColorSensor colorSensor;
 
 
@@ -59,6 +60,7 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeDreapta = hardwareMap.get(Servo.class, "OutakeDreapta");
         Parcare = hardwareMap.get(Servo.class, "Parcare");
         colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
+        PivotIntake = hardwareMap.get(Servo.class, "PivotIntake");
     }
 
     void Initialise() {
@@ -100,6 +102,7 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeStanga.setDirection(Servo.Direction.REVERSE);
         OutakeDreapta.setDirection(Servo.Direction.FORWARD);
         Parcare.setDirection(Servo.Direction.FORWARD);
+        PivotIntake.setDirection(Servo.Direction.FORWARD);
     }
 
     void InitComponente() {
@@ -111,9 +114,10 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeStanga.setPosition(0.4685);
         OutakeDreapta.setPosition(0.5717);
         ServoGhearaIntake.setPosition(0);
-        ServoGhearaOutake.setPosition(0.006);//0.006
+        ServoGhearaOutake.setPosition(0.0185);//0.006
         ServoRotire.setPosition(0.5);
         Parcare.setPosition(0.515);
+        PivotIntake.setPosition(0.2);
     }
 
     void Controler() {
@@ -143,7 +147,10 @@ public abstract class GlobalScope extends LinearOpMode {
         opresteitake = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
         sus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
         jos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
-
+        OuttakeSus2 = new ButtonReader(ct2, GamepadKeys.Button.X);
+        OuttakeJos2 = new ButtonReader(ct2, GamepadKeys.Button.B);
+        cLESTE1 = new ButtonReader(ct1, GamepadKeys.Button.X);
+        cLESTE2 = new ButtonReader(ct1, GamepadKeys.Button.B);
 
     }
 
@@ -174,6 +181,8 @@ public abstract class GlobalScope extends LinearOpMode {
     TriggerReader GhearaOutakeDeschide;
     ButtonReader Pornesteintake, opresteitake;
     ButtonReader sus, jos;
+
+    ButtonReader OuttakeSus2, OuttakeJos2, cLESTE1, cLESTE2;
     int fata = 0, spate = 0;
 
 
@@ -261,6 +270,24 @@ public abstract class GlobalScope extends LinearOpMode {
         if(countSlide2 == 1 && timpSlide.seconds() > 0.5){
             countSlide2 = 0;
             ServoGhearaOutake.setPosition(ClesteDeschis);
+        }
+    }
+
+    void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test, Servo Test2)
+    {
+        x.readValue();
+        y.readValue();
+        double pozitie = Test.getPosition();
+        double test = Test2.getPosition();
+        if(x.wasJustPressed())
+        {
+            Test.setPosition(pozitie + 0.001);
+            Test2.setPosition(pozitie + 0.001);
+        }
+        if(y.wasJustPressed())
+        {
+            Test.setPosition(pozitie - 0.001);
+            Test2.setPosition(pozitie - 0.001);
         }
     }
 

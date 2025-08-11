@@ -30,14 +30,11 @@ public class TeleOp extends GlobalScope
             OutakeRotire();
             Nivel();
             Nivele();
-            //ActiuneAuto();
-            //ActiuneAuto3();
             ActiuneAuto2();
             BazaExt();
             ParkButton();
             Cleste();
-            //Specimen();
-            GasirePozitii(cLESTE1, cLESTE2, PivotIntake);
+            Slider2Poz();
             telemetry.update();
             telemetry.addData("Secunde", Timer.seconds());
             telemetry.addData("Niv1", NivelNR);

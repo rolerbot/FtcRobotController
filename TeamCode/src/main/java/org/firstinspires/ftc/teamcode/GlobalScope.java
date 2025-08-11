@@ -143,13 +143,12 @@ public abstract class GlobalScope extends LinearOpMode {
         GhearaOutakeDeschide = new TriggerReader(ct2, GamepadKeys.Trigger.RIGHT_TRIGGER);
         GhearaOutakeInchide = new ButtonReader(ct2, GamepadKeys.Button.LEFT_STICK_BUTTON);
         Specimen = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);
-        Pornesteintake = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
-        opresteitake = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
         sus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
         jos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
         cLESTE1 = new ButtonReader(ct1, GamepadKeys.Button.X);
         cLESTE2 = new ButtonReader(ct1, GamepadKeys.Button.B);
-
+        Nivel1 = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
+        Nivel2 = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
     }
 
     /// TELEOP
@@ -171,9 +170,11 @@ public abstract class GlobalScope extends LinearOpMode {
 
     double Pivot[] = {0.205, 0.2089, 0.0483 , 0.0544};//0.0544, 0,0461
     int cnt = 0, timecounter = 1, secondtimer = 1;
+    int Niv1 = 0, Niv2 = 0;
     double CLesteInchis = 0.0056 , ClesteDeschis = 0.0185;
     int Numarator = 0, nr = 0;
     public ElapsedTime Timer = new ElapsedTime();
+    ButtonReader Nivel1, Nivel2;
     GamepadEx ct1, ct2;
     ButtonReader Viteza;
     /// cautator de viteze
@@ -183,7 +184,6 @@ public abstract class GlobalScope extends LinearOpMode {
     ButtonReader SliderSus, SliderJos, Park;
     ButtonReader Auto, NoAuto, Specimen, GhearaOutakeInchide;
     TriggerReader GhearaOutakeDeschide;
-    ButtonReader Pornesteintake, opresteitake;
     ButtonReader sus, jos;
 
     ButtonReader cLESTE1, cLESTE2;
@@ -407,19 +407,19 @@ public abstract class GlobalScope extends LinearOpMode {
 
        if(nr == 1)
        {
-           if(Timer.seconds() > 0.5 && Timer.seconds() < 0.7)
+           if(Timer.seconds() > 0.2 && Timer.seconds() < 0.5)
            {
                ServoRotire.setPosition(0.5);
                IntakeStanga.setPosition(PozitiiIntake[0][pozitieIntake]);
                IntakeDreapta.setPosition(PozitiiIntake[1][pozitieIntake]);
                PivotIntake.setPosition(Pivot[pozitieIntake]);
            }
-           if(Timer.seconds() > 0.7 && Timer.seconds() < 1.3)
+           if(Timer.seconds() > 0.5 && Timer.seconds() < 1)
            {
                BazaDreapta.setPosition(0.04);
                BazaStanga.setPosition(0.08);
            }
-           if(Timer.seconds() > 1.3) nr = 0;
+           if(Timer.seconds() > 1) nr = 0;
        }
 
        if(IntakeSus.wasJustPressed() && pozitieIntake == 1) //poz 1
@@ -480,4 +480,94 @@ public abstract class GlobalScope extends LinearOpMode {
        }
        if(pozitieIntake == 0) ServoGhearaIntake.setPosition(0.0235);
     }
+
+    void Nivele()
+    {
+        Nivel1.readValue();
+        Nivel2.readValue();
+        if(Nivel1.wasJustPressed())
+        {
+            Niv1 = 1;
+            Timer.reset();
+        }
+        if(Nivel2.wasJustPressed())
+        {
+            Niv2 = 1;
+            Timer.reset();
+        }
+    }
+
+    void Nivel()
+    {
+        if(Niv1 == 1)
+        {
+            if(Timer.seconds() > 0 && Timer.seconds() < 0.1)
+                ServoGhearaIntake.setPosition(CLesteInchis);
+            if(Timer.seconds() > 0.1 && Timer.seconds() < 0.7)
+            {
+
+                ServoGhearaOutake.setPosition(ClesteDeschis);
+                IntakeStanga.setPosition(PozitiiIntake[0][2]);
+                IntakeDreapta.setPosition(PozitiiIntake[1][2]);
+                PivotIntake.setPosition(Pivot[2]);
+                OutakeStanga.setPosition(PozitiiOutake[0][1]);
+                OutakeDreapta.setPosition(PozitiiOutake[1][1]);
+            }
+            if(Timer.seconds() > 0.7 && Timer.seconds() < 0.9)
+            {
+                OutakeStanga.setPosition(PozitiiOutake[0][0]);
+                OutakeDreapta.setPosition(PozitiiOutake[1][0]);
+            }
+            if(Timer.seconds() > 0.9 && Timer.seconds() < 1.1)
+                ServoGhearaOutake.setPosition(CLesteInchis);
+            if(Timer.seconds() > 1.1 && Timer.seconds() < 1.2)
+                ServoGhearaIntake.setPosition(0.0235);
+            if(Timer.seconds() > 1.2 &&  Timer.seconds() < 1.8)
+            {
+                OutakeDreapta.setPosition(PozitiiOutake[1][1]);
+                OutakeStanga.setPosition(PozitiiOutake[0][1]);
+                SliderD.setTargetPosition(PozSlideExt[1]);
+                SliderS.setTargetPosition(PozSlideExt[1]);
+                SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            }
+            if(Timer.seconds() > 1.8) Niv1 = 0;
+        }
+
+        if(Niv2 == 1)
+        {
+            if(Timer.seconds() > 0 && Timer.seconds() < 0.1)
+                ServoGhearaIntake.setPosition(CLesteInchis);
+            if(Timer.seconds() > 0.1 && Timer.seconds() < 0.7)
+            {
+                ServoGhearaOutake.setPosition(ClesteDeschis);
+                IntakeStanga.setPosition(PozitiiIntake[0][2]);
+                IntakeDreapta.setPosition(PozitiiIntake[1][2]);
+                PivotIntake.setPosition(Pivot[2]);
+                OutakeStanga.setPosition(PozitiiOutake[0][1]);
+                OutakeDreapta.setPosition(PozitiiOutake[1][1]);
+            }
+            if(Timer.seconds() > 0.7 && Timer.seconds() < 0.9)
+            {
+                OutakeStanga.setPosition(PozitiiOutake[0][0]);
+                OutakeDreapta.setPosition(PozitiiOutake[1][0]);
+            }
+            if(Timer.seconds() > 0.9 && Timer.seconds() < 1.1)
+                ServoGhearaOutake.setPosition(CLesteInchis);
+            if(Timer.seconds() > 1.1 && Timer.seconds() < 1.2)
+                ServoGhearaIntake.setPosition(0.0235);
+            if(Timer.seconds() > 1.2 &&  Timer.seconds() < 1.8)
+            {
+                OutakeDreapta.setPosition(PozitiiOutake[1][1]);
+                OutakeStanga.setPosition(PozitiiOutake[0][1]);
+                SliderD.setTargetPosition(PozSlideExt[2]);
+                SliderS.setTargetPosition(PozSlideExt[2]);
+                SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            }
+            if(Timer.seconds() > 1.8) Niv2 = 0;
+        }
+    }
+
+
 }

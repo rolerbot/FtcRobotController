@@ -1,10 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.arcrobotics.ftclib.gamepad.ButtonReader;
-import com.arcrobotics.ftclib.gamepad.GamepadKeys;
-import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
@@ -32,6 +28,8 @@ public class TeleOp extends GlobalScope
             SliderBaza();
             Roteste();
             OutakeRotire();
+            Nivel();
+            Nivele();
             //ActiuneAuto();
             //ActiuneAuto3();
             ActiuneAuto2();
@@ -41,9 +39,8 @@ public class TeleOp extends GlobalScope
             //Specimen();
             GasirePozitii(cLESTE1, cLESTE2, PivotIntake);
             telemetry.update();
-            telemetry.addData("Slider", SliderS.getCurrentPosition());
             telemetry.addData("Secunde", Timer.seconds());
-            telemetry.addData("PivotIntake", PivotIntake.getPosition());
+            telemetry.addData("Niv1", NivelNR);
         }
     }
 }

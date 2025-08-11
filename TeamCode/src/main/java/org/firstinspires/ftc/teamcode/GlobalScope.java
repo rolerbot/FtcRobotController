@@ -6,7 +6,6 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.arcrobotics.ftclib.gamepad.TriggerReader;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.HardwareDevice;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -170,7 +169,7 @@ public abstract class GlobalScope extends LinearOpMode {
 
     double Pivot[] = {0.205, 0.2089, 0.0483 , 0.0544};//0.0544, 0,0461
     int cnt = 0, timecounter = 1, secondtimer = 1;
-    int Niv1 = 0, Niv2 = 0;
+    int NivelNR = 0;
     double CLesteInchis = 0.0056 , ClesteDeschis = 0.0185;
     int Numarator = 0, nr = 0;
     public ElapsedTime Timer = new ElapsedTime();
@@ -295,7 +294,7 @@ public abstract class GlobalScope extends LinearOpMode {
         }
 ///-----------Jos---------------------------
         if(SliderJos.wasJustPressed()){
-            if(SliderS.getCurrentPosition() > 2300){
+            if(SliderS.getCurrentPosition() > 800){
                 SliderS.setTargetPosition(PozSlideExt[1]);
                 SliderD.setTargetPosition(PozSlideExt[1]);
                 SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -487,25 +486,30 @@ public abstract class GlobalScope extends LinearOpMode {
         Nivel2.readValue();
         if(Nivel1.wasJustPressed())
         {
-            Niv1 = 1;
+            NivelNR = 1;
             Timer.reset();
         }
         if(Nivel2.wasJustPressed())
         {
-            Niv2 = 1;
+            NivelNR = 2;
             Timer.reset();
         }
     }
 
     void Nivel()
     {
-        if(Niv1 == 1)
+        if(NivelNR != 0)
         {
-            if(Timer.seconds() > 0 && Timer.seconds() < 0.1)
-                ServoGhearaIntake.setPosition(CLesteInchis);
-            if(Timer.seconds() > 0.1 && Timer.seconds() < 0.7)
+            if(Timer.seconds() > 0 && Timer.seconds() < 0.2)
             {
-
+                pozitieIntake = 2;
+                ServoGhearaIntake.setPosition(CLesteInchis);
+            }
+            if(Timer.seconds() > 0.2 && Timer.seconds() < 1.5)
+            {
+                ServoRotire.setPosition(0.5);
+                BazaDreapta.setPosition(0.04);
+                BazaStanga.setPosition(0.08);
                 ServoGhearaOutake.setPosition(ClesteDeschis);
                 IntakeStanga.setPosition(PozitiiIntake[0][2]);
                 IntakeDreapta.setPosition(PozitiiIntake[1][2]);
@@ -513,61 +517,30 @@ public abstract class GlobalScope extends LinearOpMode {
                 OutakeStanga.setPosition(PozitiiOutake[0][1]);
                 OutakeDreapta.setPosition(PozitiiOutake[1][1]);
             }
-            if(Timer.seconds() > 0.7 && Timer.seconds() < 0.9)
+            if(Timer.seconds() > 1.5 && Timer.seconds() < 1.7)
             {
                 OutakeStanga.setPosition(PozitiiOutake[0][0]);
                 OutakeDreapta.setPosition(PozitiiOutake[1][0]);
             }
-            if(Timer.seconds() > 0.9 && Timer.seconds() < 1.1)
+            if(Timer.seconds() > 1.7 && Timer.seconds() < 1.9)
                 ServoGhearaOutake.setPosition(CLesteInchis);
-            if(Timer.seconds() > 1.1 && Timer.seconds() < 1.2)
-                ServoGhearaIntake.setPosition(0.0235);
-            if(Timer.seconds() > 1.2 &&  Timer.seconds() < 1.8)
+            if(Timer.seconds() > 1.9 && Timer.seconds() < 1.95)
+                ServoGhearaIntake.setPosition(ClesteDeschis);
+            if(Timer.seconds() > 1.95 &&  Timer.seconds() < 2.7)
             {
-                OutakeDreapta.setPosition(PozitiiOutake[1][1]);
-                OutakeStanga.setPosition(PozitiiOutake[0][1]);
-                SliderD.setTargetPosition(PozSlideExt[1]);
-                SliderS.setTargetPosition(PozSlideExt[1]);
+                pozitieOutake = 2;
+                OutakeDreapta.setPosition(PozitiiOutake[1][pozitieOutake]);
+                OutakeStanga.setPosition(PozitiiOutake[0][pozitieOutake]);
+                SliderD.setTargetPosition(PozSlideExt[NivelNR]);
+                SliderS.setTargetPosition(PozSlideExt[NivelNR]);
                 SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderS.setPower(1);
+                SliderD.setPower(1);
             }
-            if(Timer.seconds() > 1.8) Niv1 = 0;
-        }
-
-        if(Niv2 == 1)
-        {
-            if(Timer.seconds() > 0 && Timer.seconds() < 0.1)
-                ServoGhearaIntake.setPosition(CLesteInchis);
-            if(Timer.seconds() > 0.1 && Timer.seconds() < 0.7)
-            {
-                ServoGhearaOutake.setPosition(ClesteDeschis);
-                IntakeStanga.setPosition(PozitiiIntake[0][2]);
-                IntakeDreapta.setPosition(PozitiiIntake[1][2]);
-                PivotIntake.setPosition(Pivot[2]);
-                OutakeStanga.setPosition(PozitiiOutake[0][1]);
-                OutakeDreapta.setPosition(PozitiiOutake[1][1]);
-            }
-            if(Timer.seconds() > 0.7 && Timer.seconds() < 0.9)
-            {
-                OutakeStanga.setPosition(PozitiiOutake[0][0]);
-                OutakeDreapta.setPosition(PozitiiOutake[1][0]);
-            }
-            if(Timer.seconds() > 0.9 && Timer.seconds() < 1.1)
-                ServoGhearaOutake.setPosition(CLesteInchis);
-            if(Timer.seconds() > 1.1 && Timer.seconds() < 1.2)
-                ServoGhearaIntake.setPosition(0.0235);
-            if(Timer.seconds() > 1.2 &&  Timer.seconds() < 1.8)
-            {
-                OutakeDreapta.setPosition(PozitiiOutake[1][1]);
-                OutakeStanga.setPosition(PozitiiOutake[0][1]);
-                SliderD.setTargetPosition(PozSlideExt[2]);
-                SliderS.setTargetPosition(PozSlideExt[2]);
-                SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            }
-            if(Timer.seconds() > 1.8) Niv2 = 0;
+            if(Timer.seconds() > 2.7)
+                NivelNR = 0;
         }
     }
-
 
 }

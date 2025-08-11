@@ -169,6 +169,7 @@ public abstract class GlobalScope extends LinearOpMode {
     int NivelNR = 0;
     double CLesteInchis = 0.0056 , ClesteDeschis = 0.0185;
     int Numarator = 0, nr = 0;
+    int countSlide2, countSlide1;
     public ElapsedTime Timer = new ElapsedTime();
     GamepadEx ct1, ct2;
     ButtonReader NivelSlide1, NivelSlide2, SPoz0, SPoz2;
@@ -221,6 +222,98 @@ public abstract class GlobalScope extends LinearOpMode {
         if(y.wasJustPressed())
         {
             Test.setPosition(pozitie - 0.001);
+        }
+    }
+
+    /**void Specimen()
+    {
+        Specimen.readValue();
+        if(Specimen.wasJustPressed() && SliderS.getCurrentPosition() < 5)
+        {
+            timpSlide.reset();
+            timpSlide.startTime();
+            countSlide1 = 1;
+            ServoGhearaOutake.setPosition(CLesteInchis);
+        }
+        else if(Specimen.wasJustPressed() && SliderS.getCurrentPosition() < 100)
+        {
+            countSlide2 = 1;
+            timpSlide.reset();
+            timpSlide.startTime();
+            SliderS.setTargetPosition(251);
+            SliderD.setTargetPosition(251);
+            pozitieOutake = 2;
+            SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+            OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
+        }
+        if(countSlide1 == 1 && timpSlide.seconds() > 0.25)
+        {
+            SliderS.setTargetPosition(262);
+            SliderD.setTargetPosition(262);
+            SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setPower(1);
+            SliderD.setPower(1);
+            pozitieOutake = 2;
+            OutakeStanga.setPosition(PozOutakeStanga[pozitieOutake]);
+            OutakeDreapta.setPosition(PozOutakeDreapta[pozitieOutake]);
+            countSlide1 = 0;
+        }
+        if(countSlide2 == 1 && timpSlide.seconds() > 0.5){
+            countSlide2 = 0;
+            ServoGhearaOutake.setPosition(ClesteDeschis);
+        }
+    }*/
+
+    void Specimen()
+    {
+        Specimen.readValue();
+        if(Specimen.wasJustPressed() && SliderS.getCurrentPosition() < 10)
+        {
+            timpSlide.reset();
+            timpSlide.startTime();
+            countSlide1 = 1;
+            ServoGhearaOutake.setPosition(CLesteInchis);
+        }
+        if(countSlide1 == 1)
+        {
+            if(timpSlide.seconds() > 0.2 && timpSlide.seconds() < 0.5)
+            {
+                SliderS.setTargetPosition(251);
+                SliderD.setTargetPosition(251);
+                SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderS.setPower(1);
+                SliderD.setPower(1);
+                pozitieOutake = 2;
+                OutakeDreapta.setPosition(PozitiiOutake[1][pozitieOutake]);
+                OutakeStanga.setPosition(PozitiiOutake[0][pozitieOutake]);
+            }
+            if(timpSlide.seconds() > 0.5) countSlide1 = 0;
+        }
+
+        if(Specimen.wasJustPressed() && SliderS.getCurrentPosition() > 10)
+        {
+            timpSlide.reset();
+            timpSlide.startTime();
+            countSlide1 = 2;
+        }
+        if(countSlide1 == 2)
+        {
+            if(timpSlide.seconds() < 0.8)
+            {
+                SliderS.setTargetPosition(435);
+                SliderD.setTargetPosition(435);
+                SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderS.setPower(1);
+                SliderD.setPower(1);
+            }
+            if(timpSlide.seconds() > 0.8 && timpSlide.seconds() < 1)
+                ServoGhearaOutake.setPosition(ClesteDeschis);
+            if(timpSlide.seconds() > 1) countSlide1 = 0;
         }
     }
 
@@ -446,7 +539,7 @@ public abstract class GlobalScope extends LinearOpMode {
            }
        }
 
-       if(OutakeSus.wasJustPressed() && pozitieOutake < 2)
+       if(OutakeSus.wasJustPressed() && pozitieOutake < 3)
        {
            pozitieOutake++;
            OutakeStanga.setPosition(PozitiiOutake[0][pozitieOutake]);

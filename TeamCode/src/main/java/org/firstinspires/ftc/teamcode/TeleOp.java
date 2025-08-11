@@ -35,9 +35,11 @@ public class TeleOp extends GlobalScope
             ParkButton();
             Cleste();
             Slider2Poz();
+            Specimen();
             telemetry.update();
             telemetry.addData("Secunde", Timer.seconds());
             telemetry.addData("Niv1", NivelNR);
+            telemetry.addData("SliderS", SliderS.getCurrentPosition());
         }
     }
 }

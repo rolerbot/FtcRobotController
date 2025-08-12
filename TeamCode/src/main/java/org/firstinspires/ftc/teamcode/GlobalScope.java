@@ -128,8 +128,6 @@ public abstract class GlobalScope extends LinearOpMode {
         Viteza = new ButtonReader(ct1, GamepadKeys.Button.B);
         IntakeSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
         IntakeJos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
-        RotireStanga = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
-        RotireDreapta = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         OutakeJos = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
         OutakeSus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
         RotireSus = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
@@ -146,6 +144,9 @@ public abstract class GlobalScope extends LinearOpMode {
         NivelSlide2 = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
         SPoz0 = new ButtonReader(ct2, GamepadKeys.Button.X);
         SPoz2 = new ButtonReader(ct2, GamepadKeys.Button.B);
+        sus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
+        jos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
+        IntakePoz = new ButtonReader(ct1, GamepadKeys.Button.X);
     }
 
     /// TELEOP
@@ -161,17 +162,18 @@ public abstract class GlobalScope extends LinearOpMode {
     double PozIntakeDr[] = {0.0905, 0.1705, 0.732, 1};//0.6505
     double PozOutakeDreapta[] = {0.5717, 0.4461, 0.3628, 0.335, 0.3078};//0.3361
     double PozOutakeStanga[] = {0.4685, 0.3405, 0.3405, 0.3405, 0.2872};
-    double PozitiiIntake[][] ={ {0.088, 0.168, 0.737}, {0.0905, 0.1705, 0.7372} };
+    double PozitiiIntake[][] ={ {0.088, 0.2106, 0.737}, {0.0905, 0.21, 0.7372} };
     double PozitiiOutake[][] ={ {0.385, 0.37, 0.3405, 0.2872},{0.508, 0.5078, 0.3628, 0.3078} };
 
     double Pivot[] = {0.205, 0.2089, 0.0483 , 0.0544};//0.0544, 0,0461
     int cnt = 0;
-    int NivelNR = 0;
+    int NivelNR = 0, PozTimer = 0;
     double CLesteInchis = 0.0056 , ClesteDeschis = 0.0185;
     int Numarator = 0, nr = 0;
     int countSlide2, countSlide1;
     public ElapsedTime Timer = new ElapsedTime();
     GamepadEx ct1, ct2;
+    ButtonReader IntakePoz;
     ButtonReader NivelSlide1, NivelSlide2, SPoz0, SPoz2;
     ButtonReader Viteza;
     /// cautator de viteze
@@ -180,6 +182,7 @@ public abstract class GlobalScope extends LinearOpMode {
     ButtonReader OutakeJos, OutakeSus;
     ButtonReader SliderSus, SliderJos, Park;
     ButtonReader Auto, NoAuto, Specimen, GhearaOutakeInchide;
+    ButtonReader sus, jos;
     TriggerReader GhearaOutakeDeschide;
 
     void MiscareBaza()
@@ -222,6 +225,27 @@ public abstract class GlobalScope extends LinearOpMode {
         if(y.wasJustPressed())
         {
             Test.setPosition(pozitie - 0.001);
+        }
+    }
+
+    void Pozitionare()
+    {
+        IntakePoz.readValue();
+        if(IntakePoz.wasJustPressed())
+        {
+            PozTimer = 1;
+            Timer.reset();
+        }
+        if(PozTimer == 1)
+        {
+            ServoGhearaIntake.setPosition(CLesteInchis);
+            if(Timer.seconds() > 0.2)
+            {
+                PivotIntake.setPosition(0.1117);
+                IntakeStanga.setPosition(PozitiiIntake[0][1]);
+                IntakeDreapta.setPosition(PozitiiIntake[1][1]);
+            }
+            if(Timer.seconds() > 0.3) PozTimer = 0;
         }
     }
 
@@ -552,7 +576,6 @@ public abstract class GlobalScope extends LinearOpMode {
            OutakeDreapta.setPosition(PozitiiOutake[1][pozitieOutake]);
            if(pozitieOutake == 0) ServoGhearaOutake.setPosition(ClesteDeschis);
        }
-       if(pozitieIntake == 0) ServoGhearaIntake.setPosition(0.0235);
     }
 
     void Nivele()

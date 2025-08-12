@@ -36,10 +36,9 @@ public class TeleOp extends GlobalScope
             Cleste();
             Slider2Poz();
             Specimen();
+            Pozitionare();
             telemetry.update();
-            telemetry.addData("Secunde", Timer.seconds());
-            telemetry.addData("Niv1", NivelNR);
-            telemetry.addData("SliderS", SliderS.getCurrentPosition());
+            telemetry.addData("Pivot", PivotIntake.getPosition());
         }
     }
 }

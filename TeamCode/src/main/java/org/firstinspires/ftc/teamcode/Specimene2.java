@@ -174,7 +174,7 @@ public class Specimene2 extends GlobalScope {
         BratOutake bratoutake = new BratOutake();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-32, -33));
+                .strafeTo(new Vector2d(-32.3    , -33));
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(7, 0));
@@ -184,7 +184,7 @@ public class Specimene2 extends GlobalScope {
 
         TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(170))
-                .strafeTo(new Vector2d(16, 0));
+                .strafeTo(new Vector2d(17.2, 0));
 
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(30, 58));
@@ -192,7 +192,7 @@ public class Specimene2 extends GlobalScope {
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(25, 50))
                 .turn(Math.toRadians(170))
-                .strafeTo(new Vector2d(28, 50));
+                .strafeTo(new Vector2d(31.2 , 50));
 
         waitForStart();
 

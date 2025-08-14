@@ -34,11 +34,12 @@ public class TeleOp extends GlobalScope
             BazaExt();
             ParkButton();
             Cleste();
-            Slider2Poz();
             Specimen();
             Pozitionare();
+            InchideIntake();
             telemetry.update();
             telemetry.addData("Pivot", PivotIntake.getPosition());
+            telemetry.addData("rotire", ServoRotire.getPosition());
         }
     }
 }

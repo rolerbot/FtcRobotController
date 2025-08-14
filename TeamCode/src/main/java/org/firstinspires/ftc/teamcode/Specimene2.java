@@ -19,9 +19,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Specimene2 extends GlobalScope {
 
     private ElapsedTime timer = new ElapsedTime();
-    int SLiderUp1 = 261, cnt, contorSlider;
-    private int ArraySlider[] = {465, 470};
-    private double ArrayForSeconds[] = {2.2, 7};
+    int SLiderUp1 = 253, cnt, contorSlider;
+    private int ArraySlider[] = {480, 480};
+    private double ArrayForSeconds[] = {2, 6.2};
     public class Lift
     {
         public class LiftUp1 implements Action {
@@ -62,7 +62,7 @@ public class Specimene2 extends GlobalScope {
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                if(timer.seconds() > 1){
+                if(timer.seconds() > 0.1){
                     SliderS.setTargetPosition(ArraySlider[contorSlider]);
                     SliderD.setTargetPosition(ArraySlider[contorSlider]);
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -129,7 +129,7 @@ public class Specimene2 extends GlobalScope {
             public boolean run(@NonNull TelemetryPacket packet)
             {
                 ServoGhearaOutake.setPosition(CLesteInchis);
-                if(timer.seconds() < 7)
+                if(timer.seconds() < 6.8)
                     return true;
                 else return false;
 
@@ -151,7 +151,7 @@ public class Specimene2 extends GlobalScope {
             {
                 OutakeDreapta.setPosition(PozOutakeDreapta[4]);
                 OutakeStanga.setPosition(PozOutakeStanga[4]);
-                if(timer.seconds() < 6)
+                if(timer.seconds() < 4)
                     return true;
                 else return false;
 
@@ -174,7 +174,7 @@ public class Specimene2 extends GlobalScope {
         BratOutake bratoutake = new BratOutake();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-33, -33));
+                .strafeTo(new Vector2d(-32, -33));
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(7, 0));
@@ -187,12 +187,12 @@ public class Specimene2 extends GlobalScope {
                 .strafeTo(new Vector2d(16, 0));
 
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(30, 60));
+                .strafeTo(new Vector2d(30, 58));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(25, 50))
                 .turn(Math.toRadians(170))
-                .strafeTo(new Vector2d(33, 50));
+                .strafeTo(new Vector2d(28, 50));
 
         waitForStart();
 

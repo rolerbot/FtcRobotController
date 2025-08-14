@@ -19,8 +19,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Specimene2 extends GlobalScope {
 
     private ElapsedTime timer = new ElapsedTime();
-    int SLiderUp1 = 530, SliderUp2 = 1157, cnt, contorSlider;
-    private int ArraySlider[] = {1157, 1167};
+    int SLiderUp1 = 261, cnt, contorSlider;
+    private int ArraySlider[] = {465, 470};
     private double ArrayForSeconds[] = {2.2, 7};
     public class Lift
     {
@@ -214,6 +214,7 @@ public class Specimene2 extends GlobalScope {
         ServoRotire.setPosition(0.5);
         Parcare.setPosition(0.515);
         ServoGhearaOutake.setPosition(0.0056);
+        PivotIntake.setPosition(0.3);
 
         Actions.runBlocking(
                 new SequentialAction(

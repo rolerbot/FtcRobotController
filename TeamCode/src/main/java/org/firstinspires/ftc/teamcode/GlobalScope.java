@@ -157,7 +157,7 @@ public abstract class GlobalScope extends LinearOpMode {
     double[] speeds = new double[4];
     double schimbator = 0.4;//Viteza
     int pozitieIntake = 2, pozitieOutake = 0;
-    int PozSlideExt[] = {0, 450, 905}; //0, 900, 2400
+    int PozSlideExt[] = {0, 465, 905}; //0, 900, 2400
     double PozIntakeSt[] = {0.088, 0.168, 0.73, 1}; //0.649
     double PozIntakeDr[] = {0.0905, 0.1705, 0.732, 1};//0.6505
     double PozOutakeDreapta[] = {0.5717, 0.4461, 0.3628, 0.335, 0.3078};//0.3361

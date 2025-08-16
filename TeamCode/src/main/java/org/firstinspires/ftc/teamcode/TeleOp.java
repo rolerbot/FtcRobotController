@@ -37,6 +37,7 @@ public class TeleOp extends GlobalScope
             Specimen();
             Pozitionare();
             InchideIntake();
+            ButonRotire();
             telemetry.update();
             telemetry.addData("Pivot", PivotIntake.getPosition());
             telemetry.addData("rotire", ServoRotire.getPosition());

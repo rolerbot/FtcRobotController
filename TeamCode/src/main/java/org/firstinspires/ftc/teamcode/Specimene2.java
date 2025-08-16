@@ -20,7 +20,7 @@ public class Specimene2 extends GlobalScope {
 
     private ElapsedTime timer = new ElapsedTime();
     int SLiderUp1 = 253, cnt, contorSlider;
-    private int ArraySlider[] = {480, 480};
+    private int ArraySlider[] = {485, 485};
     private double ArrayForSeconds[] = {2, 6.2};
     public class Lift
     {
@@ -187,7 +187,7 @@ public class Specimene2 extends GlobalScope {
                 .strafeTo(new Vector2d(17.2, 0));
 
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(30, 58));
+                .strafeTo(new Vector2d(36, 58));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(25, 50))

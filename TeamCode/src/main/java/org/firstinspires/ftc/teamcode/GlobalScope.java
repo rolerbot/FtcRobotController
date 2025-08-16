@@ -147,6 +147,7 @@ public abstract class GlobalScope extends LinearOpMode {
         jos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         IntakePoz = new ButtonReader(ct1, GamepadKeys.Button.X);
         InchideInt = new ButtonReader(ct1, GamepadKeys.Button.LEFT_STICK_BUTTON);
+        Rotire = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_STICK_BUTTON);
     }
 
     /// TELEOP
@@ -183,7 +184,7 @@ public abstract class GlobalScope extends LinearOpMode {
     ButtonReader SliderSus, SliderJos, Park;
     ButtonReader Auto, NoAuto, Specimen, GhearaOutakeInchide;
     ButtonReader sus, jos;
-    ButtonReader InchideInt;
+    ButtonReader InchideInt, Rotire;
     TriggerReader GhearaOutakeDeschide;
 
     void MiscareBaza()
@@ -557,13 +558,19 @@ public abstract class GlobalScope extends LinearOpMode {
         }// < 0.32
     }
 
+    void ButonRotire()
+    {
+        Rotire.readValue();
+        if(Rotire.wasJustPressed()) ServoRotire.setPosition(0.4911);
+    }
+
     void Roteste()
     {
         double PosInitial = ServoRotire.getPosition();
         if (gamepad1.right_stick_x > 0.005 && ServoRotire.getPosition() < 0.56)
-            ServoRotire.setPosition(PosInitial + 0.00072 * gamepad1.right_stick_x);
+            ServoRotire.setPosition(PosInitial + 0.00071 * gamepad1.right_stick_x);
         if (gamepad1.right_stick_x < -0.005 && ServoRotire.getPosition() > 0.38)
-            ServoRotire.setPosition(PosInitial + 0.00072 * gamepad1.right_stick_x);
+            ServoRotire.setPosition(PosInitial + 0.00071 * gamepad1.right_stick_x);
     }
 
     void Cleste()

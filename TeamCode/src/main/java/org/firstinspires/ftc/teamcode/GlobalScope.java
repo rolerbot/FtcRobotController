@@ -114,7 +114,7 @@ public abstract class GlobalScope extends LinearOpMode {
         OutakeDreapta.setPosition(PozitiiOutake[1][0]);
         ServoGhearaIntake.setPosition(0);
         ServoGhearaOutake.setPosition(0.0185);//0.006
-        ServoRotire.setPosition(0.5);
+        ServoRotire.setPosition(0.4911);
         Parcare.setPosition(0.515);
         PivotIntake.setPosition(0.3);
     }
@@ -168,7 +168,7 @@ public abstract class GlobalScope extends LinearOpMode {
     double Pivot[] = {0.205, 0.2089, 0.0483 , 0.0544};//0.0544, 0,0461
     int cnt = 0;
     int NivelNR = 0, PozTimer = 0;
-    double CLesteInchis = 0.0056 , ClesteDeschis = 0.0185;
+    double CLesteInchis = 0.0056 , ClesteDeschis = 0.028;
     int Numarator = 0, nr = 0;
     int countSlide, CountSpecimen;
     public ElapsedTime Timer = new ElapsedTime();
@@ -279,34 +279,67 @@ public abstract class GlobalScope extends LinearOpMode {
     void Specimen2()
     {
         Specimen2.readValue();
-        if(Specimen2.wasJustPressed())
+        if(Specimen2.wasJustPressed() && SliderS.getCurrentPosition() < 100)
         {
             Timer.reset();
             CountSpecimen = 1;
         }
         if(CountSpecimen == 1)
         {
-            if(Timer.seconds() > 0 && Timer.seconds() < 0.1) ServoGhearaIntake.setPosition(CLesteInchis);
-            if(Timer.seconds() > 0.1 && Timer.seconds() < 2)
+            if(Timer.seconds() > 0 && Timer.seconds() < 0.2) ServoGhearaIntake.setPosition(CLesteInchis);
+            if(Timer.seconds() > 0.2 && Timer.seconds() < 1.7)
             {
                 pozitieIntake = 2;
                 pozitieOutake = 1;
+                ServoGhearaOutake.setPosition(ClesteDeschis);
+                BazaDreapta.setPosition(0.04);
+                BazaStanga.setPosition(0.08);
                 IntakeStanga.setPosition(PozitiiIntake[0][pozitieIntake]);
                 IntakeDreapta.setPosition(PozitiiIntake[1][pozitieIntake]);
-                ServoRotire.setPosition(0.8);
+                ServoRotire.setPosition(0.3772);
                 PivotIntake.setPosition(Pivot[pozitieIntake]);
                 OutakeStanga.setPosition(PozitiiOutake[0][pozitieOutake]);
                 OutakeDreapta.setPosition(PozitiiOutake[1][pozitieOutake]);
             }
-            if(Timer.seconds() > 2 && Timer.seconds() < 2.5)
+            if(Timer.seconds() > 1.7 && Timer.seconds() < 2.1)
             {
                 pozitieOutake = 0;
                 OutakeStanga.setPosition(PozitiiOutake[0][pozitieOutake]);
                 OutakeDreapta.setPosition(PozitiiOutake[1][pozitieOutake]);
             }
-            if(Timer.seconds() > 2.5 && Timer.seconds() < 2.7)  ServoGhearaOutake.setPosition(CLesteInchis);
-            if(Timer.seconds() > 2.7 && Timer.seconds() < 2.8) ServoGhearaIntake.setPosition(ClesteDeschis);
-            if(Timer.seconds() > 2.8) CountSpecimen = 0;
+            if(Timer.seconds() > 2.1 && Timer.seconds() < 2.3)  ServoGhearaOutake.setPosition(CLesteInchis);
+            if(Timer.seconds() > 2.3 && Timer.seconds() < 2.5) ServoGhearaIntake.setPosition(ClesteDeschis);
+            if(Timer.seconds() > 2.5 && Timer.seconds() < 3.2)
+            {
+                SliderS.setTargetPosition(251);
+                SliderD.setTargetPosition(251);
+                SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderS.setPower(1);
+                SliderD.setPower(1);
+                pozitieOutake = 2;
+                OutakeDreapta.setPosition(PozitiiOutake[1][pozitieOutake]);
+                OutakeStanga.setPosition(PozitiiOutake[0][pozitieOutake]);
+            }
+            if(Timer.seconds() > 3.2) CountSpecimen = 0;
+        }
+
+        if(Specimen2.wasJustPressed() && SliderS.getCurrentPosition() > 100)
+        {
+            Timer.reset();
+            Timer.startTime();
+            SliderS.setTargetPosition(485);
+            SliderD.setTargetPosition(485);
+            SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            SliderS.setPower(1);
+            SliderD.setPower(1);
+            CountSpecimen = 2;
+        }
+        if(CountSpecimen == 2 && Timer.seconds() > 0.7)
+        {
+           ServoGhearaOutake.setPosition(ClesteDeschis);
+           CountSpecimen = 0;
         }
     }
 
@@ -527,8 +560,10 @@ public abstract class GlobalScope extends LinearOpMode {
     void Roteste()
     {
         double PosInitial = ServoRotire.getPosition();
-        if (gamepad1.right_stick_x > 0.005 || gamepad1.right_stick_x < -0.005)
-            ServoRotire.setPosition(PosInitial + 0.0015 * gamepad1.right_stick_x);
+        if (gamepad1.right_stick_x > 0.005 && ServoRotire.getPosition() < 0.56)
+            ServoRotire.setPosition(PosInitial + 0.00072 * gamepad1.right_stick_x);
+        if (gamepad1.right_stick_x < -0.005 && ServoRotire.getPosition() > 0.38)
+            ServoRotire.setPosition(PosInitial + 0.00072 * gamepad1.right_stick_x);
     }
 
     void Cleste()
@@ -586,7 +621,7 @@ public abstract class GlobalScope extends LinearOpMode {
        {
            if(Timer.seconds() > 0.2 && Timer.seconds() < 0.5)
            {
-               ServoRotire.setPosition(0.5);
+               ServoRotire.setPosition(0.4911);
                IntakeStanga.setPosition(PozitiiIntake[0][pozitieIntake]);
                IntakeDreapta.setPosition(PozitiiIntake[1][pozitieIntake]);
                PivotIntake.setPosition(Pivot[pozitieIntake]);
@@ -684,7 +719,7 @@ public abstract class GlobalScope extends LinearOpMode {
             }
             if(Timer.seconds() > 0.2 && Timer.seconds() < 1.5)
             {
-                ServoRotire.setPosition(0.5);
+                ServoRotire.setPosition(0.4911);
                 BazaDreapta.setPosition(0.04);
                 BazaStanga.setPosition(0.08);
                 ServoGhearaOutake.setPosition(ClesteDeschis);

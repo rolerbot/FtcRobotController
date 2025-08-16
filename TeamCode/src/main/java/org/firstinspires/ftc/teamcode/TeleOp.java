@@ -22,7 +22,7 @@ public class TeleOp extends GlobalScope
 
         while (opModeIsActive())
         {
-
+            Specimen2();
             MiscareBaza();
             SliderPoz2();
             SliderBaza();
@@ -40,6 +40,8 @@ public class TeleOp extends GlobalScope
             telemetry.update();
             telemetry.addData("Pivot", PivotIntake.getPosition());
             telemetry.addData("rotire", ServoRotire.getPosition());
+            telemetry.addData("secunde", Timer.seconds());
+            telemetry.addData("SlideCount", CountSpecimen);
         }
     }
 }

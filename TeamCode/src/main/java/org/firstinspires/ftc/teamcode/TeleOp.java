@@ -15,6 +15,7 @@ public class TeleOp extends GlobalScope
         Timer.startTime();
 
         Initialise();
+        schimbator = 1.4 - schimbator;
 
         waitForStart();
 

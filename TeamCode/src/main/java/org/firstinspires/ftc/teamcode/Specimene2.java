@@ -184,7 +184,7 @@ public class Specimene2 extends GlobalScope {
 
         TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
                 .turn(Math.toRadians(160))
-                .strafeTo(new Vector2d(20, 0));
+                .strafeTo(new Vector2d(19, 0));
 
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(22, 70));
@@ -192,7 +192,7 @@ public class Specimene2 extends GlobalScope {
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(23, 57))
                 .turn(Math.toRadians(160))
-                .strafeTo(new Vector2d(25.7, 57));
+                .strafeTo(new Vector2d(27.7, 57));
 
         waitForStart();
 

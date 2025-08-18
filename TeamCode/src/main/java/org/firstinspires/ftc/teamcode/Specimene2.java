@@ -180,19 +180,19 @@ public class Specimene2 extends GlobalScope {
                 .strafeTo(new Vector2d(7, 0));
 
         TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(8, 70));
+                .strafeTo(new Vector2d(8, 75));
 
         TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
-                .turn(Math.toRadians(170))
-                .strafeTo(new Vector2d(17.2, 0));
+                .turn(Math.toRadians(160))
+                .strafeTo(new Vector2d(20, 0));
 
         TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(36, 58));
+                .strafeTo(new Vector2d(22, 70));
 
         TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(25, 50))
-                .turn(Math.toRadians(170))
-                .strafeTo(new Vector2d(31.2 , 50));
+                .strafeTo(new Vector2d(23, 57))
+                .turn(Math.toRadians(160))
+                .strafeTo(new Vector2d(25.7, 57));
 
         waitForStart();
 

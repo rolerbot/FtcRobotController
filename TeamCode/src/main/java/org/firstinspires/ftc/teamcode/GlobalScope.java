@@ -156,7 +156,7 @@ public abstract class GlobalScope extends LinearOpMode {
     public ElapsedTime timpSlide = new ElapsedTime();
     double drive, strafe, twist;
     double[] speeds = new double[4];
-    double schimbator = 0.4;//Viteza
+    double schimbator = 1.4;//Viteza 0.4
     int pozitieIntake = 2, pozitieOutake = 0;
     int PozSlideExt[] = {0, 465, 905}; //0, 900, 2400
     double PozIntakeSt[] = {0.088, 0.2678, 0.73, 1}; //0.168
@@ -191,7 +191,8 @@ public abstract class GlobalScope extends LinearOpMode {
     {
         Viteza.readValue();
         if (Viteza.wasJustPressed()) {
-            schimbator = 1.4 - schimbator;
+            //schimbator = 1.4 - schimbator;
+            schimbator = schimbator - 0.4;
             telemetry.addData("viteza este", schimbator);
             telemetry.update();
         }

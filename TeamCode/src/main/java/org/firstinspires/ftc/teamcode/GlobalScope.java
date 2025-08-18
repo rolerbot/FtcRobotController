@@ -725,7 +725,7 @@ public abstract class GlobalScope extends LinearOpMode {
                 pozitieIntake = 2;
                 ServoGhearaIntake.setPosition(CLesteInchis);
             }
-            if(Timer.seconds() > 0.2 && Timer.seconds() < 1.5)
+            if(Timer.seconds() > 0.2 && Timer.seconds() < 1.3)
             {
                 ServoRotire.setPosition(0.4911);
                 BazaDreapta.setPosition(0.04);
@@ -737,16 +737,16 @@ public abstract class GlobalScope extends LinearOpMode {
                 OutakeStanga.setPosition(PozitiiOutake[0][1]);
                 OutakeDreapta.setPosition(PozitiiOutake[1][1]);
             }
-            if(Timer.seconds() > 1.5 && Timer.seconds() < 1.7)
+            if(Timer.seconds() > 1.3 && Timer.seconds() < 1.5)
             {
                 OutakeStanga.setPosition(PozitiiOutake[0][0]);
                 OutakeDreapta.setPosition(PozitiiOutake[1][0]);
             }
-            if(Timer.seconds() > 1.7 && Timer.seconds() < 1.9)
+            if(Timer.seconds() > 1.5 && Timer.seconds() < 1.7)
                 ServoGhearaOutake.setPosition(CLesteInchis);
-            if(Timer.seconds() > 1.9 && Timer.seconds() < 1.95)
+            if(Timer.seconds() > 1.7 && Timer.seconds() < 1.8)
                 ServoGhearaIntake.setPosition(ClesteDeschis);
-            if(Timer.seconds() > 1.95 &&  Timer.seconds() < 2.7)
+            if(Timer.seconds() > 1.8 &&  Timer.seconds() < 2.3)
             {
                 pozitieOutake = 2;
                 OutakeDreapta.setPosition(PozitiiOutake[1][pozitieOutake]);
@@ -758,7 +758,7 @@ public abstract class GlobalScope extends LinearOpMode {
                 SliderS.setPower(1);
                 SliderD.setPower(1);
             }
-            if(Timer.seconds() > 2.7)
+            if(Timer.seconds() > 2.3)
                 NivelNR = 0;
         }
     }

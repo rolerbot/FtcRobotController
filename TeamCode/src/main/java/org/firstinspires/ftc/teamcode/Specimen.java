@@ -19,8 +19,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Specimen extends GlobalScope {
 
     private ElapsedTime timer = new ElapsedTime();
-    int SLiderUp1 = 530, SliderUp2 = 1157, cnt;
-    private double ArrayForSeconds[] = {2.2, 7};
+    int SLiderUp1 = 253, cnt, contorSlider;
+    private int ArraySlider[] = {485, 485};
+    private double ArrayForSeconds[] = {2, 6.2};
     public class Lift
     {
         public class LiftUp1 implements Action {
@@ -61,9 +62,9 @@ public class Specimen extends GlobalScope {
 
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
-                if(timer.seconds() > 1){
-                    SliderS.setTargetPosition(SliderUp2);
-                    SliderD.setTargetPosition(SliderUp2);
+                if(timer.seconds() > 0.1){
+                    SliderS.setTargetPosition(ArraySlider[contorSlider]);
+                    SliderD.setTargetPosition(ArraySlider[contorSlider]);
                     SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 }
@@ -74,6 +75,7 @@ public class Specimen extends GlobalScope {
                 if(timer.seconds() < ArrayForSeconds[cnt] + 0.2)
                     return true;
                 else{
+                    contorSlider++;
                     cnt++;
                     return false;
                 }
@@ -119,21 +121,88 @@ public class Specimen extends GlobalScope {
         }
     }
 
+    public class Cleste
+    {
+        public class CloseClawOutake implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                ServoGhearaOutake.setPosition(CLesteInchis);
+                if(timer.seconds() < 6.8)
+                    return true;
+                else return false;
+
+            }
+        }
+
+        public Action closeClawOutake()
+        {
+            return new Cleste.CloseClawOutake();
+        }
+    }
+
+    public class BratOutake
+    {
+        public class Brat implements Action
+        {
+            @Override
+            public boolean run(@NonNull TelemetryPacket packet)
+            {
+                OutakeDreapta.setPosition(PozOutakeDreapta[4]);
+                OutakeStanga.setPosition(PozOutakeStanga[4]);
+                if(timer.seconds() < 4)
+                    return true;
+                else return false;
+
+            }
+        }
+
+        public Action brat()
+        {
+            return new BratOutake.Brat();
+        }
+
+    }
 
     @Override
     public void runOpMode() {
         Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(0)); //11.8, 61.7
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
         Lift lift = new Lift();
+        Cleste cleste = new Cleste();
+        BratOutake bratoutake = new BratOutake();
 
         TrajectoryActionBuilder tab = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(-33, -33));
+                .strafeTo(new Vector2d(-32.3    , -33));
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(8, 70));
+                .strafeTo(new Vector2d(4, 0))
+                .strafeTo(new Vector2d(4, 38))
+                .strafeTo(new Vector2d(-21, 38))
+                .strafeTo(new Vector2d(-21, 55.5))
+                .turn(Math.toRadians(175))
+                .strafeTo(new Vector2d(17, 55))
+                .strafeTo(new Vector2d(14, 55))
+                .strafeTo(new Vector2d(17, 55));
 
-        TrajectoryActionBuilder tab2 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(28, 57));
+
+        TrajectoryActionBuilder tab3 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(11, 75));
+
+        TrajectoryActionBuilder tab6 = drive.actionBuilder(initialPose)
+                .turn(Math.toRadians(160))
+                .strafeTo(new Vector2d(17, 0));
+
+        TrajectoryActionBuilder tab5 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(24, 62))
+                .strafeTo(new Vector2d(30, 65))
+                .turn(Math.toRadians(90));
+
+        TrajectoryActionBuilder tab4 = drive.actionBuilder(initialPose)
+                .strafeTo(new Vector2d(23, 57))
+                .turn(Math.toRadians(165))
+                .strafeTo(new Vector2d(27, 57));
 
         waitForStart();
 
@@ -155,6 +224,7 @@ public class Specimen extends GlobalScope {
         ServoRotire.setPosition(0.5);
         Parcare.setPosition(0.515);
         ServoGhearaOutake.setPosition(0.0056);
+        PivotIntake.setPosition(0.3);
 
         Actions.runBlocking(
                 new SequentialAction(
@@ -165,9 +235,21 @@ public class Specimen extends GlobalScope {
                         lift.liftUp2(),
                         new ParallelAction(
                                 lift.liftDown(),
-                                tab1.build()
+                                tab3.build()
                         ),
-                        tab2.build()
+                        new ParallelAction(
+                                tab6.build(),
+                                bratoutake.brat()
+                        ),
+                        cleste.closeClawOutake(),
+                        lift.liftUp1(),
+                        tab4.build(),
+                        lift.liftUp2(),
+                        new ParallelAction(
+                                lift.liftDown(),
+                                tab1.build()
+                        )
+                        //tab5.build()
                 )
         );
     }

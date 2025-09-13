@@ -23,48 +23,34 @@ public abstract class GlobalScope extends LinearOpMode {
     /// Spate stanga
     public DcMotorEx MotorSD = null;
     /// Spate dreapta
-    public DcMotorEx MotorIntake = null;
-    public DcMotorEx SliderS = null;//Stanga
-    public DcMotorEx SliderD = null;
 
 
-    void LinkComponents() {
+    void LinkComponents()
+    {
         MotorFS = hardwareMap.get(DcMotorEx.class, "MotorFS");
         MotorFD = hardwareMap.get(DcMotorEx.class, "MotorFD");
         MotorSS = hardwareMap.get(DcMotorEx.class, "MotorSS");
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
-        SliderS = hardwareMap.get(DcMotorEx.class, "SliderS");
-        SliderD = hardwareMap.get(DcMotorEx.class, "SliderD");
-        MotorIntake = hardwareMap.get(DcMotorEx.class, "MotorIntake");
     }
 
-    void Initialise() {
+    void Initialise()
+    {
         LinkComponents();
+
         //---------------------ROTZI---------------
         MotorFS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorFD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorSS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorSD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        MotorIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorFS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorFD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorSS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorSD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorFS.setDirection(DcMotorSimple.Direction.REVERSE);
         MotorSS.setDirection(DcMotorSimple.Direction.REVERSE);
 
-
         //--------------------------SLIDE-------------
-        SliderS.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SliderS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        SliderS.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        SliderS.setDirection(DcMotorSimple.Direction.FORWARD);//Reverse
 
-        SliderD.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SliderD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        SliderD.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        SliderD.setDirection(DcMotorSimple.Direction.FORWARD);//Reverse
 
         //------------------------SERVO---------------------
 
@@ -84,8 +70,6 @@ public abstract class GlobalScope extends LinearOpMode {
         ct2 = new GamepadEx(gamepad2);
 
         Viteza = new ButtonReader(ct1, GamepadKeys.Button.B);
-        SliderJos = new ButtonReader(ct2, GamepadKeys.Button.A);
-        SliderSus = new ButtonReader(ct2, GamepadKeys.Button.Y);
 
     }
 
@@ -94,21 +78,10 @@ public abstract class GlobalScope extends LinearOpMode {
     double drive, strafe, twist;
     double[] speeds = new double[4];
     double schimbator = 0.4;//Viteza 0.4
-
-    public ElapsedTime Timer = new ElapsedTime();
     GamepadEx ct1, ct2;
-    ButtonReader IntakePoz;
-    ButtonReader NivelSlide1, NivelSlide2, Specimen2;
     ButtonReader Viteza;
     /// cautator de viteze
-    ButtonReader RotireStanga, RotireDreapta, RotireSus, RotireJos;
-    ButtonReader IntakeSus, IntakeJos;
-    ButtonReader OutakeJos, OutakeSus;
-    ButtonReader SliderSus, SliderJos, Park;
-    ButtonReader Auto, NoAuto, Specimen, GhearaOutakeInchide;
-    ButtonReader sus, jos;
-    ButtonReader InchideInt, Rotire;
-    TriggerReader GhearaOutakeDeschide;
+    ButtonReader SliderSus, SliderJos;
 
     void MiscareBaza()
     {
@@ -155,6 +128,5 @@ public abstract class GlobalScope extends LinearOpMode {
             Test.setPosition(pozitie - 0.001);
         }
     }
-
 
 }

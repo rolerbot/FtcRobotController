@@ -118,15 +118,15 @@ public abstract class GlobalScope extends LinearOpMode {
     }
     void MotorIn()
     {
-    if(ButtonJos.wasJustPressed())
-    {
-        MotorIN.setPower(-1);
-    }
-    else if(ButtonSus.wasJustPressed())
-    {
-        MotorIN.setPower(1);
-    }
-    else MotorFS.setPower(0);
+        if(ButtonJos.wasJustPressed())
+        {
+            MotorIN.setPower(-1);
+        }
+        else if(ButtonSus.wasJustPressed())
+        {
+            MotorIN.setPower(1);
+        }
+        else MotorFS.setPower(0);
     }
     void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test, Servo test)
     {

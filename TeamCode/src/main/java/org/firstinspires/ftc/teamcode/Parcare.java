@@ -19,12 +19,12 @@ public class Parcare extends GlobalScope {
 
     @Override
     public void runOpMode() {
-        Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(0)); //11.8, 61.7
+        Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(0)); /// 11.8, 61.7
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
 
         TrajectoryActionBuilder tab1 = drive.actionBuilder(initialPose)
                 //.waitSeconds(20)
-                .strafeTo(new Vector2d(10, -75));
+                .strafeTo(new Vector2d(10, -75)); /// yum yum numere magice, ma reper deja, dar TODO: SCOATE NUMERELE MAGICE!
 
         waitForStart();
 
@@ -39,8 +39,8 @@ public class Parcare extends GlobalScope {
         IntakeStanga.setPosition(0.649);
         IntakeDreapta.setPosition(0.6505);
         ServoRotire.setPosition(0.5);
-        Parcare.setPosition(0.515);
-        ///Doar parcare mai jos
+        Parcare.setPosition(0.515); /// pozitiile par foarte carpite, ascund o problema mai severa.
+        /// Doar parcare mai jos
         Actions.runBlocking(
                 new SequentialAction(
                         tab1.build()

@@ -15,17 +15,15 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 public abstract class GlobalScope extends LinearOpMode {
-    public DcMotorEx MotorFS = null;
-    /// Fata stanga
-    public DcMotorEx MotorFD = null;
-    /// Fata dreapta
-    public DcMotorEx MotorSS = null;
-    /// Spate stanga
-    public DcMotorEx MotorSD = null;
-    /// Spate dreapta
+
+    /// TODO: ADD GETTERS, SETTERS AND NEVER MAKE VARIABLES PUBLIC!
+    public DcMotorEx MotorFS = null; /// Fata stanga
+    public DcMotorEx MotorFD = null; /// Fata dreapta
+    public DcMotorEx MotorSS = null; /// Spate stanga
+    public DcMotorEx MotorSD = null; /// Spate dreapta
     public DcMotorEx MotorIntake = null;
-    public DcMotorEx SliderS = null;//Stanga
-    public DcMotorEx SliderD = null;
+    public DcMotorEx SliderS = null;/// Slider Stanga
+    public DcMotorEx SliderD = null;/// Slider Dreapta
     public Servo Parcare = null;
     public Servo ServoRotire = null;
     public Servo OutakeStanga = null;
@@ -34,8 +32,8 @@ public abstract class GlobalScope extends LinearOpMode {
     public Servo BazaDreapta = null;
     public Servo IntakeStanga = null;
     public Servo IntakeDreapta = null;
-    public Servo ServoGhearaIntake = null; //Cleste Stanga
-    public Servo ServoGhearaOutake = null;//Cleste Dreapta
+    public Servo ServoGhearaIntake = null; /// Cleste Stanga
+    public Servo ServoGhearaOutake = null; /// Cleste Dreapta
     public  Servo PivotIntake = null;
     public ColorSensor colorSensor;
 
@@ -119,7 +117,7 @@ public abstract class GlobalScope extends LinearOpMode {
         PivotIntake.setPosition(0.3);
     }
 
-    void Controler() {
+    void MapControlerButtons() {
         InitComponente();
 
         ct1 = new GamepadEx(gamepad1);
@@ -151,7 +149,7 @@ public abstract class GlobalScope extends LinearOpMode {
     }
 
     /// TELEOP
-
+    ///  TODO: SCAPA URGENT DE VARIABILE GLOBALE. GETTERI SI SETTERI PESTE TOT!
     public ElapsedTime timpMiscare = new ElapsedTime();
     public ElapsedTime timpSlide = new ElapsedTime();
     double drive, strafe, twist;
@@ -344,6 +342,7 @@ public abstract class GlobalScope extends LinearOpMode {
         }
     }
 
+    ///  ce cauta functia asta aici?
     /**void Specimen()
     {
         Specimen.readValue();
@@ -442,13 +441,13 @@ public abstract class GlobalScope extends LinearOpMode {
         {
             if(timpSlide.seconds() > 0.2 && timpSlide.seconds() < 0.5)
             {
-                SliderS.setTargetPosition(251);
+                SliderS.setTargetPosition(251); /// TODO: SCAPA DE NUMAR MAGIC
                 SliderD.setTargetPosition(251);
                 SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 SliderS.setPower(1);
                 SliderD.setPower(1);
-                pozitieOutake = 2;
+                pozitieOutake = 2; /// ce e 2?
                 OutakeDreapta.setPosition(PozitiiOutake[1][pozitieOutake]);
                 OutakeStanga.setPosition(PozitiiOutake[0][pozitieOutake]);
             }
@@ -465,10 +464,16 @@ public abstract class GlobalScope extends LinearOpMode {
         {
             if(timpSlide.seconds() < 0.8)
             {
+<<<<<<< HEAD
                 SliderS.setTargetPosition(480);
                 SliderD.setTargetPosition(480);
+=======
+                SliderS.setTargetPosition(435);
+                SliderD.setTargetPosition(435); /// nr magic
+>>>>>>> 2f88348 (Adaugat comentarii stil feedback. Acest repo devine arhiva.)
                 SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION); /// apeluri atat de repetitive poate fi scris intr-o functie lejer.
+                /// functia poate lua ca parametru vector (mai bine tuplu!!!) de slidere si gata.
                 SliderS.setPower(1);
                 SliderD.setPower(1);
             }
@@ -485,7 +490,7 @@ public abstract class GlobalScope extends LinearOpMode {
 
         if(SliderSus.wasJustPressed())
         {
-            if(SliderS.getCurrentPosition() < 300)
+            if(SliderS.getCurrentPosition() < 300) ///  TODO: SCAPA DE NUMAR MAGIC
             {
                 SliderS.setTargetPosition(PozSlideExt[1]);
                 SliderD.setTargetPosition(PozSlideExt[1]);
@@ -507,9 +512,9 @@ public abstract class GlobalScope extends LinearOpMode {
 ///-----------Jos---------------------------
         if(SliderJos.wasJustPressed())
         {
-            if(SliderS.getCurrentPosition() > 800)
+            if(SliderS.getCurrentPosition() > 800) ///  TODO: SCAPA DE NUMAR MAGIC
             {
-                SliderS.setTargetPosition(PozSlideExt[1]);
+                SliderS.setTargetPosition(PozSlideExt[1]); /// iarasi pozitie magica!
                 SliderD.setTargetPosition(PozSlideExt[1]);
                 SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -518,7 +523,7 @@ public abstract class GlobalScope extends LinearOpMode {
             }
             else
             {
-                SliderS.setTargetPosition(PozSlideExt[0]);
+                SliderS.setTargetPosition(PozSlideExt[0]); /// iarasi pozitie magica!
                 SliderD.setTargetPosition(PozSlideExt[0]);
                 SliderD.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 SliderS.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -532,9 +537,9 @@ public abstract class GlobalScope extends LinearOpMode {
     {
         Park.readValue();
         if(Park.wasJustPressed()){
-            if(Parcare.getPosition() == 0.515)
-                Parcare.setPosition(0.6172);
-            else Parcare.setPosition(0.515);
+            if(Parcare.getPosition() == 0.515) /// TODO: SCAPA DE NUMAR MAGIC
+                Parcare.setPosition(0.6172); /// TODO: SCAPA DE NUMAR MAGIC
+            else Parcare.setPosition(0.515); /// TODO: SCAPA DE NUMAR MAGIC
         }
     }
 
@@ -545,12 +550,12 @@ public abstract class GlobalScope extends LinearOpMode {
         if (RotireSus.wasJustPressed())
             OutakeDreapta.setPosition(OutakeDreapta.getPosition() - 0.003);
         if (RotireJos.wasJustPressed())
-            OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.003);
+            OutakeDreapta.setPosition(OutakeDreapta.getPosition() + 0.003); /// TODO: SCAPA DE NUMAR MAGIC
     }
 
     void SliderBaza()
     {
-        double Controler = 0.005;
+        double Controler = 0.005; /// TODO: SCAPA DE NUMAR MAGIC (valeleu ce e aici.....)
         if (gamepad1.right_stick_y > Controler && BazaDreapta.getPosition() < 0.28 ||
                 gamepad1.right_stick_y < -Controler && BazaStanga.getPosition() > 0.07) {
             BazaDreapta.setPosition(BazaDreapta.getPosition() + 0.0013 * gamepad1.right_stick_y);
@@ -566,6 +571,8 @@ public abstract class GlobalScope extends LinearOpMode {
 
     void Roteste()
     {
+        /// TODO: SCAPA DE NUMAR MAGIC
+        /// la fel ca la SliderBaza
         double PosInitial = ServoRotire.getPosition();
         if (gamepad1.right_stick_x > 0.005 && ServoRotire.getPosition() < 0.56)
             ServoRotire.setPosition(PosInitial + 0.00071 * gamepad1.right_stick_x);
@@ -575,12 +582,14 @@ public abstract class GlobalScope extends LinearOpMode {
 
     void Cleste()
     {
+        ///  asa se scrie functia, DAR parametrii unde sunt??? TODO: REMOVE GLOBAL SCOPE
         GhearaOutakeDeschide.readValue();
         GhearaOutakeInchide.readValue();
         if(GhearaOutakeDeschide.wasJustPressed())
             ServoGhearaOutake.setPosition(ClesteDeschis);
         if(GhearaOutakeInchide.wasJustPressed())
-            ServoGhearaOutake.setPosition(CLesteInchis);
+            ServoGhearaOutake.setPosition(CLesteInchis); /// ??? de ce e L aici si l mai sus? TODO: SANITY CHECK..
+        ///  java e case sensitive btw! nu scrii cod SQL
     }
 
     void BazaExt()
@@ -588,7 +597,7 @@ public abstract class GlobalScope extends LinearOpMode {
         Auto.readValue();
         NoAuto.readValue();
         if (Auto.wasJustPressed())
-            cnt = 0;
+            cnt = 0; /// centrala nucleara termica? ce inseamna cnt???
         if (NoAuto.wasJustPressed())
             cnt = 1;
     }
@@ -599,7 +608,7 @@ public abstract class GlobalScope extends LinearOpMode {
        OutakeJos.readValue();
        IntakeSus.readValue();
        IntakeJos.readValue();
-
+        ///  poz 0?
        if(IntakeJos.wasJustPressed() && pozitieIntake > 0 ) //poz 0
        {
            if(pozitieIntake > 1 && cnt == 0)
@@ -613,22 +622,26 @@ public abstract class GlobalScope extends LinearOpMode {
            IntakeDreapta.setPosition(PozitiiIntake[1][pozitieIntake]);
            PivotIntake.setPosition(Pivot[pozitieIntake]);
            if(pozitieIntake > 1) ServoGhearaIntake.setPosition(CLesteInchis);
-           else ServoGhearaIntake.setPosition(0.0235);
+           else ServoGhearaIntake.setPosition(0.0235); /// TODO: SCAPA DE NUMAR MAGIC
        }
 
        if(IntakeSus.wasJustPressed() && pozitieIntake == 0)
        {
-           nr = 1;
+           nr = 1; /// ce e nr???
            ServoGhearaIntake.setPosition(CLesteInchis);
            Timer.reset();
            pozitieIntake++;
        }
-
+        ///  nr magic
        if(nr == 1)
        {
            if(Timer.seconds() > 0.2 && Timer.seconds() < 0.5)
            {
+<<<<<<< HEAD
                ServoRotire.setPosition(0.4911);
+=======
+               ServoRotire.setPosition(0.5); /// POZITIE MAGICA
+>>>>>>> 2f88348 (Adaugat comentarii stil feedback. Acest repo devine arhiva.)
                IntakeStanga.setPosition(PozitiiIntake[0][pozitieIntake]);
                IntakeDreapta.setPosition(PozitiiIntake[1][pozitieIntake]);
                PivotIntake.setPosition(Pivot[pozitieIntake]);
@@ -638,7 +651,7 @@ public abstract class GlobalScope extends LinearOpMode {
                BazaDreapta.setPosition(0.04);
                BazaStanga.setPosition(0.08);
            }
-           if(Timer.seconds() > 1) nr = 0;
+           if(Timer.seconds() > 1) nr = 0; /// s-a schimbat nr si nu e clar ce face, TODO: redenumeste variabila
        }
 
        if(IntakeSus.wasJustPressed() && pozitieIntake == 1) //poz 1
@@ -647,8 +660,8 @@ public abstract class GlobalScope extends LinearOpMode {
            Timer.reset();
            pozitieIntake++;
        }
-
-       if(Numarator == 1) //poz 3
+       ///  acelasi nr magic
+       if(Numarator == 1) /// poz 3
        {
            pozitieOutake = 1;
            if (Timer.seconds() > 0.1 && Timer.seconds() < 0.7)
@@ -671,7 +684,7 @@ public abstract class GlobalScope extends LinearOpMode {
            if (Timer.seconds() > 2 && Timer.seconds() < 2.15)
                ServoGhearaOutake.setPosition(CLesteInchis);
            if (Timer.seconds() > 2.2 && Timer.seconds() < 2.4)
-               ServoGhearaIntake.setPosition(0.0235);
+               ServoGhearaIntake.setPosition(0.0235); /// TODO: SCAPA DE NUMAR MAGIC
            if(Timer.seconds() > 2.4 && Timer.seconds() < 2.7)
            {
                OutakeDreapta.setPosition(PozitiiOutake[1][2]);
@@ -693,7 +706,7 @@ public abstract class GlobalScope extends LinearOpMode {
        if(OutakeJos.wasJustPressed() && pozitieOutake > 0)
        {
            pozitieOutake--;
-           OutakeStanga.setPosition(PozitiiOutake[0][pozitieOutake]);
+           OutakeStanga.setPosition(PozitiiOutake[0][pozitieOutake]); /// foarte verbal, imi place
            OutakeDreapta.setPosition(PozitiiOutake[1][pozitieOutake]);
            if(pozitieOutake == 0) ServoGhearaOutake.setPosition(ClesteDeschis);
        }
@@ -705,7 +718,7 @@ public abstract class GlobalScope extends LinearOpMode {
         NivelSlide2.readValue();
         if(NivelSlide1.wasJustPressed())
         {
-            NivelNR = 1;
+            NivelNR = 1; /// hai ca se putea sa fie mai clar numele.
             Timer.reset();
         }
         if(NivelSlide2.wasJustPressed())
@@ -719,16 +732,26 @@ public abstract class GlobalScope extends LinearOpMode {
     {
         if(NivelNR != 0)
         {
+            /// TODO: 14 apeluri de Timer.seconds()...
+            /// pune o variabila ca ajungi la edge case si intra in urmatorul if fara sa vrei.
             if(Timer.seconds() > 0 && Timer.seconds() < 0.2)
             {
                 pozitieIntake = 2;
                 ServoGhearaIntake.setPosition(CLesteInchis);
             }
+<<<<<<< HEAD
             if(Timer.seconds() > 0.2 && Timer.seconds() < 1.3)
             {
                 ServoRotire.setPosition(0.4911);
                 BazaDreapta.setPosition(0.04);
                 BazaStanga.setPosition(0.08);
+=======
+            if(Timer.seconds() > 0.2 && Timer.seconds() < 1.5) /// este grav sa apelezi de atatea ori Timer.seconds()....
+            {
+                ServoRotire.setPosition(0.5); /// pozitie magica
+                BazaDreapta.setPosition(0.04); /// pozitie magica
+                BazaStanga.setPosition(0.08); /// pozitie magica
+>>>>>>> 2f88348 (Adaugat comentarii stil feedback. Acest repo devine arhiva.)
                 ServoGhearaOutake.setPosition(ClesteDeschis);
                 IntakeStanga.setPosition(PozitiiIntake[0][2]);
                 IntakeDreapta.setPosition(PozitiiIntake[1][2]);

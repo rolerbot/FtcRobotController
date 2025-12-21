@@ -23,7 +23,7 @@ public abstract class GlobalScope extends LinearOpMode {
     /// Spate stanga
     public DcMotorEx MotorSD = null;
     /// Spate dreapta
-
+    public DcMotorEx MotorIN = null;
 
     void LinkComponents()
     {
@@ -31,6 +31,7 @@ public abstract class GlobalScope extends LinearOpMode {
         MotorFD = hardwareMap.get(DcMotorEx.class, "MotorFD");
         MotorSS = hardwareMap.get(DcMotorEx.class, "MotorSS");
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
+        MotorIN = hardwareMap.get(DcMotorEx.class, "MotorIN");
     }
 
     void Initialise()
@@ -38,22 +39,26 @@ public abstract class GlobalScope extends LinearOpMode {
         LinkComponents();
 
         //---------------------ROTZI---------------
-        MotorFS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        MotorFD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        MotorSS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        MotorSD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        MotorFS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorFD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorSS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorSD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorFS.setDirection(DcMotorSimple.Direction.REVERSE);
-        MotorSS.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        MotorIN.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
 
         //--------------------------SLIDE-------------
 
 
         //------------------------SERVO---------------------
 
+    }
+    void MapControlerButtons() {
+        InitComponente();
+
+        ct1 = new GamepadEx(gamepad1);
+        ct2 = new GamepadEx(gamepad2);
+
+        Viteza = new ButtonReader(ct1, GamepadKeys.Button.B);
+        ButtonSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+        ButtonSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
     }
 
     void InitComponente()
@@ -82,6 +87,7 @@ public abstract class GlobalScope extends LinearOpMode {
     ButtonReader Viteza;
     /// cautator de viteze
     ButtonReader SliderSus, SliderJos;
+    ButtonReader ButtonSus, ButtonJos;
 
     void MiscareBaza()
     {
@@ -110,7 +116,18 @@ public abstract class GlobalScope extends LinearOpMode {
         MotorSS.setPower(speeds[2]);
         MotorSD.setPower(speeds[3]);
     }
-
+    void MotorIn()
+    {
+    if(ButtonJos.wasJustPressed())
+    {
+        MotorIN.setPower(-1);
+    }
+    else if(ButtonSus.wasJustPressed())
+    {
+        MotorIN.setPower(1);
+    }
+    else MotorFS.setPower(0);
+    }
     void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test, Servo test)
     {
         x.readValue();

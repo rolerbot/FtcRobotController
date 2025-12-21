@@ -67,17 +67,6 @@ public abstract class GlobalScope extends LinearOpMode {
 
     }
 
-    void Controler()
-    {
-        InitComponente();
-
-        ct1 = new GamepadEx(gamepad1);
-        ct2 = new GamepadEx(gamepad2);
-
-        Viteza = new ButtonReader(ct1, GamepadKeys.Button.B);
-
-    }
-
     /// TELEOP
 
     double drive, strafe, twist;
@@ -118,6 +107,8 @@ public abstract class GlobalScope extends LinearOpMode {
     }
     void MotorIn()
     {
+        ButtonJos.readValue();
+        ButtonSus.readValue();
         if(ButtonJos.wasJustPressed())
         {
             MotorIN.setPower(-1);

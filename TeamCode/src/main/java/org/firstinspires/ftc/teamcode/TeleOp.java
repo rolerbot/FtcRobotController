@@ -15,8 +15,8 @@ public class TeleOp extends GlobalScope
 
         waitForStart();
 
-        Controler();
 
+        MapControlerButtons();
         while (opModeIsActive())
         {
             MotorIn();

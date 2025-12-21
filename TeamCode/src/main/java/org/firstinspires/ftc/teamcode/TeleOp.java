@@ -11,11 +11,12 @@ public class TeleOp extends GlobalScope
     {
 
         Initialise();
-        MapControlerButtons();
 
         schimbator = 1.4 - schimbator;
 
         waitForStart();
+
+        MapControlerButtons();
 
         while (opModeIsActive())
         {

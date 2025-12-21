@@ -38,14 +38,22 @@ public abstract class GlobalScope extends LinearOpMode {
     {
         LinkComponents();
 
-        //---------------------ROTZI---------------
-
+        //---------------------ROTZI----------------
         MotorIN.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-
-        //--------------------------SLIDE-------------
-
+        MotorFD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorFD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorFD.setDirection(DcMotorSimple.Direction.FORWARD);
+        MotorFS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorFS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorFS.setDirection(DcMotorSimple.Direction.FORWARD);
+        MotorSD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorSD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorSD.setDirection(DcMotorSimple.Direction.FORWARD);
+        MotorSS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorSS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorSS.setDirection(DcMotorSimple.Direction.FORWARD);
 
         //------------------------SERVO---------------------
 

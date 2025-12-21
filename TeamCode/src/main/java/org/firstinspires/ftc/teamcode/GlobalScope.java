@@ -50,8 +50,9 @@ public abstract class GlobalScope extends LinearOpMode {
         //------------------------SERVO---------------------
 
     }
-    void MapControlerButtons() {
-        InitComponente();
+    void MapControlerButtons()
+    {
+       // InitComponente();
 
         ct1 = new GamepadEx(gamepad1);
         ct2 = new GamepadEx(gamepad2);
@@ -74,8 +75,8 @@ public abstract class GlobalScope extends LinearOpMode {
     double schimbator = 0.4;//Viteza 0.4
     GamepadEx ct1, ct2;
     ButtonReader Viteza;
+
     /// cautator de viteze
-    ButtonReader SliderSus, SliderJos;
     ButtonReader ButtonSus, ButtonJos;
 
     void MiscareBaza()
@@ -109,6 +110,7 @@ public abstract class GlobalScope extends LinearOpMode {
     {
         ButtonJos.readValue();
         ButtonSus.readValue();
+
         if(ButtonJos.wasJustPressed())
         {
             MotorIN.setPower(-1);

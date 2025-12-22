@@ -20,7 +20,10 @@ public class TeleOp extends GlobalScope
 
         while (opModeIsActive())
         {
-            MotorIn();
+            //MotorIn();
+            MotorIntake();
+            MiscareBaza();
+            ArtifacteIndx();
             telemetry.update();
         }
     }

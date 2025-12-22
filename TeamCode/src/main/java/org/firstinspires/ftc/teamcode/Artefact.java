@@ -1,18 +1,18 @@
 package org.firstinspires.ftc.teamcode;
 
 enum culoare{verde, mov};
-public class Coi
+public class Artefact
 {
     private culoare col;
     private double pozitie;
 
-    public Coi()
+    public Artefact()
     {
         this.col = culoare.verde;
         this.pozitie = 0;
     }
 
-    public  Coi(culoare cul, double poz)
+    public Artefact(culoare cul, double poz)
     {
         this.col = cul;
         this.pozitie = poz;

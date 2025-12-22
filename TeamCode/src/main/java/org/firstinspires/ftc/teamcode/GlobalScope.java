@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
-import com.arcrobotics.ftclib.gamepad.TriggerReader;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -11,8 +10,6 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
-
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 public abstract class GlobalScope extends LinearOpMode {
     public DcMotorEx MotorFS = null;
@@ -90,7 +87,7 @@ public abstract class GlobalScope extends LinearOpMode {
     double[] pozitiiCoi = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6}; //6 pozitii posibile pentru coii
 
     int lenPozitiiCoi = 0;
-    Coi[] artifacte = new Coi[3];
+    Artefact[] artifacte = new Artefact[3];
     int lenCoi = 0;
     double schimbator = 0.4;//Viteza 0.4
     GamepadEx ct1, ct2;
@@ -166,15 +163,15 @@ public abstract class GlobalScope extends LinearOpMode {
     {
         if((Culoare(cSensorSt) > 0 || Culoare(cSensorDr) > 0) && cnt == 1)
         {
-            Coi coi = null;
+            Artefact coi = null;
             if(Culoare(cSensorSt) == 1)
-                coi = new Coi(culoare.mov, pozitiiCoi[lenPozitiiCoi]);
+                coi = new Artefact(culoare.mov, pozitiiCoi[lenPozitiiCoi]);
             else if(Culoare(cSensorSt) == 2)
-                coi = new Coi(culoare.verde, pozitiiCoi[lenPozitiiCoi]);
+                coi = new Artefact(culoare.verde, pozitiiCoi[lenPozitiiCoi]);
             else if(Culoare(cSensorDr) == 1)
-                coi = new Coi(culoare.mov, pozitiiCoi[lenPozitiiCoi]);
+                coi = new Artefact(culoare.mov, pozitiiCoi[lenPozitiiCoi]);
             else if(Culoare(cSensorDr) == 2)
-                coi = new Coi(culoare.verde, pozitiiCoi[lenPozitiiCoi]);
+                coi = new Artefact(culoare.verde, pozitiiCoi[lenPozitiiCoi]);
             artifacte[lenCoi++] = coi;
             lenPozitiiCoi += 2;
             ServoMixer.setPosition(pozitiiCoi[lenPozitiiCoi]);
@@ -184,6 +181,11 @@ public abstract class GlobalScope extends LinearOpMode {
                 MotorIN.setPower(0);
             }
         }
+    }
+
+    void AruncareArtifacte()
+    {
+        //if(cnt == 0 )
     }
 
     void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test, Servo test)

@@ -24,9 +24,13 @@ public abstract class GlobalScope extends LinearOpMode
     public DcMotorEx MotorSD = null;
     /// Spate dreapta
     public DcMotorEx MotorIN = null;
-
-    public Servo ServoMixer = null;
-
+    /// Servouri Mixer
+    public Servo ServoMixer1 = null;
+    public Servo ServoMixer2 = null;
+    ///  Servo pentru aruncare
+    public Servo ServoRidicare = null;
+    /// Motor Aruncare
+    public  DcMotorEx MotorAruncare = null;
     public void LinkComponents()
     {
         MotorFS = hardwareMap.get(DcMotorEx.class, "MotorFS");
@@ -34,7 +38,10 @@ public abstract class GlobalScope extends LinearOpMode
         MotorSS = hardwareMap.get(DcMotorEx.class, "MotorSS");
         MotorSD = hardwareMap.get(DcMotorEx.class, "MotorSD");
         MotorIN = hardwareMap.get(DcMotorEx.class, "MotorIN");
-        ServoMixer = hardwareMap.get(Servo.class, "ServoMixer");
+        ServoMixer1 = hardwareMap.get(Servo.class, "ServoMixer1");
+        ServoMixer2 = hardwareMap.get(Servo.class, "ServoMixer2");
+        ServoRidicare = hardwareMap.get(Servo.class, "ServoRidicare");
+        MotorAruncare = hardwareMap.get(DcMotorEx.class, "MotorAruncare");
     }
 
     void Initialise()
@@ -42,8 +49,6 @@ public abstract class GlobalScope extends LinearOpMode
         LinkComponents();
 
         //---------------------ROTZI----------------
-        MotorIN.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         MotorFD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorFD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -58,9 +63,20 @@ public abstract class GlobalScope extends LinearOpMode
         MotorSS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorSS.setDirection(DcMotorSimple.Direction.FORWARD);
 
+        //---------------------ARUNCARE SI INTAKE----------------
+        MotorAruncare.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorAruncare.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorAruncare.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        MotorIN.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorIN.setDirection(DcMotorSimple.Direction.FORWARD);
+
         //------------------------SERVO---------------------
 
-        ServoMixer.setDirection(Servo.Direction.FORWARD);
+        ServoMixer1.setDirection(Servo.Direction.FORWARD);
+        ServoMixer2.setDirection(Servo.Direction.FORWARD);
+        ServoRidicare.setDirection(Servo.Direction.FORWARD);
     }
 
     void MapControlerButtons()
@@ -78,7 +94,9 @@ public abstract class GlobalScope extends LinearOpMode
 
     void InitComponente()
     {
-        ServoMixer.setPosition(0);
+        ServoMixer1.setPosition(0);
+        ServoMixer2.setPosition(0);
+        ServoRidicare.setPosition(0);
     }
 
     /// TELEOP
@@ -89,11 +107,7 @@ public abstract class GlobalScope extends LinearOpMode
     double[] speeds = new double[4];
     double[] pozitiiIndx = {0, 0.2, 0.4}; //3 pozitii
     double[] pozitiiAruncare = {0.1, 0.3, 0.5}; // 3 pozitii aruncare
-
-    enum culoare
-    {mov, verde}
-
-    ;
+    enum culoare {mov, verde};
     private ElapsedTime runtime = new ElapsedTime();
     int lenPozitii = 0;
     culoare[] artifacte = new culoare[3];
@@ -101,8 +115,6 @@ public abstract class GlobalScope extends LinearOpMode
     GamepadEx ct1, ct2;
     ButtonReader Viteza;
     ColorSensor cSensorSt, cSensorDr;
-
-    /// cautator de viteze
     ButtonReader ButtonSus, ButtonJos, Aruncare;
 
     void MiscareBaza()
@@ -200,7 +212,11 @@ public abstract class GlobalScope extends LinearOpMode
                 counterRotire = 0;
                 MotorIN.setPower(0);
             }
-            else ServoMixer.setPosition(pozitiiIndx[lenPozitii]);
+            else
+            {
+                ServoMixer1.setPosition(pozitiiIndx[lenPozitii]);
+                //ServoMixer2.setPosition(pozitiiIndx[lenPozitii]);
+            }
             runtime.reset();
         }
     }
@@ -208,9 +224,13 @@ public abstract class GlobalScope extends LinearOpMode
     void AruncareArtifacte()
     {
         Aruncare.readValue();
-        if (counterRotire == 0 && lenPozitii > 0 && Aruncare.wasJustPressed())
+        if (counterRotire == 0 && lenPozitii > 0 && Aruncare.wasJustPressed() && runtime.seconds() == 0)
         {
-            ServoMixer.setPosition(pozitiiAruncare[--lenPozitii]);
+            runtime.reset();
+            runtime.startTime();
+            ServoMixer1.setPosition(pozitiiAruncare[--lenPozitii]);
+
+            //ServoMixer2.setPosition(pozitiiAruncare[--lenPozitii]);
         }
     }
 

@@ -10,8 +10,11 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
-public abstract class GlobalScope extends LinearOpMode {
+
+public abstract class GlobalScope extends LinearOpMode
+{
     public DcMotorEx MotorFS = null;
     /// Fata stanga
     public DcMotorEx MotorFD = null;
@@ -24,9 +27,7 @@ public abstract class GlobalScope extends LinearOpMode {
 
     public Servo ServoMixer = null;
 
-    public
-
-    void LinkComponents()
+    public void LinkComponents()
     {
         MotorFS = hardwareMap.get(DcMotorEx.class, "MotorFS");
         MotorFD = hardwareMap.get(DcMotorEx.class, "MotorFD");
@@ -61,6 +62,7 @@ public abstract class GlobalScope extends LinearOpMode {
 
         ServoMixer.setDirection(Servo.Direction.FORWARD);
     }
+
     void MapControlerButtons()
     {
         InitComponente();
@@ -71,6 +73,7 @@ public abstract class GlobalScope extends LinearOpMode {
         Viteza = new ButtonReader(ct1, GamepadKeys.Button.B);
         ButtonSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
         ButtonJos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
     }
 
     void InitComponente()
@@ -81,26 +84,32 @@ public abstract class GlobalScope extends LinearOpMode {
     /// TELEOP
 
     double drive, strafe, twist;
-    int cnt = 0;
+    int counterRotire = 0;
+    int counterInversare = 0;
     double[] speeds = new double[4];
+    double[] pozitiiIndx = {0, 0.2, 0.4}; //3 pozitii
+    double[] pozitiiAruncare = {0.1, 0.3, 0.5}; // 3 pozitii aruncare
 
-    double[] pozitiiCoi = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6}; //6 pozitii posibile pentru coii
+    enum culoare
+    {mov, verde}
 
-    int lenPozitiiCoi = 0;
-    Artefact[] artifacte = new Artefact[3];
-    int lenCoi = 0;
+    ;
+    private ElapsedTime runtime = new ElapsedTime();
+    int lenPozitii = 0;
+    culoare[] artifacte = new culoare[3];
     double schimbator = 0.4;//Viteza 0.4
     GamepadEx ct1, ct2;
     ButtonReader Viteza;
     ColorSensor cSensorSt, cSensorDr;
 
     /// cautator de viteze
-    ButtonReader ButtonSus, ButtonJos;
+    ButtonReader ButtonSus, ButtonJos, Aruncare;
 
     void MiscareBaza()
     {
         Viteza.readValue();
-        if (Viteza.wasJustPressed()) {
+        if (Viteza.wasJustPressed())
+        {
             schimbator = 1.4 - schimbator;
             telemetry.addData("viteza este", schimbator);
             telemetry.update();
@@ -113,10 +122,12 @@ public abstract class GlobalScope extends LinearOpMode {
         speeds[2] = (drive - strafe + twist);//SS
         speeds[3] = (drive + strafe - twist);//SD
         double max = Math.abs(speeds[0]);
-        for (int i = 0; i < speeds.length; i++) {
+        for (int i = 0; i < speeds.length; i++)
+        {
             if (max < Math.abs(speeds[i])) max = Math.abs(speeds[i]);
         }
-        if (max > 1) {
+        if (max > 1)
+        {
             for (int i = 0; i < speeds.length; i++) speeds[i] /= max;
         }
         MotorFS.setPower(speeds[0]);
@@ -127,18 +138,33 @@ public abstract class GlobalScope extends LinearOpMode {
 
     void MotorIntake()
     {
-        ButtonJos.readValue();
         ButtonSus.readValue();
 
-        if(ButtonSus.wasJustPressed() && cnt == 1)
+        if (ButtonSus.wasJustPressed() && counterRotire == 1)
         {
-            cnt = 0;
+            counterRotire = 0;
             MotorIN.setPower(0);
-        }
-        else if(ButtonSus.wasJustPressed() && cnt == 0)
+        } else if (ButtonSus.wasJustPressed() && counterRotire == 0)
         {
-            cnt = 1;
+            counterRotire = 1;
             MotorIN.setPower(0.8);
+        }
+    }
+
+    void MotorIntakeReverse()
+    {
+        ButtonJos.readValue();
+
+        if (ButtonJos.wasJustPressed() && counterInversare == 1)
+        {
+            counterRotire = 0;
+            counterInversare = 0;
+            MotorIN.setPower(0);
+        } else if (ButtonJos.wasJustPressed() && counterInversare == 0)
+        {
+            counterRotire = 0;
+            counterInversare = 1;
+            MotorIN.setPower(-0.8);
         }
     }
 
@@ -148,44 +174,44 @@ public abstract class GlobalScope extends LinearOpMode {
         int green = cSensor.green();
         int blue = cSensor.blue();
 
-        if (red > green && blue > green && red > 100 && blue > 100) {
+        if (red > green && blue > green && red > 100 && blue > 100)
             return 1; // Mov
-        }
 
-        if (green > red && green > blue && green > 100) {
+        if (green > red && green > blue && green > 100)
             return 2; // Verde
-        }
 
         return 0; // Altă culoare
     }
 
     void ArtifacteIndx()
     {
-        if((Culoare(cSensorSt) > 0 || Culoare(cSensorDr) > 0) && cnt == 1)
+        if (runtime.seconds() == 0 && (Culoare(cSensorSt) > 0 || Culoare(cSensorDr) > 0) && counterRotire == 1)
         {
-            Artefact coi = null;
-            if(Culoare(cSensorSt) == 1)
-                coi = new Artefact(culoare.mov, pozitiiCoi[lenPozitiiCoi]);
-            else if(Culoare(cSensorSt) == 2)
-                coi = new Artefact(culoare.verde, pozitiiCoi[lenPozitiiCoi]);
-            else if(Culoare(cSensorDr) == 1)
-                coi = new Artefact(culoare.mov, pozitiiCoi[lenPozitiiCoi]);
-            else if(Culoare(cSensorDr) == 2)
-                coi = new Artefact(culoare.verde, pozitiiCoi[lenPozitiiCoi]);
-            artifacte[lenCoi++] = coi;
-            lenPozitiiCoi += 2;
-            ServoMixer.setPosition(pozitiiCoi[lenPozitiiCoi]);
-            if(lenCoi == 3)
+            runtime.startTime();
+            if (Culoare(cSensorSt) == 1 || Culoare(cSensorDr) == 1)
+                artifacte[lenPozitii++] = culoare.mov;
+            else if (Culoare(cSensorSt) == 2 || Culoare(cSensorDr) == 2)
+                artifacte[lenPozitii++] = culoare.verde;
+        }
+        else if (runtime.seconds() > 1)
+        {
+            if (lenPozitii == 3)
             {
-                cnt = 0;
+                counterRotire = 0;
                 MotorIN.setPower(0);
             }
+            else ServoMixer.setPosition(pozitiiIndx[lenPozitii]);
+            runtime.reset();
         }
     }
 
     void AruncareArtifacte()
     {
-        //if(cnt == 0 )
+        Aruncare.readValue();
+        if (counterRotire == 0 && lenPozitii > 0 && Aruncare.wasJustPressed())
+        {
+            ServoMixer.setPosition(pozitiiAruncare[--lenPozitii]);
+        }
     }
 
     void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test, Servo test)
@@ -194,18 +220,15 @@ public abstract class GlobalScope extends LinearOpMode {
         y.readValue();
         double pozitie = Test.getPosition();
         double pozitie2 = test.getPosition();
-        if(x.wasJustPressed())
+        if (x.wasJustPressed())
         {
             test.setPosition(pozitie2 + 0.001);
             Test.setPosition(pozitie + 0.001);
         }
-        if(y.wasJustPressed())
+        if (y.wasJustPressed())
         {
             test.setPosition(pozitie - 0.001);
             Test.setPosition(pozitie - 0.001);
         }
     }
-
-
-
 }

@@ -6,12 +6,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
 public class TeleOp extends GlobalScope
 {
-
     public void runOpMode()
     {
 
         Initialise();
-
         schimbator = 1.4 - schimbator;
 
         waitForStart();
@@ -20,10 +18,9 @@ public class TeleOp extends GlobalScope
 
         while (opModeIsActive())
         {
-            //MotorIn();
             MotorIntake();
             MiscareBaza();
-            ArtifacteIndx();
+            MotorIntakeReverse();
             telemetry.update();
         }
     }

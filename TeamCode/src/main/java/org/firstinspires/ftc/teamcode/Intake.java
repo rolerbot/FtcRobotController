@@ -68,7 +68,7 @@ public class Intake implements Subsystem{
         MotorIN.setPower(0);
     }
     public boolean IsStopped(){
-        return counterRotire == 0 && counterInversare == 0;
+        return counterRotire == 0;
     }
 
     public void Run()

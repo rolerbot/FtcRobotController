@@ -21,7 +21,8 @@ public class Intake implements Subsystem{
     public void LinkComponents(HardwareMap hwMap){
         MotorIN = hwMap.get(DcMotorEx.class, "MotorIN");
     }
-    public void Initialize(HardwareMap hwMap){
+    public void Initialize(HardwareMap hwMap)
+    {
         LinkComponents(hwMap);
 
         ButtonSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
@@ -42,7 +43,7 @@ public class Intake implements Subsystem{
         else if (ButtonSus.wasJustPressed() && counterRotire == 0)
         {
             counterRotire = 1;
-            MotorIN.setPower(0.8);
+            MotorIN.setPower(0.65);
         }
     }
     void MotorIntakeReverse()
@@ -57,10 +58,11 @@ public class Intake implements Subsystem{
             //start reverse
             counterRotire = 0;
             counterInversare = 1;
-            MotorIN.setPower(-0.8);
+            MotorIN.setPower(-0.65);
         }
     }
-    public void StopMotor(){
+    public void StopMotor()
+    {
         counterRotire = 0;
         counterInversare = 0;
         MotorIN.setPower(0);
@@ -69,7 +71,8 @@ public class Intake implements Subsystem{
         return counterRotire == 0 && counterInversare == 0;
     }
 
-    public void Run(){
+    public void Run()
+    {
         MotorIntake();
         MotorIntakeReverse();
     }

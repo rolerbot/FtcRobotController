@@ -20,10 +20,9 @@ public abstract class GlobalScope extends LinearOpMode
         ct1 = new GamepadEx(gamepad1);
         ct2 = new GamepadEx(gamepad2);
     }
-
     GamepadEx ct1, ct2;
 
-    void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test, Servo test)
+    void GasirePozitii1(ButtonReader x, ButtonReader y, Servo Test, Servo test)
     {
         x.readValue();
         y.readValue();
@@ -31,13 +30,30 @@ public abstract class GlobalScope extends LinearOpMode
         double pozitie2 = test.getPosition();
         if (x.wasJustPressed())
         {
-            test.setPosition(pozitie2 + 0.001);
+            test.setPosition(pozitie2 + 0.01);
+            Test.setPosition(pozitie + 0.01);
+        }
+        if (y.wasJustPressed())
+        {
+            test.setPosition(pozitie - 0.002);
+            Test.setPosition(pozitie - 0.002);
+        }
+    }
+
+    void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test)
+    {
+        x.readValue();
+        y.readValue();
+        double pozitie = Test.getPosition();
+
+        if (x.wasJustPressed())
+        {
             Test.setPosition(pozitie + 0.001);
         }
         if (y.wasJustPressed())
         {
-            test.setPosition(pozitie - 0.001);
             Test.setPosition(pozitie - 0.001);
         }
     }
+
 }

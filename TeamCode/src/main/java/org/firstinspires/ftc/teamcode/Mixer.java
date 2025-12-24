@@ -13,7 +13,7 @@ public class Mixer implements Subsystem{
     public Servo ServoMixer2 = null;
     private final Intake intake;
     private ElapsedTime runtime = new ElapsedTime();
-    double[] pozitiiIndx = {0, 0.2, 0.4}; //3 pozitii
+    double[] pozitiiIndx = {0.0206, 0.404, 0.7856}; //3 pozitii
     ColorSensor cSensorSt, cSensorDr;
     Color[] artifacte = new Color[3];
     int lenPozitii = 0;
@@ -32,8 +32,8 @@ public class Mixer implements Subsystem{
         LinkComponents(hwMap);
         ServoMixer1.setDirection(Servo.Direction.FORWARD);
         ServoMixer2.setDirection(Servo.Direction.FORWARD);
-        ServoMixer1.setPosition(0);
-        ServoMixer2.setPosition(0);
+        ServoMixer1.setPosition(0.0206);
+        ServoMixer2.setPosition(0.0206);
     }
     void ArtifacteIndx()
     {

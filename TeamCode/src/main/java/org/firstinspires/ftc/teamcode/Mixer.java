@@ -76,7 +76,6 @@ public class Mixer implements Subsystem{
             if(colorLeft != Color.None)
             {
                 artifacte[lenPozitii++] = colorLeft;
-                telemetry.addData("ArtifactGasit:", "");
                 isRunning = true;
             }
         }
@@ -118,11 +117,9 @@ public class Mixer implements Subsystem{
 
     public int RemoveArtifact(){
         if (this.IsEmpty()){
-            telemetry.addData("Mixer gol!", "");
             return -1;
         }
         lenPozitii--;
-        // ServoMixer1.setPosition(pozitiiIndx[lenPozitii]);
         return lenPozitii;
     }
 

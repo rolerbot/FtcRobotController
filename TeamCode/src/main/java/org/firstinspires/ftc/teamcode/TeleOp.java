@@ -69,9 +69,9 @@ public class TeleOp extends GlobalScope
         {
             intake.Run();
             GasirePozitii1(left, right, ServoPoz1, ServoPoz2);
-            //drivetrain.Run();
-            //mixer.Run();
-            //shooter.Run();
+            drivetrain.Run();
+            mixer.Run();
+            shooter.Run();
             telemetry.addData("ServoPoz", ServoPoz1.getPosition());
             telemetry.update();
         }

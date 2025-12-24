@@ -4,8 +4,6 @@ import org.openftc.easyopencv.OpenCvPipeline;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
 /**
  * ULTRA-FAST Green vs Purple Detection Pipeline with Luminance Awareness
  * Uses RGBA color space with perceptual luminance (ITU-R BT.709) for robust detection
@@ -35,7 +33,7 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
 
     // Configuration
     private boolean showVisualization = true;
-    private static final int SAMPLES_PER_SLICE = 569; // Increased for better accuracy
+    private static final int SAMPLES_PER_SLICE = 56; // Increased for better accuracy
 
     // Pre-calculated sample points
     private Point[] leftSamplesIntake;
@@ -52,12 +50,12 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
     // PURPLE: Luminance 25-230, R+B>G by 12%, Colorful >20%, R/B balanced, Hue 270-330°
 
     // Confidence threshold - % of samples that must agree (LOWERED for easier detection)
-    private static final double CONFIDENCE_THRESHOLD = 0.25; // 30% of samples must be same color
+    private static final double CONFIDENCE_THRESHOLD = 0.20; // 30% of samples must be same color
 
     // Visualization colors
     private final Scalar WHITE = new Scalar(255, 255, 255);
     private final Scalar BLACK = new Scalar(0, 0, 0);
-    private final Scalar GREEN = new Scalar(0, 255, 0);
+    private static final Scalar GREEN = new Scalar(0, 255, 0);
     private final Scalar PURPLE = new Scalar(255, 0, 255);
     private final Scalar GRAY = new Scalar(128, 128, 128);
 
@@ -275,7 +273,7 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
      */
     private boolean isGreenPixelRGBA(double r, double g, double b, double a, double luminance) {
         // Much more relaxed luminance threshold
-        if (luminance < 20 || luminance > 250) {
+        if (luminance < 30 || luminance > 230) {
             return false; // Only reject if extremely dark or bright
         }
 
@@ -286,10 +284,7 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
 
         // RELAXED: Green just needs to be somewhat higher than others
         // Old: required 15% dominance, New: just needs to be higher
-        double greenAdvantage = g - Math.max(r, b);
-        if (greenAdvantage < 5) { // Green must be at least 5 units higher
-            return false;
-        }
+
 
         // RELAXED: Lower colorfulness requirement
         double maxChannel = Math.max(r, Math.max(g, b));
@@ -338,11 +333,6 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
             return false;
         }
 
-        // RELAXED: Red and blue just need to be somewhat higher than green
-        double purpleAdvantage = (r + b) / 2.0 - g;
-        if (purpleAdvantage < 5) { // R+B average must be at least 5 units higher than G
-            return false;
-        }
 
         // RELAXED: Lower colorfulness requirement
         double maxChannel = Math.max(r, Math.max(g, b));
@@ -355,7 +345,7 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
 
         // RELAXED: Purple should have relatively balanced red and blue
         double rbRatio = Math.min(r, b) / (Math.max(r, b) + 1);
-        if (rbRatio < 0.50) { // Reduced from 0.60 to 0.50 (more tolerant)
+        if (rbRatio < 0.40) { // Reduced from 0.60 to 0.50 (more tolerant)
             return false;
         }
 
@@ -375,7 +365,7 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
             if (h < 0) h += 360;
 
             // Wider purple/magenta hue range: 265-335 degrees (was 270-330)
-            return (h >= 265 && h <= 335);
+            return (h >= 255 && h <= 340);
         }
 
         // If delta is small but purple-ness criteria met, accept it
@@ -440,14 +430,6 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
         drawColorLabel(output, "UP IN: " + upSliceIntake, 10, 30, upColorIntake);
         drawColorLabel(output, "LEFT IN: " + leftSliceIntake, 10, 60, leftColorIntake);
         drawColorLabel(output, "RIGHT IN: " + rightSliceIntake, 10, 90, rightColorIntake);
-
-        telemetry.addData("UP INTAKE: ", upSliceIntake.toString());
-        telemetry.addData("LEFT INTAKE: ", leftSliceIntake.toString());
-        telemetry.addData("RIGHT INTAKE: ", rightSliceIntake.toString());
-
-        telemetry.addData("CENTER OUTTAKE: ", centerSliceOuttake.toString());
-        telemetry.addData("LEFT OUTTAKE: ", leftSliceOuttake.toString());
-        telemetry.addData("RIGHT OUTTAKE: ", rightSliceOuttake.toString());
 
         drawColorLabel(output, "down OUT: " + centerSliceOuttake, 10, 120, downColorOuttake);
         drawColorLabel(output, "LEFT OUT: " + leftSliceOuttake, 10, 150, leftColorOuttake);

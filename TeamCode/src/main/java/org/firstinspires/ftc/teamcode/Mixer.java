@@ -13,11 +13,12 @@ public class Mixer implements Subsystem{
     public Servo ServoMixer2 = null;
     private final Intake intake;
     private ElapsedTime runtime = new ElapsedTime();
+    private boolean isRunning = false;
     private double initialPosition = 0.0206;
     private double currentPosition = initialPosition;
     private double offsetPosition = 0.3834 / 2;
     // double[] pozitiiIndx = {0.0206, 0.404, 0.7856}; //3 pozitii
-    ColorSensor cSensorSt, cSensorDr;
+    ColorSensor cSensor;
     Color[] artifacte = new Color[3];
     int lenPozitii = 0;
 
@@ -28,48 +29,72 @@ public class Mixer implements Subsystem{
         runtime.reset();
     }
     public void LinkComponents(HardwareMap hardwareMap){
+        cSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
         ServoMixer1 = hardwareMap.get(Servo.class, "ServoMixer1");
         ServoMixer2 = hardwareMap.get(Servo.class, "ServoMixer2");
     }
     public void Initialize(HardwareMap hwMap){
         LinkComponents(hwMap);
-        ServoMixer1.setDirection(Servo.Direction.FORWARD);
-        ServoMixer2.setDirection(Servo.Direction.FORWARD);
+        ServoMixer1.setDirection(Servo.Direction.REVERSE);
+        ServoMixer2.setDirection(Servo.Direction.REVERSE);
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
+    }
+
+    public int GetColorBlue()
+    {
+        return cSensor.blue();
+    }
+
+    public int GetColorGreen()
+    {
+        return cSensor.green();
+    }
+
+    public int GetColorRed()
+    {
+        return cSensor.red();
     }
     double GetCurrentPosition(){
         return currentPosition;
     }
     void IncrementPosition(){
-        currentPosition += offsetPosition;
+        this.currentPosition += offsetPosition;
     }
     void NextPosition(){
-        mixer.IncrementPosition();
-        mixer.SetPosition(mixer.GetCurrentPosition());
+        IncrementPosition();
+        ServoMixer1.setPosition(this.GetCurrentPosition());
+        ServoMixer2.setPosition(this.GetCurrentPosition());
     }
     void ArtifacteIndx()
     {
-        if (intake.IsStopped() && runtime.seconds() == 0)
+        if (intake.IsStopped() && !isRunning && lenPozitii < 3)
         {
+            runtime.reset();
             runtime.startTime();
-            Color colorLeft = Culoare(cSensorSt);
-            //Color colorRight = Culoare(cSensorDr);
-            artifacte[lenPozitii++] = colorLeft;
+            Color colorLeft = Culoare(cSensor);
+            if(colorLeft != Color.None)
+            {
+                artifacte[lenPozitii++] = colorLeft;
+                telemetry.addData("ArtifactGasit:", "");
+                isRunning = true;
+            }
         }
-        else if (runtime.seconds() > 1)
+        else if (runtime.seconds() > 1 && isRunning)
         {
+            isRunning = false;
             if (lenPozitii == 3)
             {
+                //lenPozitii--;
                 intake.StopMotor();
             }
             else
             {
-                mixer.IncrementPosition();
-                mixer.IncrementPosition(); // dublu increment pentru feed bila
+                IncrementPosition();
+                IncrementPosition(); // dublu increment pentru feed bila
                 ServoMixer1.setPosition(GetCurrentPosition());
+                ServoMixer2.setPosition(GetCurrentPosition());
             }
-            runtime.reset();
         }
     }
     private Color Culoare(ColorSensor cSensor)
@@ -92,7 +117,7 @@ public class Mixer implements Subsystem{
     }
 
     public int RemoveArtifact(){
-        if (mixer.IsEmpty()){
+        if (this.IsEmpty()){
             telemetry.addData("Mixer gol!", "");
             return -1;
         }
@@ -103,19 +128,6 @@ public class Mixer implements Subsystem{
 
     public double GetTimerElapsed(){
         return runtime.seconds();
-    }
-
-    public int NextPosition(){
-        return lenPozitii - 1;
-    }
-
-    public void SetPosition(int position){
-        if (position < 0 || position > 2){
-            telemetry.addData("Pozitie invalida", position);
-            return;
-        }
-        lenPozitii = position;
-        ServoMixer1.setPosition(pozitiiIndx[position]);
     }
 
     public void Run(){

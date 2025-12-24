@@ -63,12 +63,10 @@ public class Shooter implements Subsystem{
     private void ResetTimer(){
         runtime.reset();
     }
-    void AruncareArtifacte()
-    {
+    void AruncareArtifacte() {
         Aruncare.readValue();
 
-        if (Aruncare.wasJustPressed() && intake.IsStopped() && !mixer.IsEmpty() && !isShooting)
-        {
+        if (Aruncare.wasJustPressed() && intake.IsStopped() && !mixer.IsEmpty() && !isShooting) {
             isShooting = true;
             telemetry.addData("ARUNC la pozitia: ", mixer.GetCurrentPosition());
 
@@ -80,8 +78,7 @@ public class Shooter implements Subsystem{
             telemetry.addData("AM RIDICAT la pozitia: ", Shooter.GetPositionLever());
             telemetry.update();
         }
-        if(isShooting && runtime.seconds() > 1)
-        {
+        if (isShooting && runtime.seconds() > 1) {
             isShooting = false;
             telemetry.addData("Coboara la pozitia: ", initialPosition);
             Shooter.SetPositionLever(initialPosition); // coboara
@@ -90,5 +87,5 @@ public class Shooter implements Subsystem{
             mixer.RemoveArtifact();
             Shooter.ResetTimer();
         }
-
+    }
 }

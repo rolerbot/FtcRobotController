@@ -4,6 +4,8 @@ import org.openftc.easyopencv.OpenCvPipeline;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+
 /**
  * ULTRA-FAST Green vs Purple Detection Pipeline with Luminance Awareness
  * Uses RGBA color space with perceptual luminance (ITU-R BT.709) for robust detection
@@ -24,18 +26,25 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
     private int frameHeight;
 
     // Results - only 3 possible values: GREEN, PURPLE, EMPTY
-    private volatile SliceColor leftSlice;
-    private volatile SliceColor centerSlice;
-    private volatile SliceColor rightSlice;
+    private volatile SliceColor upSliceIntake;
+    private volatile SliceColor leftSliceIntake;
+    private volatile SliceColor rightSliceIntake;
+    private volatile SliceColor leftSliceOuttake;
+    private volatile SliceColor centerSliceOuttake;
+    private volatile SliceColor rightSliceOuttake;
 
     // Configuration
     private boolean showVisualization = true;
-    private static final int SAMPLES_PER_SLICE = 369; // Increased for better accuracy
+    private static final int SAMPLES_PER_SLICE = 569; // Increased for better accuracy
 
     // Pre-calculated sample points
-    private Point[] leftSamples;
-    private Point[] centerSamples;
-    private Point[] rightSamples;
+    private Point[] leftSamplesIntake;
+    private Point[] centerSamplesIntake;
+    private Point[] rightSamplesIntake;
+
+    private Point[] leftSamplesOuttake;
+    private Point[] centerSamplesOuttake;
+    private Point[] rightSamplesOuttake;
 
     // LUMINANCE-BASED COLOR DETECTION
     // Uses RGBA with perceptual luminance (ITU-R BT.709) for robust detection
@@ -43,7 +52,7 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
     // PURPLE: Luminance 25-230, R+B>G by 12%, Colorful >20%, R/B balanced, Hue 270-330°
 
     // Confidence threshold - % of samples that must agree (LOWERED for easier detection)
-    private static final double CONFIDENCE_THRESHOLD = 0.30; // 30% of samples must be same color
+    private static final double CONFIDENCE_THRESHOLD = 0.25; // 30% of samples must be same color
 
     // Visualization colors
     private final Scalar WHITE = new Scalar(255, 255, 255);
@@ -98,9 +107,14 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
         }
 
         // Fast detection
-        leftSlice = detectSliceColor(input, leftSamples);
-        centerSlice = detectSliceColor(input, centerSamples);
-        rightSlice = detectSliceColor(input, rightSamples);
+        upSliceIntake = detectSliceColor(input, leftSamplesIntake);
+        leftSliceIntake = detectSliceColor(input, centerSamplesIntake);
+        rightSliceIntake = detectSliceColor(input, rightSamplesIntake);
+
+        centerSliceOuttake = detectSliceColor(input, centerSamplesOuttake);
+        leftSliceOuttake = detectSliceColor(input, leftSamplesOuttake);
+        rightSliceOuttake = detectSliceColor(input, rightSamplesOuttake);
+
 
         // Return visualization if enabled
         if (showVisualization) {
@@ -122,13 +136,17 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
         double cy = centerPoint.y;
 
         // LEFT slice: -60° to 60° (top area)
-        leftSamples = generateSamplePoints(cx, cy, width, height, -30, 90);
-
+        leftSamplesIntake = generateSamplePoints(cx, cy, width, height, 30, 150);
         // CENTER slice: 60° to 180° (right area)
-        centerSamples = generateSamplePoints(cx, cy, width, height, 90, 210);
-
+        centerSamplesIntake = generateSamplePoints(cx, cy, width, height, 150, 270);
         // RIGHT slice: 180° to 300° (left-bottom area)
-        rightSamples = generateSamplePoints(cx, cy, width, height, 210, 330);
+        rightSamplesIntake = generateSamplePoints(cx, cy, width, height, 270, 390);
+
+        rightSamplesOuttake = generateSamplePoints(cx, cy, width, height, 90, 210);
+        // CENTER slice: 60° to 180° (right area)
+        centerSamplesOuttake = generateSamplePoints(cx, cy, width, height, 210, 330);
+        // RIGHT slice: 180° to 300° (left-bottom area)
+        leftSamplesOuttake = generateSamplePoints(cx, cy, width, height, -30, 90);
     }
 
     /**
@@ -311,7 +329,7 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
      */
     private boolean isPurplePixelRGBA(double r, double g, double b, double a, double luminance) {
         // Relaxed luminance threshold
-        if (luminance < 20 || luminance > 240) {
+        if (luminance < 10 || luminance > 250) {
             return false; // Reject if extremely dark or bright
         }
 
@@ -368,15 +386,15 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
      * Get detailed detection result with confidence
      */
     public DetectionResult getLeftSliceDetailed() {
-        return getDetailedResult(leftSlice, leftSamples);
+        return getDetailedResult(upSliceIntake, leftSamplesIntake);
     }
 
     public DetectionResult getCenterSliceDetailed() {
-        return getDetailedResult(centerSlice, centerSamples);
+        return getDetailedResult(leftSliceIntake, centerSamplesIntake);
     }
 
     public DetectionResult getRightSliceDetailed() {
-        return getDetailedResult(rightSlice, rightSamples);
+        return getDetailedResult(rightSliceIntake, rightSamplesIntake);
     }
 
     private DetectionResult getDetailedResult(SliceColor color, Point[] samples) {
@@ -395,23 +413,45 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
         int cy = (int) centerPoint.y;
 
         // Draw slice boundaries with color-coding
-        Scalar leftColor = getColorForSlice(leftSlice);
-        Scalar centerColor = getColorForSlice(centerSlice);
-        Scalar rightColor = getColorForSlice(rightSlice);
+        Scalar upColorIntake = getColorForSlice(upSliceIntake);
+        Scalar leftColorIntake = getColorForSlice(leftSliceIntake);
+        Scalar rightColorIntake = getColorForSlice(rightSliceIntake);
 
-        drawSliceBoundary(output, cx, cy, -30, leftColor);
-        drawSliceBoundary(output, cx, cy, 90, centerColor);
-        drawSliceBoundary(output, cx, cy, 210, rightColor);
-        drawSliceBoundary(output, cx, cy, 330, leftColor);
+        Scalar downColorOuttake = getColorForSlice(centerSliceOuttake);
+        Scalar leftColorOuttake = getColorForSlice(leftSliceOuttake);
+        Scalar rightColorOuttake = getColorForSlice(rightSliceOuttake);
+
+//
+//        drawSliceBoundary(output, cx, cy, 30, leftColorIntake);
+//        drawSliceBoundary(output, cx, cy, 150, upColorIntake);
+//        drawSliceBoundary(output, cx, cy, 270, rightColorIntake);
+        //drawSliceBoundary(output, cx, cy, 330, leftColor);
+
+
+        drawSliceBoundary(output, cx, cy, -30, leftColorOuttake);
+        drawSliceBoundary(output, cx, cy, 90, downColorOuttake);
+        drawSliceBoundary(output, cx, cy, 210, rightColorOuttake);
 
         // Draw center point
         Imgproc.circle(output, centerPoint, 5, WHITE, -1);
         Imgproc.circle(output, centerPoint, 5, BLACK, 1);
 
         // Draw labels with color backgrounds
-        drawColorLabel(output, "RIGHT: " + leftSlice, 10, 30, leftColor);
-        drawColorLabel(output, "LEFT: " + centerSlice, 10, 60, centerColor);
-        drawColorLabel(output, "DOWN: " + rightSlice, 10, 90, rightColor);
+        drawColorLabel(output, "UP IN: " + upSliceIntake, 10, 30, upColorIntake);
+        drawColorLabel(output, "LEFT IN: " + leftSliceIntake, 10, 60, leftColorIntake);
+        drawColorLabel(output, "RIGHT IN: " + rightSliceIntake, 10, 90, rightColorIntake);
+
+        telemetry.addData("UP INTAKE: ", upSliceIntake.toString());
+        telemetry.addData("LEFT INTAKE: ", leftSliceIntake.toString());
+        telemetry.addData("RIGHT INTAKE: ", rightSliceIntake.toString());
+
+        telemetry.addData("CENTER OUTTAKE: ", centerSliceOuttake.toString());
+        telemetry.addData("LEFT OUTTAKE: ", leftSliceOuttake.toString());
+        telemetry.addData("RIGHT OUTTAKE: ", rightSliceOuttake.toString());
+
+        drawColorLabel(output, "down OUT: " + centerSliceOuttake, 10, 120, downColorOuttake);
+        drawColorLabel(output, "LEFT OUT: " + leftSliceOuttake, 10, 150, leftColorOuttake);
+        drawColorLabel(output, "RIGHT OUT: " + rightSliceOuttake, 10, 180, rightColorOuttake);
 
         return output;
     }
@@ -460,16 +500,16 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
 
     // Simple Getters
 
-    public SliceColor getLeftSlice() {
-        return leftSlice;
+    public SliceColor getUpSliceIntake() {
+        return upSliceIntake;
     }
 
-    public SliceColor getCenterSlice() {
-        return centerSlice;
+    public SliceColor getLeftSliceIntake() {
+        return leftSliceIntake;
     }
 
-    public SliceColor getRightSlice() {
-        return rightSlice;
+    public SliceColor getRightSliceIntake() {
+        return rightSliceIntake;
     }
 
     public Point getCenterPoint() {
@@ -486,7 +526,7 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
      * Get compact results string
      */
     public String getResultsString() {
-        return String.format("L:%s C:%s R:%s", leftSlice, centerSlice, rightSlice);
+        return String.format("L:%s C:%s R:%s", upSliceIntake, leftSliceIntake, rightSliceIntake);
     }
 
     /**
@@ -497,16 +537,16 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
         switch (sliceName.toUpperCase()) {
             case "LEFT":
             case "L":
-                color = leftSlice;
+                color = upSliceIntake;
                 break;
             case "CENTER":
             case "C":
             case "MIDDLE":
-                color = centerSlice;
+                color = leftSliceIntake;
                 break;
             case "RIGHT":
             case "R":
-                color = rightSlice;
+                color = rightSliceIntake;
                 break;
         }
 
@@ -517,9 +557,9 @@ public class GreenPurpleDetectionPipeline extends OpenCvPipeline {
      * Find which slice (if any) contains the target color
      */
     public String findSliceWithColor(SliceColor targetColor) {
-        if (leftSlice == targetColor) return "LEFT";
-        if (centerSlice == targetColor) return "CENTER";
-        if (rightSlice == targetColor) return "RIGHT";
+        if (upSliceIntake == targetColor) return "LEFT";
+        if (leftSliceIntake == targetColor) return "CENTER";
+        if (rightSliceIntake == targetColor) return "RIGHT";
         return "NONE";
     }
 }

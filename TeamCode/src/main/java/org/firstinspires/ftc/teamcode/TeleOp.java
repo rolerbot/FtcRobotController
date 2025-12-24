@@ -3,15 +3,16 @@ package org.firstinspires.ftc.teamcode;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.hardware.Servo;
+import org.openftc.easyopencv.OpenCvCamera;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
 public class TeleOp extends GlobalScope
 {
-    //Drivetrain drivetrain;
+    Drivetrain drivetrain;
     Intake intake;
-    //Mixer mixer;
-    //Shooter shooter;
-    //OpenCvCamera camera;
+    Mixer mixer;
+    Shooter shooter;
+    OpenCvCamera camera;
     private Servo ServoPoz1 = null;
     private Servo ServoPoz2 = null;
 
@@ -24,37 +25,18 @@ public class TeleOp extends GlobalScope
         ServoPoz1.setDirection(Servo.Direction.FORWARD);
         ServoPoz2 = hardwareMap.get(Servo.class, "ServoPoz2");
         ServoPoz2.setDirection(Servo.Direction.FORWARD);
-       /* drivetrain = new Drivetrain(ct1, ct2);
+        drivetrain = new Drivetrain(ct1, ct2);
         drivetrain.Initialize(hardwareMap);
-        drivetrain.schimbator = 1.4 - drivetrain.schimbator;*/
+        drivetrain.schimbator = 1.4 - drivetrain.schimbator;
 
         intake = new Intake(ct1);
         intake.Initialize(hardwareMap);
 
-        /*mixer = new Mixer(intake);
+        mixer = new Mixer(intake);
         mixer.Initialize(hardwareMap);
 
         shooter = new Shooter(mixer,intake,ct1);
         shooter.Initialize(hardwareMap);
-
-        int cameraMonitorViewId = hardwareMap.appContext
-                .getResources()
-                .getIdentifier(
-                        "cameraMonitorViewId",
-                        "id",
-                        hardwareMap.appContext.getPackageName()
-                );
-
-        camera = OpenCvCameraFactory.getInstance()
-                .createWebcam(
-                        hardwareMap.get(WebcamName.class, "Webcam 1"),
-                        cameraMonitorViewId
-                );
-
-        camera.setPipeline(new ExamplePipeline());
-
-        camera.openCameraDevice();
-        camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);*/
     }
 
     public void runOpMode()
@@ -72,7 +54,12 @@ public class TeleOp extends GlobalScope
             drivetrain.Run();
             mixer.Run();
             shooter.Run();
-            telemetry.addData("ServoPoz", ServoPoz1.getPosition());
+            telemetry.addData("PozLever", shooter.GetPositionLever());
+            telemetry.addData("ServoPoz2", ServoPoz2.getPosition());
+            telemetry.addData("ServoPoz1", ServoPoz1.getPosition());
+            telemetry.addData("ColorB", mixer.GetColorBlue());
+            telemetry.addData("ColorG", mixer.GetColorGreen());
+            telemetry.addData("ColorR", mixer.GetColorRed());
             telemetry.update();
         }
     }

@@ -23,7 +23,8 @@ public class Drivetrain implements Subsystem {
     double schimbator = 0.4;//Viteza 0.4
     double[] speeds = new double[4];
     double drive, strafe, twist;
-    public Drivetrain(GamepadEx ct1, GamepadEx ct2){
+    public Drivetrain(GamepadEx ct1, GamepadEx ct2)
+    {
         this.ct1 = ct1;
         this.ct2 = ct2;
     }
@@ -59,8 +60,8 @@ public class Drivetrain implements Subsystem {
         if (Viteza.wasJustPressed())
         {
             schimbator = 1.4 - schimbator;
-            telemetry.addData("viteza este", schimbator);
-            telemetry.update();
+            //telemetry.addData("viteza este", schimbator);
+            //telemetry.update();
         }
         drive = -ct1.getLeftY()  * schimbator;
         strafe = ct1.getLeftX() * schimbator;

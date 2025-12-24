@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class Shooter implements Subsystem{
     private ButtonReader Aruncare;
@@ -46,7 +47,7 @@ public class Shooter implements Subsystem{
         MotorAruncare.setDirection(DcMotorSimple.Direction.FORWARD);
 
         ServoRidicare.setDirection(Servo.Direction.FORWARD);
-        ServoRidicare.setPosition(0);
+        ServoRidicare.setPosition(initialPosition);
     }
     public void Run(){
         AruncareArtifacte();
@@ -54,9 +55,7 @@ public class Shooter implements Subsystem{
     public void SetPositionLever(double position){
         ServoRidicare.setPosition(position);
     }
-    public double GetCurrentPositionLever(){
-        return currentPosition;
-    }
+    //public double GetCurrentPositionLever(){return currentPosition;}
     public double GetPositionLever(){
         return ServoRidicare.getPosition();
     }
@@ -66,26 +65,25 @@ public class Shooter implements Subsystem{
     void AruncareArtifacte() {
         Aruncare.readValue();
 
-        if (Aruncare.wasJustPressed() && intake.IsStopped() && !mixer.IsEmpty() && !isShooting) {
+        if (Aruncare.wasJustPressed() && intake.IsStopped() && !isShooting)//// //&& mixer.Empty();
+        {
             isShooting = true;
             telemetry.addData("ARUNC la pozitia: ", mixer.GetCurrentPosition());
 
-            Shooter.ResetTimer();
+            ResetTimer();
 
             mixer.NextPosition(); // pregateste sa traga
-            Shooter.SetPositionLever(finalPosition); // ridica
+            SetPositionLever(finalPosition); // ridica
 
-            telemetry.addData("AM RIDICAT la pozitia: ", Shooter.GetPositionLever());
-            telemetry.update();
+            telemetry.addData("AM RIDICAT la pozitia: ", GetPositionLever());
         }
         if (isShooting && runtime.seconds() > 1) {
             isShooting = false;
             telemetry.addData("Coboara la pozitia: ", initialPosition);
-            Shooter.SetPositionLever(initialPosition); // coboara
+            SetPositionLever(initialPosition); // coboara
             mixer.NextPosition();
-            telemetry.update();
             mixer.RemoveArtifact();
-            Shooter.ResetTimer();
+            ResetTimer();
         }
     }
 }

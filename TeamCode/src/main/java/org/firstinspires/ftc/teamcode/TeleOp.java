@@ -15,7 +15,6 @@ public class TeleOp extends GlobalScope
     OpenCvCamera camera;
     private Servo ServoPoz1 = null;
     private Servo ServoPoz2 = null;
-
     ButtonReader left;
     ButtonReader right;
     private void Initialize()

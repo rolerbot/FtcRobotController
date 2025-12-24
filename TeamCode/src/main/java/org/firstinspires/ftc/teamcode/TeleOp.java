@@ -3,6 +3,12 @@ package org.firstinspires.ftc.teamcode;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.hardware.Servo;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.opencv_pipelines.GreenPurpleDetectionPipeline;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.openftc.easyopencv.OpenCvWebcam;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
 public class TeleOp extends GlobalScope
@@ -36,6 +42,8 @@ public class TeleOp extends GlobalScope
 
         shooter = new Shooter(mixer,intake,ct1);
         shooter.Initialize(hardwareMap);
+        
+         */
 
         int cameraMonitorViewId = hardwareMap.appContext
                 .getResources()
@@ -45,16 +53,16 @@ public class TeleOp extends GlobalScope
                         hardwareMap.appContext.getPackageName()
                 );
 
-        camera = OpenCvCameraFactory.getInstance()
+        OpenCvCamera camera = OpenCvCameraFactory.getInstance()
                 .createWebcam(
                         hardwareMap.get(WebcamName.class, "Webcam 1"),
                         cameraMonitorViewId
                 );
 
-        camera.setPipeline(new ExamplePipeline());
+        camera.setPipeline(new GreenPurpleDetectionPipeline());
 
         camera.openCameraDevice();
-        camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);*/
+        camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
     }
 
     public void runOpMode()
@@ -69,9 +77,9 @@ public class TeleOp extends GlobalScope
         {
             intake.Run();
             GasirePozitii1(left, right, ServoPoz1, ServoPoz2);
-            drivetrain.Run();
-            mixer.Run();
-            shooter.Run();
+//            drivetrain.Run();
+//            mixer.Run();
+//            shooter.Run();
             telemetry.addData("ServoPoz", ServoPoz1.getPosition());
             telemetry.update();
         }

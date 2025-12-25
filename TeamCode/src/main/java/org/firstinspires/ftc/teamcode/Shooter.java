@@ -16,7 +16,7 @@ public class Shooter implements Subsystem{
     private ButtonReader Aruncare;
     private final GamepadEx ct1;
     private final double initialPosition = 0.0506;
-    private final double finalPosition = 0.6134;
+    private final double finalPosition = 0.07;
     private final double currentPosition = initialPosition;
     private ElapsedTime runtime = new ElapsedTime();
     boolean isShooting = false;
@@ -67,12 +67,13 @@ public class Shooter implements Subsystem{
         Aruncare.readValue();
 
         if (Aruncare.wasJustPressed() && intake.IsStopped() && !isShooting)//// //&& mixer.Empty();
+
         {
             isShooting = true;
             ResetTimer();
             mixer.NextPosition(); // pregateste sa traga
         }
-        if (isShooting && runtime.seconds() > 0.3)
+        if (isShooting && runtime.seconds() > 0.3 && runtime.seconds() <= 0.7)
             SetPositionLever(finalPosition);
         else if(isShooting && runtime.seconds() > 0.7)
         {

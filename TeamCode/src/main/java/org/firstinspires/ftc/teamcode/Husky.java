@@ -19,7 +19,6 @@ public class Husky implements Subsystem
     private int ID = 0;
     private boolean completeArtifact = false;
     public Color[] artifactOrder = new Color[3];
-
     public void LinkComponents(HardwareMap hardwareMap)
     {
         huskyLens = hardwareMap.get(HuskyLens.class, "huskylens");
@@ -30,11 +29,7 @@ public class Husky implements Subsystem
         huskyLens.selectAlgorithm(HuskyLens.Algorithm.TAG_RECOGNITION);
 
     }
-    public void Run()
-    {
-        ReadHusky();
-    }
-
+    public void Run() {ReadHusky();}
     private void ReadHusky()
     {
         if (runtime.seconds() >= READ_PERIOD && !huskyRead)
@@ -57,12 +52,7 @@ public class Husky implements Subsystem
             CompleteColor();
         }
     }
-
-    public int GetID()
-    {
-        return ID;
-    }
-
+    public int GetID() {return ID;}
     private void CompleteColor()
     {
         completeArtifact = true;

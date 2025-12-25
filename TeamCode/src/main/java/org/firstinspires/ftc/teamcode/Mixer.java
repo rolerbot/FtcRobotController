@@ -20,9 +20,7 @@ public class Mixer implements Subsystem{
     ColorSensor cSensor;
     Color[] artifacte = new Color[3];
     int lenPozitii = 0;
-    public Mixer(Intake intake){
-        this.intake = intake;
-    }
+    public Mixer(Intake intake){this.intake = intake;}
     public void ResetTimer(){
         runtime.reset();
     }
@@ -39,13 +37,7 @@ public class Mixer implements Subsystem{
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
     }
-
-    public void StartTimer()
-    {
-        ResetTimer();
-        runtime.startTime();
-    }
-
+    public void StartTimer() {ResetTimer(); runtime.startTime();}
     public int GetColorBlue()
     {
         return cSensor.blue();
@@ -76,10 +68,7 @@ public class Mixer implements Subsystem{
         ServoMixer1.setPosition(this.GetCurrentPosition());
         ServoMixer2.setPosition(this.GetCurrentPosition());
     }
-    public double GetServoPosition()
-    {
-        return ServoMixer1.getPosition();
-    }
+    public double GetServoPosition() {return ServoMixer1.getPosition();}
 
     public void ResetServoPosition()
     {
@@ -142,11 +131,7 @@ public class Mixer implements Subsystem{
 
         return Color.None;
     }
-
-    public boolean IsEmpty(){
-        return lenPozitii == 0;
-    }
-
+    public boolean IsEmpty(){return lenPozitii == 0;}
     public int RemoveArtifact(){
         if (this.IsEmpty()){
             return -1;
@@ -154,12 +139,6 @@ public class Mixer implements Subsystem{
         lenPozitii--;
         return lenPozitii;
     }
-
-    public double GetTimerElapsed(){
-        return runtime.seconds();
-    }
-
-    public void Run(){
-        ArtifacteIndx();
-    }
+    public double GetTimerElapsed(){return runtime.seconds();}
+    public void Run(){ArtifacteIndx();}
 }

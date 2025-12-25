@@ -23,11 +23,7 @@ public class Drivetrain implements Subsystem {
     double schimbator = 0.4;//Viteza 0.4
     double[] speeds = new double[4];
     double drive, strafe, twist;
-    public Drivetrain(GamepadEx ct1, GamepadEx ct2)
-    {
-        this.ct1 = ct1;
-        this.ct2 = ct2;
-    }
+    public Drivetrain(GamepadEx ct1, GamepadEx ct2) {this.ct1 = ct1; this.ct2 = ct2;}
     public void LinkComponents(HardwareMap hardwareMap)
     {
         MotorFS = hardwareMap.get(DcMotorEx.class, "MotorFS");
@@ -53,7 +49,6 @@ public class Drivetrain implements Subsystem {
         MotorSS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorSS.setDirection(DcMotorSimple.Direction.FORWARD);
     }
-
     public void Run()
     {
         Viteza.readValue();
@@ -84,5 +79,4 @@ public class Drivetrain implements Subsystem {
         MotorSS.setPower(speeds[2]);
         MotorSD.setPower(speeds[3]);
     }
-
 }

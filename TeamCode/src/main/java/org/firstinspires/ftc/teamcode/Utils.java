@@ -12,17 +12,12 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-enum Color{
-    None,
-    Purple,
-    Green
-};
-
-
+enum Color{None, Purple, Green};
 
 public class Utils
 {
-    public static String ColorToString(Color color){
+    public static String ColorToString(Color color)
+    {
         if (color == Color.None) return "None";
         if (color == Color.Green) return "Green";
         return "Purple";
@@ -31,21 +26,26 @@ public class Utils
     private static boolean updatedThisLoop = false;
     private static boolean dataAddedThisLoop = false;
 
-    public static void Telem(Telemetry telemetry, String caption, Object value) {
-        if (telemetry != null && value != null) {
+    public static void Telem(Telemetry telemetry, String caption, Object value)
+    {
+        if (telemetry != null && value != null)
+        {
             telemetry.addData(caption, value);
             dataAddedThisLoop = true;
         }
     }
 
-    public static void TelemUpdate(Telemetry telemetry) {
-        if (telemetry != null && dataAddedThisLoop && !updatedThisLoop) {
+    public static void TelemUpdate(Telemetry telemetry)
+    {
+        if (telemetry != null && dataAddedThisLoop && !updatedThisLoop)
+        {
             telemetry.update();
             updatedThisLoop = true;
         }
     }
 
-    public static void TelemReset() {
+    public static void TelemReset()
+    {
         updatedThisLoop = false;
         dataAddedThisLoop = false;
     }

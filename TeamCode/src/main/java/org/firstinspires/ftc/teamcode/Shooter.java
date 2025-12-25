@@ -68,18 +68,14 @@ public class Shooter implements Subsystem{
     private void ResetTimer(){
         runtime.reset();
     }
-    public void PowerShooterMotors(double power){
+    public void PowerShooterMotors(double power)
+    {
         MotorAruncare1.setPower(power);
         MotorAruncare2.setPower(power);
     }
-    private void StopShooterMotors(){
-        PowerShooterMotors(0);
-    }
+    private void StopShooterMotors(){PowerShooterMotors(0);}
 
-    public boolean GetIsShooting()
-    {
-        return isShooting;
-    }
+    public boolean GetIsShooting() {return isShooting;}
     private void ArtifactShooting()
     {
         if (preparingLaunch && !isShooting && !mixer.IsEmpty())

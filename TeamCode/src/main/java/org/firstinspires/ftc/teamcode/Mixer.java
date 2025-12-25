@@ -17,10 +17,10 @@ public class Mixer implements Subsystem{
     private double initialPosition = 0.0206;
     private double currentPosition = initialPosition;
     private double offsetPosition = 0.3834 / 2;
-    // double[] pozitiiIndx = {0.0206, 0.404, 0.7856}; //3 pozitii
     ColorSensor cSensor;
     Color[] artifacte = new Color[3];
     int lenPozitii = 0;
+    private boolean Direction = true; // true - up, false - down
 
     public Mixer(Intake intake){
         this.intake = intake;
@@ -28,7 +28,8 @@ public class Mixer implements Subsystem{
     public void ResetTimer(){
         runtime.reset();
     }
-    public void LinkComponents(HardwareMap hardwareMap){
+    public void LinkComponents(HardwareMap hardwareMap)
+    {
         cSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
         ServoMixer1 = hardwareMap.get(Servo.class, "ServoMixer1");
         ServoMixer2 = hardwareMap.get(Servo.class, "ServoMixer2");
@@ -39,6 +40,12 @@ public class Mixer implements Subsystem{
         ServoMixer2.setDirection(Servo.Direction.REVERSE);
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
+    }
+
+    public void StartTimer()
+    {
+        ResetTimer();
+        runtime.startTime();
     }
 
     public int GetColorBlue()
@@ -58,10 +65,14 @@ public class Mixer implements Subsystem{
     double GetCurrentPosition(){
         return currentPosition;
     }
-    void IncrementPosition(){
-        this.currentPosition += offsetPosition;
+    void IncrementPosition()
+    {
+        if(this.currentPosition + offsetPosition > 1.0 || this.currentPosition + offsetPosition < -1)
+            this.offsetPosition *= (-1);
+        this.currentPosition += this.offsetPosition;
     }
-    void NextPosition(){
+    void NextPosition()
+    {
         IncrementPosition();
         ServoMixer1.setPosition(this.GetCurrentPosition());
         ServoMixer2.setPosition(this.GetCurrentPosition());
@@ -70,8 +81,7 @@ public class Mixer implements Subsystem{
     {
         if (intake.IsStopped() && !isRunning && lenPozitii < 3)
         {
-            runtime.reset();
-            runtime.startTime();
+            StartTimer();
             Color colorLeft = Culoare(cSensor);
             if(colorLeft != Color.None)
             {
@@ -79,20 +89,19 @@ public class Mixer implements Subsystem{
                 isRunning = true;
             }
         }
-        else if (runtime.seconds() > 1 && isRunning)
+        else if (GetTimerElapsed() > 0.7 && isRunning)
         {
             isRunning = false;
             if (lenPozitii == 3)
             {
                 //lenPozitii--;
+                //IncrementPosition();
                 intake.StopMotor();
             }
             else
             {
                 IncrementPosition();
-                IncrementPosition(); // dublu increment pentru feed bila
-                ServoMixer1.setPosition(GetCurrentPosition());
-                ServoMixer2.setPosition(GetCurrentPosition());
+                NextPosition();
             }
         }
     }

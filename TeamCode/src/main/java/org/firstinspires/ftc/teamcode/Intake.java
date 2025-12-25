@@ -36,30 +36,33 @@ public class Intake implements Subsystem{
     {
         ButtonSus.readValue();
 
-        if (ButtonSus.wasJustPressed() && counterRotire == 1)
-        {
-            StopMotor();
-        }
-        else if (ButtonSus.wasJustPressed() && counterRotire == 0)
+        if (ButtonSus.wasJustPressed() && counterRotire == 0)
         {
             counterRotire = 1;
+            counterInversare = 0;
             MotorIN.setPower(0.65);
         }
+        else if (ButtonSus.wasJustPressed() && counterRotire == 1)
+        {
+            MotorIN.setPower(-0.1);
+            counterInversare = 0;
+            counterRotire = 2;
+        }
+        else if(ButtonSus.wasJustPressed() && counterRotire == 2)
+            StopMotor();
     }
     void MotorIntakeReverse()
     {
         ButtonJos.readValue();
-        if (ButtonJos.wasJustPressed() && counterInversare == 1)
-        {
-            StopMotor();
-        }
-        else if (ButtonJos.wasJustPressed() && counterInversare == 0)
+        if (ButtonJos.wasJustPressed() && counterInversare == 0)
         {
             //start reverse
             counterRotire = 0;
             counterInversare = 1;
             MotorIN.setPower(-0.65);
         }
+        else if (ButtonJos.wasJustPressed() && counterInversare == 1)
+            StopMotor();
     }
     public void StopMotor()
     {
@@ -68,7 +71,7 @@ public class Intake implements Subsystem{
         MotorIN.setPower(0);
     }
     public boolean IsStopped(){
-        return counterRotire == 0 && counterInversare == 0;
+        return counterRotire > 1 && counterInversare == 0;
     }
 
     public void Run()

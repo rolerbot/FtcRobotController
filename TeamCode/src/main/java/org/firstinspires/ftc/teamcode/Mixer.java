@@ -76,6 +76,16 @@ public class Mixer implements Subsystem{
         ServoMixer1.setPosition(this.GetCurrentPosition());
         ServoMixer2.setPosition(this.GetCurrentPosition());
     }
+    public double GetServoPosition()
+    {
+        return ServoMixer1.getPosition();
+    }
+
+    public void ResetServoPosition()
+    {
+        ServoMixer1.setPosition(initialPosition);
+        ServoMixer2.setPosition(initialPosition);
+    }
     void ArtifacteIndx()
     {
         if (!intake.IsStopped() && !isRunning && !isWaitingForBall && lenPozitii < 3)

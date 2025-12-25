@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
@@ -55,7 +53,10 @@ public class Shooter implements Subsystem{
         ServoRidicare.setPosition(initialPosition);
     }
     public void Run(){
-        AruncareArtifacte();
+        Aruncare.readValue();
+        if(Aruncare.wasJustPressed())
+            preparingLaunch = true;
+        ArtifactShooting();
     }
     public void SetPositionLever(double position){
         ServoRidicare.setPosition(position);
@@ -79,10 +80,9 @@ public class Shooter implements Subsystem{
     {
         return isShooting;
     }
-    void AruncareArtifacte()
+    private void ArtifactShooting()
     {
-        Aruncare.readValue();
-        if (Aruncare.wasJustPressed() && !isShooting && !mixer.IsEmpty())
+        if (preparingLaunch && !isShooting && !mixer.IsEmpty())
         {
             isShooting = true;
             PowerShooterMotors(this.motorPower);
@@ -98,7 +98,14 @@ public class Shooter implements Subsystem{
             mixer.NextPosition();
             mixer.RemoveArtifact();
             PowerShooterMotors(0.2);
+            if(mixer.IsEmpty())
+                preparingLaunch = false;
             ResetTimer();
+        }
+        if(mixer.IsEmpty() && mixer.GetServoPosition() != 0)
+        {
+            mixer.ResetServoPosition();
+            StopShooterMotors();
         }
     }
 }

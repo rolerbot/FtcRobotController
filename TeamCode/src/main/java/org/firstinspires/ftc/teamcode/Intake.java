@@ -13,7 +13,7 @@ public class Intake implements Subsystem{
     public DcMotorEx MotorIN = null;
     ButtonReader ButtonSus, ButtonJos;
     private boolean isReversed = false, isForward = false;
-    private double motorPower = 0.6;
+    private double motorPower = 0.8;
 
     public Intake(GamepadEx ct1){
         this.ct1 = ct1;

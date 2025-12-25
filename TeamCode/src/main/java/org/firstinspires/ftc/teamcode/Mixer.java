@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
 
+import android.os.Debug;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -12,6 +13,7 @@ public class Mixer implements Subsystem{
     private final Intake intake;
     private final ElapsedTime runtime = new ElapsedTime();
     private boolean isRunning = false;
+    private boolean isWaitingForBall = false;
     private final double initialPosition = 0.0206;
     private double currentPosition = initialPosition;
     private double offsetPosition = 0.3834 / 2;
@@ -61,12 +63,13 @@ public class Mixer implements Subsystem{
     double GetCurrentPosition(){
         return currentPosition;
     }
-    void IncrementPosition()
+    private void IncrementPosition()
     {
         if(this.currentPosition + offsetPosition > 1.0 || this.currentPosition + offsetPosition < 0)
             this.offsetPosition *= (-1);
         this.currentPosition += this.offsetPosition;
     }
+    ///  Rotates the Mixer 60 degrees to a side, depending on servo limits.
     void NextPosition()
     {
         IncrementPosition();
@@ -75,31 +78,36 @@ public class Mixer implements Subsystem{
     }
     void ArtifacteIndx()
     {
-        if (!isRunning && lenPozitii < 3)
+        if (!intake.IsStopped() && !isRunning && !isWaitingForBall && lenPozitii < 3)
         {
             StartTimer();
             Color detectedColor = Culoare(cSensor);
+
             if(detectedColor != Color.None)
             {
-                intake.SetMotorPower(0.3);
+                //intake.SetMotorPower(0.3);
+                //telemetry.addData("Detected Color", Utils.ColorToString(detectedColor));
                 artifacte[lenPozitii++] = detectedColor;
                 isRunning = true;
+                isWaitingForBall = true;
             }
         }
-        else if (isRunning && GetTimerElapsed() > 0.7)
+        else if (isRunning && isWaitingForBall && GetTimerElapsed() > 0.7)
         {
-            isRunning = false;
+            isWaitingForBall = false;
             if (lenPozitii == 3)
             {
-                //lenPozitii--;
-                //IncrementPosition();
-                intake.SetMotorPower(0.3);
+                // intake.SetMotorPower(0.3);
             }
             else
             {
                 IncrementPosition();
                 NextPosition();
             }
+        }
+        else if (isRunning && !isWaitingForBall && GetTimerElapsed() > 1)
+        {
+            isRunning = false;
         }
     }
     private Color Culoare(ColorSensor cSensor)
@@ -108,7 +116,7 @@ public class Mixer implements Subsystem{
         int green = cSensor.green();
         int blue = cSensor.blue();
 
-        if (red > green && blue > green && red > 300 && blue > 300)
+        if (green < 350 && red > blue && red > green && blue > green)
             return Color.Purple; // Mov
 
         if (green > red && green > blue && green > 450)

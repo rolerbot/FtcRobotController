@@ -16,14 +16,14 @@ public class Shooter implements Subsystem{
     private ButtonReader Aruncare;
     private final GamepadEx ct1;
     private final double initialPosition = 0.0506;
-    private final double finalPosition = 0.07;
+    private final double finalPosition = 0.079;
     private final double currentPosition = initialPosition;
     private ElapsedTime runtime = new ElapsedTime();
     boolean isShooting = false;
     // private final double[] pozitiiAruncare = {0.225, 0.6117, 1}; // 3 pozitii aruncare
     private final Mixer mixer;
     private final Intake intake;
-
+    private boolean preparingLaunch = false;
     public Servo ServoRidicare = null;
     /// Motor Aruncare
     public DcMotorEx MotorAruncare1 = null;
@@ -67,7 +67,7 @@ public class Shooter implements Subsystem{
     private void ResetTimer(){
         runtime.reset();
     }
-    private void PowerShooterMotors(double power){
+    public void PowerShooterMotors(double power){
         MotorAruncare1.setPower(power);
         MotorAruncare2.setPower(power);
     }
@@ -77,23 +77,22 @@ public class Shooter implements Subsystem{
     void AruncareArtifacte()
     {
         Aruncare.readValue();
-
-        if (Aruncare.wasJustPressed() && intake.IsStopped() && !isShooting && !mixer.IsEmpty())
+        if (Aruncare.wasJustPressed() && !isShooting && !mixer.IsEmpty())
         {
             isShooting = true;
             PowerShooterMotors(this.motorPower);
             ResetTimer();
             mixer.NextPosition(); // pregateste sa traga
         }
-        if (isShooting && runtime.seconds() > 0.3 && runtime.seconds() <= 0.8)
+        if (isShooting && runtime.seconds() > 0.5 && runtime.seconds() <= 1) // trage
             SetPositionLever(finalPosition);
-        else if(isShooting && runtime.seconds() > 0.8)
+        else if(isShooting && runtime.seconds() > 1)
         {
             isShooting = false;
-            StopShooterMotors();
             SetPositionLever(initialPosition); // coboara
             mixer.NextPosition();
             mixer.RemoveArtifact();
+            PowerShooterMotors(0.2);
             ResetTimer();
         }
     }

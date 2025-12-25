@@ -12,9 +12,19 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-enum Color{None, Purple, Green};
+enum Color{
+    None,
+    Purple,
+    Green
+};
+
 public class Utils
 {
+    public static String ColorToString(Color color){
+        if (color == Color.None) return "None";
+        if (color == Color.Green) return "Green";
+        return "Purple";
+    }
     public static void GasirePozitii1(ButtonReader x, ButtonReader y, Servo Test, Servo test)
     {
         x.readValue();

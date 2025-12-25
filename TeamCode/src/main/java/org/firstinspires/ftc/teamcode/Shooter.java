@@ -26,7 +26,9 @@ public class Shooter implements Subsystem{
 
     public Servo ServoRidicare = null;
     /// Motor Aruncare
-    public  DcMotorEx MotorAruncare = null;
+    public DcMotorEx MotorAruncare1 = null;
+    public DcMotorEx MotorAruncare2 = null;
+    private double motorPower = 0.6;
     public Shooter(Mixer mixer,Intake intk,GamepadEx ct1)
     {
         this.ct1 = ct1;
@@ -37,15 +39,18 @@ public class Shooter implements Subsystem{
      {
         Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
         ServoRidicare = hardwareMap.get(Servo.class, "ServoRidicare");
-        MotorAruncare = hardwareMap.get(DcMotorEx.class, "MotorAruncare");
+        MotorAruncare1 = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
+        MotorAruncare2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
     }
     public void Initialize(HardwareMap hwMap)
     {
         LinkComponents(hwMap);
-        MotorAruncare.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        MotorAruncare.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorAruncare.setDirection(DcMotorSimple.Direction.FORWARD);
-
+        MotorAruncare1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorAruncare1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorAruncare1.setDirection(DcMotorSimple.Direction.FORWARD);
+        MotorAruncare2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorAruncare2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        MotorAruncare2.setDirection(DcMotorSimple.Direction.REVERSE);
         ServoRidicare.setDirection(Servo.Direction.FORWARD);
         ServoRidicare.setPosition(initialPosition);
     }
@@ -62,22 +67,30 @@ public class Shooter implements Subsystem{
     private void ResetTimer(){
         runtime.reset();
     }
+    private void PowerShooterMotors(double power){
+        MotorAruncare1.setPower(power);
+        MotorAruncare2.setPower(power);
+    }
+    private void StopShooterMotors(){
+        PowerShooterMotors(0);
+    }
     void AruncareArtifacte()
     {
         Aruncare.readValue();
 
-        if (Aruncare.wasJustPressed() && intake.IsStopped() && !isShooting)//// //&& mixer.Empty();
-
+        if (Aruncare.wasJustPressed() && intake.IsStopped() && !isShooting && !mixer.IsEmpty())
         {
             isShooting = true;
+            PowerShooterMotors(this.motorPower);
             ResetTimer();
             mixer.NextPosition(); // pregateste sa traga
         }
-        if (isShooting && runtime.seconds() > 0.3 && runtime.seconds() <= 0.7)
+        if (isShooting && runtime.seconds() > 0.3 && runtime.seconds() <= 0.8)
             SetPositionLever(finalPosition);
-        else if(isShooting && runtime.seconds() > 0.7)
+        else if(isShooting && runtime.seconds() > 0.8)
         {
             isShooting = false;
+            StopShooterMotors();
             SetPositionLever(initialPosition); // coboara
             mixer.NextPosition();
             mixer.RemoveArtifact();

@@ -10,16 +10,14 @@ public class Mixer implements Subsystem{
     public Servo ServoMixer1 = null;
     public Servo ServoMixer2 = null;
     private final Intake intake;
-    private ElapsedTime runtime = new ElapsedTime();
+    private final ElapsedTime runtime = new ElapsedTime();
     private boolean isRunning = false;
-    private double initialPosition = 0.0206;
+    private final double initialPosition = 0.0206;
     private double currentPosition = initialPosition;
     private double offsetPosition = 0.3834 / 2;
     ColorSensor cSensor;
     Color[] artifacte = new Color[3];
     int lenPozitii = 0;
-    private boolean Direction = true; // true - up, false - down
-
     public Mixer(Intake intake){
         this.intake = intake;
     }
@@ -77,24 +75,25 @@ public class Mixer implements Subsystem{
     }
     void ArtifacteIndx()
     {
-        if (intake.IsStopped() && !isRunning && lenPozitii < 3)
+        if (!isRunning && lenPozitii < 3)
         {
             StartTimer();
-            Color colorLeft = Culoare(cSensor);
-            if(colorLeft != Color.None)
+            Color detectedColor = Culoare(cSensor);
+            if(detectedColor != Color.None)
             {
-                artifacte[lenPozitii++] = colorLeft;
+                intake.SetMotorPower(0.3);
+                artifacte[lenPozitii++] = detectedColor;
                 isRunning = true;
             }
         }
-        else if (GetTimerElapsed() > 0.7 && isRunning)
+        else if (isRunning && GetTimerElapsed() > 0.7)
         {
             isRunning = false;
             if (lenPozitii == 3)
             {
                 //lenPozitii--;
                 //IncrementPosition();
-                intake.StopMotor();
+                intake.SetMotorPower(0.3);
             }
             else
             {

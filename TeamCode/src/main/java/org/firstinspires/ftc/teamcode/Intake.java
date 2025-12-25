@@ -12,8 +12,8 @@ public class Intake implements Subsystem{
     private GamepadEx ct1;
     public DcMotorEx MotorIN = null;
     ButtonReader ButtonSus, ButtonJos;
-    int counterInversare = 0;
-    int counterRotire = 0;
+    private boolean isReversed = false, isForward = false;
+    private double motorPower = 0.6;
 
     public Intake(GamepadEx ct1){
         this.ct1 = ct1;
@@ -38,41 +38,37 @@ public class Intake implements Subsystem{
     }
     private void MotorIntake()
     {
-        if (ButtonSus.wasJustPressed() && counterRotire == 0)
+        if (ButtonSus.wasJustPressed() && !isForward)
         {
-            counterRotire = 1;
-            counterInversare = 0;
-            MotorIN.setPower(0.65);
+            isForward = true;
+            isReversed = false;
+            MotorIN.setPower(motorPower);
         }
-        else if (ButtonSus.wasJustPressed() && counterRotire == 1)
-        {
-            MotorIN.setPower(-0.1);
-            counterInversare = 0;
-            counterRotire = 2;
-        }
-        else if(ButtonSus.wasJustPressed() && counterRotire == 2)
-            StopMotor();
+        else if(ButtonSus.wasJustPressed() && isForward)
+            SetMotorPower(0);
     }
     private void MotorIntakeReverse()
     {
-        if (ButtonJos.wasJustPressed() && counterInversare == 0)
+        if (ButtonJos.wasJustPressed() && !isReversed)
         {
-            //start reverse
-            counterRotire = 0;
-            counterInversare = 1;
-            MotorIN.setPower(-0.65);
+            isForward = false;
+            isReversed = true;
+            MotorIN.setPower(-motorPower);
         }
-        else if (ButtonJos.wasJustPressed() && counterInversare == 1)
-            StopMotor();
+        else if (ButtonJos.wasJustPressed() && isReversed)
+            SetMotorPower(0);
     }
-    protected void StopMotor()
+
+    protected void SetMotorPower(double pow)
     {
-        counterRotire = 0;
-        counterInversare = 0;
-        MotorIN.setPower(0);
+        if(pow > 1 || pow < -1)
+            return;
+        MotorIN.setPower(pow);
+        isReversed = false;
+        isForward = false;
     }
     public boolean IsStopped(){
-        return counterRotire > 1 && counterInversare == 0;
+        return (!isForward  && !isReversed);
     }
     public void Run()
     {

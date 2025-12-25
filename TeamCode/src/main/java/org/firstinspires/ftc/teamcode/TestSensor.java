@@ -17,7 +17,7 @@ public class TestSensor extends LinearOpMode
 
     public void runOpMode()
     {
-        colorSensor = hardwareMap.get(ColorSensor.class, "sensor_color");
+        colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
 
         waitForStart();
 
@@ -32,7 +32,6 @@ public class TestSensor extends LinearOpMode
             telemetry.addData("Green", green);
             telemetry.addData("Blue", blue);
             telemetry.addData("Alpha", alpha);
-
             telemetry.update();
         }
     }

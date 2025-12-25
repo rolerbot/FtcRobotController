@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -9,20 +10,12 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-
-public abstract class GlobalScope extends LinearOpMode
+enum Color{None, Purple, Green};
+public class Utils
 {
-    void MapControlerButtons()
-    {
-        ct1 = new GamepadEx(gamepad1);
-        ct2 = new GamepadEx(gamepad2);
-    }
-    GamepadEx ct1, ct2;
-
-    void GasirePozitii1(ButtonReader x, ButtonReader y, Servo Test, Servo test)
+    public static void GasirePozitii1(ButtonReader x, ButtonReader y, Servo Test, Servo test)
     {
         x.readValue();
         y.readValue();
@@ -55,5 +48,4 @@ public abstract class GlobalScope extends LinearOpMode
             Test.setPosition(pozitie - 0.001);
         }
     }
-
 }

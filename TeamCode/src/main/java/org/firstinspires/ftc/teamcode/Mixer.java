@@ -6,8 +6,6 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-enum Color {None,Purple, Green};
 public class Mixer implements Subsystem{
     public Servo ServoMixer1 = null;
     public Servo ServoMixer2 = null;
@@ -67,7 +65,7 @@ public class Mixer implements Subsystem{
     }
     void IncrementPosition()
     {
-        if(this.currentPosition + offsetPosition > 1.0 || this.currentPosition + offsetPosition < -1)
+        if(this.currentPosition + offsetPosition > 1.0 || this.currentPosition + offsetPosition < 0)
             this.offsetPosition *= (-1);
         this.currentPosition += this.offsetPosition;
     }
@@ -111,10 +109,10 @@ public class Mixer implements Subsystem{
         int green = cSensor.green();
         int blue = cSensor.blue();
 
-        if (red > green && blue > green && red > 100 && blue > 100)
+        if (red > green && blue > green && red > 300 && blue > 300)
             return Color.Purple; // Mov
 
-        if (green > red && green > blue && green > 100)
+        if (green > red && green > blue && green > 450)
             return Color.Green; // Verde
 
         return Color.None;

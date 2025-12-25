@@ -1,16 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.dfrobot.HuskyLens;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.robotcore.internal.system.Deadline;
-
-import java.util.concurrent.TimeUnit;
-enum culori{None, Purple, Green};
 
 // ID 1 - Green, Purple, Purple
 // ID 2 - Purple, Green, Purple
@@ -24,8 +17,8 @@ public class Husky implements Subsystem
     private boolean huskyRead = false;
     private ElapsedTime runtime = new ElapsedTime();
     private int ID = 0;
-    private boolean artifacteCompletate = false;
-    public culori[] artifacte = new culori[3];
+    private boolean completeArtifact = false;
+    public Color[] artifactOrder = new Color[3];
 
     public void LinkComponents(HardwareMap hardwareMap)
     {
@@ -59,9 +52,9 @@ public class Husky implements Subsystem
                     break;
                 }
         }
-        if(huskyRead && !artifacteCompletate)
+        if(huskyRead && !completeArtifact)
         {
-            CompletareCulori();
+            CompleteColor();
         }
     }
 
@@ -70,32 +63,32 @@ public class Husky implements Subsystem
         return ID;
     }
 
-    private void CompletareCulori()
+    private void CompleteColor()
     {
-        artifacteCompletate = true;
+        completeArtifact = true;
         if(ID == 1)
         {
-            artifacte[0] = culori.Green;
-            artifacte[1] = culori.Purple;
-            artifacte[2] = culori.Purple;
+            artifactOrder[0] = Color.Green;
+            artifactOrder[1] = Color.Purple;
+            artifactOrder[2] = Color.Purple;
         }
         else if(ID == 2)
         {
-            artifacte[0] = culori.Purple;
-            artifacte[1] = culori.Green;
-            artifacte[2] = culori.Purple;
+            artifactOrder[0] = Color.Purple;
+            artifactOrder[1] = Color.Green;
+            artifactOrder[2] = Color.Purple;
         }
         else if(ID == 3)
         {
-            artifacte[0] = culori.Purple;
-            artifacte[1] = culori.Green;
-            artifacte[2] = culori.Purple;
+            artifactOrder[0] = Color.Purple;
+            artifactOrder[1] = Color.Green;
+            artifactOrder[2] = Color.Purple;
         }
         else
         {
-            artifacte[0] = culori.Purple;
-            artifacte[1] = culori.Purple;
-            artifacte[2] = culori.Green;
+            artifactOrder[0] = Color.Purple;
+            artifactOrder[1] = Color.Purple;
+            artifactOrder[2] = Color.Green;
         }
     }
 }

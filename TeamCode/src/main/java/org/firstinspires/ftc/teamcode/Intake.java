@@ -32,7 +32,7 @@ public class Intake implements Subsystem{
         MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorIN.setDirection(DcMotorSimple.Direction.FORWARD);
     }
-    void MotorIntake()
+    private void MotorIntake()
     {
         ButtonSus.readValue();
 
@@ -51,7 +51,7 @@ public class Intake implements Subsystem{
         else if(ButtonSus.wasJustPressed() && counterRotire == 2)
             StopMotor();
     }
-    void MotorIntakeReverse()
+    private void MotorIntakeReverse()
     {
         ButtonJos.readValue();
         if (ButtonJos.wasJustPressed() && counterInversare == 0)
@@ -64,7 +64,7 @@ public class Intake implements Subsystem{
         else if (ButtonJos.wasJustPressed() && counterInversare == 1)
             StopMotor();
     }
-    public void StopMotor()
+    protected void StopMotor()
     {
         counterRotire = 0;
         counterInversare = 0;
@@ -73,7 +73,6 @@ public class Intake implements Subsystem{
     public boolean IsStopped(){
         return counterRotire > 1 && counterInversare == 0;
     }
-
     public void Run()
     {
         MotorIntake();

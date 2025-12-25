@@ -1,12 +1,14 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
+import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.openftc.easyopencv.OpenCvCamera;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
-public class TeleOp extends GlobalScope
+public class TeleOp extends LinearOpMode
 {
     Drivetrain drivetrain;
     Intake intake;
@@ -16,6 +18,12 @@ public class TeleOp extends GlobalScope
     Husky huskyLens;
     ButtonReader left;
     ButtonReader right;
+    private GamepadEx ct1, ct2;
+    private void MapControlerButtons()
+    {
+        ct1 = new GamepadEx(gamepad1);
+        ct2 = new GamepadEx(gamepad2);
+    }
     private void Initialize()
     {
         MapControlerButtons();

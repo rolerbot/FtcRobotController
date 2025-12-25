@@ -7,7 +7,7 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.ColorSensor;
-
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -18,6 +18,8 @@ enum Color{
     Green
 };
 
+
+
 public class Utils
 {
     public static String ColorToString(Color color){
@@ -25,6 +27,29 @@ public class Utils
         if (color == Color.Green) return "Green";
         return "Purple";
     }
+
+    private static boolean updatedThisLoop = false;
+    private static boolean dataAddedThisLoop = false;
+
+    public static void Telem(Telemetry telemetry, String caption, Object value) {
+        if (telemetry != null && value != null) {
+            telemetry.addData(caption, value);
+            dataAddedThisLoop = true;
+        }
+    }
+
+    public static void TelemUpdate(Telemetry telemetry) {
+        if (telemetry != null && dataAddedThisLoop && !updatedThisLoop) {
+            telemetry.update();
+            updatedThisLoop = true;
+        }
+    }
+
+    public static void TelemReset() {
+        updatedThisLoop = false;
+        dataAddedThisLoop = false;
+    }
+
     public static void GasirePozitii1(ButtonReader x, ButtonReader y, Servo Test, Servo test)
     {
         x.readValue();

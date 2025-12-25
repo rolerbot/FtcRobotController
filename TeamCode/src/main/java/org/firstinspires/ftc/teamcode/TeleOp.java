@@ -52,17 +52,20 @@ public class TeleOp extends LinearOpMode
         right = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         while (opModeIsActive())
         {
+            Utils.TelemReset();
             huskyLens.Run();
             intake.Run();
             drivetrain.Run();
-            mixer.Run();
+            if(!shooter.GetIsShooting())
+                mixer.Run();
             shooter.Run();
-            telemetry.addData("PozLever", shooter.GetPositionLever());
-            telemetry.addData("ColorB", mixer.GetColorBlue());
-            telemetry.addData("ColorG", mixer.GetColorGreen());
-            telemetry.addData("ColorR", mixer.GetColorRed());
-            telemetry.addData("Husky ID:" , huskyLens.GetID());
-            telemetry.update();
+//            Utils.Telem(telemetry, "PozLever", shooter.GetPositionLever());
+//            Utils.Telem(telemetry, "ColorB", mixer.GetColorBlue());
+//            Utils.Telem(telemetry, "ColorG", mixer.GetColorGreen());
+//            Utils.Telem(telemetry, "ColorR", mixer.GetColorRed());
+//            Utils.Telem(telemetry, "Husky ID:" , huskyLens.GetID());
+
+            Utils.TelemUpdate(telemetry);
         }
     }
 }

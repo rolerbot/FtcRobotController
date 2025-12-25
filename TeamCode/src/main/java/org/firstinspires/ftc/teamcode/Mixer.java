@@ -85,8 +85,16 @@ public class Mixer implements Subsystem{
 
             if(detectedColor != Color.None)
             {
-                //intake.SetMotorPower(0.3);
-                //telemetry.addData("Detected Color", Utils.ColorToString(detectedColor));
+                // intake.SetMotorPower(0.3);
+                Utils.Telem(telemetry, "Detected Color", Utils.ColorToString(detectedColor));
+                Utils.Telem(telemetry, "Nr. Bile in mixer", lenPozitii);
+                int index = 0;
+                for (Color col : artifacte)
+                {
+                    Utils.Telem(telemetry, String.format("Bila mixer pozitie %d", index), Utils.ColorToString(col));
+                    index++;
+                }
+                Utils.TelemReset();
                 artifacte[lenPozitii++] = detectedColor;
                 isRunning = true;
                 isWaitingForBall = true;
@@ -116,10 +124,10 @@ public class Mixer implements Subsystem{
         int green = cSensor.green();
         int blue = cSensor.blue();
 
-        if (green < 350 && red > blue && red > green && blue > green)
+        if (green < 200 && red > blue && red > green && blue > green)
             return Color.Purple; // Mov
 
-        if (green > red && green > blue && green > 450)
+        if (green > red && green > blue && green > 300)
             return Color.Green; // Verde
 
         return Color.None;

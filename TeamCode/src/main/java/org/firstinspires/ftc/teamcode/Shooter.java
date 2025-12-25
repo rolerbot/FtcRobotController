@@ -74,6 +74,11 @@ public class Shooter implements Subsystem{
     private void StopShooterMotors(){
         PowerShooterMotors(0);
     }
+
+    public boolean GetIsShooting()
+    {
+        return isShooting;
+    }
     void AruncareArtifacte()
     {
         Aruncare.readValue();

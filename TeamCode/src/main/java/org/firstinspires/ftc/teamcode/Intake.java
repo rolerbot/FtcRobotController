@@ -32,10 +32,12 @@ public class Intake implements Subsystem{
         MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorIN.setDirection(DcMotorSimple.Direction.FORWARD);
     }
+    private void ReadButtons(){
+        ButtonSus.readValue();
+        ButtonJos.readValue();
+    }
     private void MotorIntake()
     {
-        ButtonSus.readValue();
-
         if (ButtonSus.wasJustPressed() && counterRotire == 0)
         {
             counterRotire = 1;
@@ -53,7 +55,6 @@ public class Intake implements Subsystem{
     }
     private void MotorIntakeReverse()
     {
-        ButtonJos.readValue();
         if (ButtonJos.wasJustPressed() && counterInversare == 0)
         {
             //start reverse
@@ -75,6 +76,7 @@ public class Intake implements Subsystem{
     }
     public void Run()
     {
+        ReadButtons();
         MotorIntake();
         MotorIntakeReverse();
     }

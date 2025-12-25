@@ -33,7 +33,7 @@ public class Utils
         }
     }
 
-    void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test)
+    public static void GasirePozitii(ButtonReader x, ButtonReader y, Servo Test)
     {
         x.readValue();
         y.readValue();

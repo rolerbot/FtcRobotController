@@ -47,12 +47,12 @@ public class TeleOp extends LinearOpMode
     public void runOpMode()
     {
         Initialize();
-        huskyLens.Run();
         waitForStart();
         left = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
         right = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         while (opModeIsActive())
         {
+            huskyLens.Run();
             intake.Run();
             drivetrain.Run();
             mixer.Run();

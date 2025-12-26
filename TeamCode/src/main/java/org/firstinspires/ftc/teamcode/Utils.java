@@ -76,11 +76,11 @@ public class Utils
 
         if (x.wasJustPressed())
         {
-            Test.setPosition(pozitie + 0.001);
+            Test.setPosition(pozitie + 0.5);
         }
         if (y.wasJustPressed())
         {
-            Test.setPosition(pozitie - 0.001);
+            Test.setPosition(pozitie - 0.5);
         }
     }
 }

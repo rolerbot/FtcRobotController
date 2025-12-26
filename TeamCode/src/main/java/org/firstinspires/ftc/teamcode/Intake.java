@@ -8,19 +8,24 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class Intake implements Subsystem{
+public class Intake implements Subsystem
+{
     private GamepadEx ct1;
     public DcMotorEx MotorIN = null;
     ButtonReader ButtonSus, ButtonJos;
     private boolean isReversed = false, isForward = false;
     private double motorPower = 0.8;
 
-    public Intake(GamepadEx ct1){
+    public Intake(GamepadEx ct1)
+    {
         this.ct1 = ct1;
     }
-    public void LinkComponents(HardwareMap hwMap){
+
+    public void LinkComponents(HardwareMap hwMap)
+    {
         MotorIN = hwMap.get(DcMotorEx.class, "MotorIN");
     }
+
     public void Initialize(HardwareMap hwMap)
     {
         LinkComponents(hwMap);
@@ -32,11 +37,18 @@ public class Intake implements Subsystem{
         MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorIN.setDirection(DcMotorSimple.Direction.FORWARD);
     }
+
     private void ReadButtons()
     {
         ButtonSus.readValue();
         ButtonJos.readValue();
     }
+
+    public void SetPowerMax()
+    {
+        MotorIN.setPower(motorPower);
+    }
+
     private void MotorIntake()
     {
         if (ButtonSus.wasJustPressed() && !isForward)
@@ -44,10 +56,10 @@ public class Intake implements Subsystem{
             isForward = true;
             isReversed = false;
             MotorIN.setPower(motorPower);
-        }
-        else if(ButtonSus.wasJustPressed() && isForward)
+        } else if (ButtonSus.wasJustPressed() && isForward)
             SetMotorPower(0);
     }
+
     private void MotorIntakeReverse()
     {
         if (ButtonJos.wasJustPressed() && !isReversed)
@@ -55,19 +67,28 @@ public class Intake implements Subsystem{
             isForward = false;
             isReversed = true;
             MotorIN.setPower(-motorPower);
-        }
-        else if (ButtonJos.wasJustPressed() && isReversed)
+        } else if (ButtonJos.wasJustPressed() && isReversed)
             SetMotorPower(0);
     }
+
     protected void SetMotorPower(double pow)
     {
-        if(pow > 1 || pow < -1)
+        if (pow > 1 || pow < -1)
             return;
         MotorIN.setPower(pow);
         isReversed = false;
-        isForward = false;
     }
-    public boolean IsStopped() {return (!isForward  && !isReversed);}
+
+    public boolean IsForward()
+    {
+        return isForward;
+    }
+
+    public boolean IsStopped()
+    {
+        return (!isForward && !isReversed);
+    }
+
     public void Run()
     {
         ReadButtons();

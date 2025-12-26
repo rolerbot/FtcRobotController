@@ -40,7 +40,7 @@ public class TeleOp extends LinearOpMode
         shooter = new Shooter(mixer,intake,ct1);
         shooter.Initialize(hardwareMap);
 
-        huskyLens = new Husky();
+        huskyLens = new Husky(ct1);
         huskyLens.Initialize(hardwareMap);
     }
 
@@ -59,13 +59,6 @@ public class TeleOp extends LinearOpMode
             if(!shooter.GetIsShooting())
                 mixer.Run();
             shooter.Run();
-//            Utils.Telem(telemetry, "PozLever", shooter.GetPositionLever());
-//            Utils.Telem(telemetry, "ColorB", mixer.GetColorBlue());
-//            Utils.Telem(telemetry, "ColorG", mixer.GetColorGreen());
-//            Utils.Telem(telemetry, "ColorR", mixer.GetColorRed());
-//            Utils.Telem(telemetry, "Husky ID:" , huskyLens.GetID());
-
-            Utils.TelemUpdate(telemetry);
         }
     }
 }

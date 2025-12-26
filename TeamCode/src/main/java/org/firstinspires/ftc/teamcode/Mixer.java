@@ -18,7 +18,8 @@ public class Mixer implements Subsystem{
     private double currentPosition = initialPosition;
     private double offsetPosition = 0.3834 / 2;
     ColorSensor cSensor;
-    Color[] artifacte = new Color[3];
+    Color[] artifacte= {Color.None, Color.None, Color.None};
+
     int lenPozitii = 0;
     public Mixer(Intake intake){this.intake = intake;}
     public void ResetTimer(){
@@ -26,6 +27,7 @@ public class Mixer implements Subsystem{
     }
     public void LinkComponents(HardwareMap hardwareMap)
     {
+
         cSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
         ServoMixer1 = hardwareMap.get(Servo.class, "ServoMixer1");
         ServoMixer2 = hardwareMap.get(Servo.class, "ServoMixer2");
@@ -84,7 +86,6 @@ public class Mixer implements Subsystem{
 
             if(detectedColor != Color.None)
             {
-                // intake.SetMotorPower(0.3);
                 Utils.Telem(telemetry, "Detected Color", Utils.ColorToString(detectedColor));
                 Utils.Telem(telemetry, "Nr. Bile in mixer", lenPozitii);
                 int index = 0;
@@ -99,12 +100,12 @@ public class Mixer implements Subsystem{
                 isWaitingForBall = true;
             }
         }
-        else if (isRunning && isWaitingForBall && GetTimerElapsed() > 0.7)
+        else if (isRunning && isWaitingForBall && GetTimerElapsed() > 0.3 && isWaitingForBall) //&&iswaitingforball
         {
             isWaitingForBall = false;
             if (lenPozitii == 3)
             {
-                // intake.SetMotorPower(0.3);
+                 intake.SetMotorPower(0.3);
             }
             else
             {
@@ -112,7 +113,7 @@ public class Mixer implements Subsystem{
                 NextPosition();
             }
         }
-        else if (isRunning && !isWaitingForBall && GetTimerElapsed() > 1)
+        else if (isRunning && !isWaitingForBall && GetTimerElapsed() > 0.55)
         {
             isRunning = false;
         }
@@ -132,12 +133,11 @@ public class Mixer implements Subsystem{
         return Color.None;
     }
     public boolean IsEmpty(){return lenPozitii == 0;}
-    public int RemoveArtifact(){
-        if (this.IsEmpty()){
-            return -1;
-        }
+    public void RemoveArtifact()
+    {
+        if (this.IsEmpty())
+            return;
         lenPozitii--;
-        return lenPozitii;
     }
     public double GetTimerElapsed(){return runtime.seconds();}
     public void Run(){ArtifacteIndx();}

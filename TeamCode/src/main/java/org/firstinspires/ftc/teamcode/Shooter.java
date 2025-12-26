@@ -13,12 +13,13 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Shooter implements Subsystem{
     private ButtonReader Aruncare;
     private final GamepadEx ct1;
-    private final double initialPosition = 0.0506;
-    private final double finalPosition = 0.079;
-    private final double currentPosition = initialPosition;
+    private final double initialPosition = 0; // 0 si 0.032 - final
+    private final double finalPosition = 0.37;
+    //private final double currentPosition = initialPosition;
     private ElapsedTime runtime = new ElapsedTime();
     boolean isShooting = false;
     // private final double[] pozitiiAruncare = {0.225, 0.6117, 1}; // 3 pozitii aruncare
+    boolean shooterPrepare = false;
     private final Mixer mixer;
     private final Intake intake;
     private boolean preparingLaunch = false;
@@ -49,11 +50,17 @@ public class Shooter implements Subsystem{
         MotorAruncare2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorAruncare2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorAruncare2.setDirection(DcMotorSimple.Direction.REVERSE);
-        ServoRidicare.setDirection(Servo.Direction.FORWARD);
+        ServoRidicare.setDirection(Servo.Direction.REVERSE);
         ServoRidicare.setPosition(initialPosition);
     }
-    public void Run(){
+    public void Run()
+    {
         Aruncare.readValue();
+        if(!mixer.IsEmpty() && !shooterPrepare)
+        {
+            shooterPrepare = true;
+            PrepareLaunch();
+        }
         if(Aruncare.wasJustPressed())
             preparingLaunch = true;
         ArtifactShooting();
@@ -61,10 +68,7 @@ public class Shooter implements Subsystem{
     public void SetPositionLever(double position){
         ServoRidicare.setPosition(position);
     }
-    //public double GetCurrentPositionLever(){return currentPosition;}
-    public double GetPositionLever(){
-        return ServoRidicare.getPosition();
-    }
+
     private void ResetTimer(){
         runtime.reset();
     }
@@ -85,23 +89,30 @@ public class Shooter implements Subsystem{
             ResetTimer();
             mixer.NextPosition(); // pregateste sa traga
         }
-        if (isShooting && runtime.seconds() > 0.5 && runtime.seconds() <= 1) // trage
+        if (isShooting && runtime.seconds() > 1 && runtime.seconds() <= 1.25) // trage
             SetPositionLever(finalPosition);
-        else if(isShooting && runtime.seconds() > 1)
+        else if(isShooting && runtime.seconds() > 1.25 && runtime.seconds() <= 1.5) // coboara
+            SetPositionLever(initialPosition);
+        else if(isShooting && runtime.seconds() > 1.5 && runtime.seconds() < 1.8) //se roteste
         {
             isShooting = false;
-            SetPositionLever(initialPosition); // coboara
-            mixer.NextPosition();
             mixer.RemoveArtifact();
-            PowerShooterMotors(0.2);
             if(mixer.IsEmpty())
+            {
+                StopShooterMotors();
                 preparingLaunch = false;
+                if(intake.IsForward())
+                    intake.SetPowerMax();
+                mixer.ResetServoPosition();
+                shooterPrepare = false;
+            }
+            else
+                mixer.NextPosition();
             ResetTimer();
         }
-        if(mixer.IsEmpty() && mixer.GetServoPosition() != 0)
-        {
-            mixer.ResetServoPosition();
-            StopShooterMotors();
-        }
+    }
+    private void PrepareLaunch()
+    {
+        PowerShooterMotors(0.45);
     }
 }

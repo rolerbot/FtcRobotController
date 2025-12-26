@@ -118,7 +118,7 @@ public class Mixer implements Subsystem{
                 }
             }
         }
-        else if (isRunning && isWaitingForBall && GetTimerElapsed() > 0.3 && isWaitingForBall) //&&iswaitingforball
+        else if (isRunning && isWaitingForBall && GetTimerElapsed() > 0.2 && isWaitingForBall) //&&iswaitingforball
         {
             isWaitingForBall = false;
             if (lenPozitii == 3)
@@ -131,7 +131,7 @@ public class Mixer implements Subsystem{
                 NextPosition();
             }
         }
-        else if (isRunning && !isWaitingForBall && GetTimerElapsed() > 0.55)
+        else if (isRunning && !isWaitingForBall && GetTimerElapsed() > 0.4)
         {
             isRunning = false;
         }

@@ -97,11 +97,11 @@ public class Shooter implements Subsystem{
             ResetTimer();
             mixer.NextPosition(); // pregateste sa traga
         }
-        if (isShooting && runtime.seconds() > 1 && runtime.seconds() <= 1.25) // trage
+        if (isShooting && runtime.seconds() > 0.7 && runtime.seconds() <= 1) // trage
             SetPositionLever(finalPosition);
-        else if(isShooting && runtime.seconds() > 1.25 && runtime.seconds() <= 1.5) // coboara
+        else if(isShooting && runtime.seconds() > 1 && runtime.seconds() <= 1.25) // coboara
             SetPositionLever(initialPosition);
-        else if(isShooting && runtime.seconds() > 1.5 && runtime.seconds() < 1.8) //se roteste
+        else if(isShooting && runtime.seconds() > 1.25 && runtime.seconds() < 1.5) //se roteste
         {
             isShooting = false;
             mixer.RemoveArtifact();

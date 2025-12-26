@@ -8,6 +8,7 @@ import com.qualcomm.hardware.dfrobot.HuskyLens;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 // ID 1 - Green, Purple, Purple
 // ID 2 - Purple, Green, Purple
@@ -17,19 +18,19 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Husky implements Subsystem
 {
     private HuskyLens huskyLens;
-    private final int READ_PERIOD = 1;
     private boolean allignPrepare = false;
     private boolean huskyRead = false;
-    private ElapsedTime runtime = new ElapsedTime();
     private int ID = 0;
     private boolean completeArtifact = false;
     public Color[] artifactOrder = new Color[3];
+    private final TelemetryCustom telemetry;
     ButtonReader Allign;
     GamepadEx ct1;
 
-    public Husky(GamepadEx ct1)
+    public Husky(TelemetryCustom tl, GamepadEx ct1)
     {
         this.ct1 = ct1;
+        this.telemetry = tl;
     }
     public void LinkComponents(HardwareMap hardwareMap)
     {
@@ -44,11 +45,8 @@ public class Husky implements Subsystem
     public void Run() {ReadHusky();}
     private void ReadHusky()
     {
-        if (runtime.seconds() >= READ_PERIOD && !huskyRead)
-        {
-            runtime.reset();
-        }
-        else if(!huskyRead)
+        telemetry.Log("ID:", GetID());
+        if(!huskyRead)
         {
             HuskyLens.Block[] blocuri = huskyLens.blocks();
              for (int i = 0; i < blocuri.length; i++)
@@ -60,9 +58,7 @@ public class Husky implements Subsystem
                 }
         }
         if(huskyRead && !completeArtifact)
-        {
             CompleteColor();
-        }
     }
     public int GetID() {return ID;}
     private void CompleteColor()
@@ -96,10 +92,7 @@ public class Husky implements Subsystem
 
     private void AutoAllign()
     {
-        if(allignPrepare)
-        {
 
-        }
     }
 
     private void AutoAllingnPrepare()

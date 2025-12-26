@@ -43,7 +43,7 @@ public class TeleOp extends LinearOpMode
         shooter = new Shooter(myLogger, mixer, intake, ct1);
         shooter.Initialize(hardwareMap);
 
-        huskyLens = new Husky(ct1);
+        huskyLens = new Husky(myLogger,ct1);
         huskyLens.Initialize(hardwareMap);
     }
 

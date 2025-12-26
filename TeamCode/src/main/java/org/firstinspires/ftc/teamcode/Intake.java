@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Intake implements Subsystem
 {
@@ -15,10 +16,12 @@ public class Intake implements Subsystem
     ButtonReader ButtonSus, ButtonJos;
     private boolean isReversed = false, isForward = false;
     private double motorPower = 0.8;
+    private final TelemetryCustom telemetry;
 
-    public Intake(GamepadEx ct1)
+    public Intake(TelemetryCustom tl, GamepadEx ct1)
     {
         this.ct1 = ct1;
+        this.telemetry = tl;
     }
 
     public void LinkComponents(HardwareMap hwMap)

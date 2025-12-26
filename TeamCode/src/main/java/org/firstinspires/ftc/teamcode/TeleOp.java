@@ -10,6 +10,7 @@ import org.openftc.easyopencv.OpenCvCamera;
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
 public class TeleOp extends LinearOpMode
 {
+    TelemetryCustom myLogger;
     Drivetrain drivetrain;
     Intake intake;
     Mixer mixer;
@@ -26,18 +27,20 @@ public class TeleOp extends LinearOpMode
     }
     private void Initialize()
     {
+        myLogger = new TelemetryCustom(telemetry);
+
         MapControlerButtons();
         drivetrain = new Drivetrain(ct1, ct2);
         drivetrain.Initialize(hardwareMap);
         drivetrain.schimbator = 1.4 - drivetrain.schimbator;
 
-        intake = new Intake(ct1);
+        intake = new Intake(myLogger, ct1);
         intake.Initialize(hardwareMap);
 
-        mixer = new Mixer(intake);
+        mixer = new Mixer(myLogger, intake);
         mixer.Initialize(hardwareMap);
 
-        shooter = new Shooter(mixer,intake,ct1);
+        shooter = new Shooter(myLogger, mixer, intake, ct1);
         shooter.Initialize(hardwareMap);
 
         huskyLens = new Husky(ct1);
@@ -47,18 +50,20 @@ public class TeleOp extends LinearOpMode
     public void runOpMode()
     {
         Initialize();
+        myLogger.Log("Status", "Initialized and Ready");
         waitForStart();
         left = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
         right = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         while (opModeIsActive())
         {
-            Utils.TelemReset();
             huskyLens.Run();
             intake.Run();
             drivetrain.Run();
             if(!shooter.GetIsShooting())
                 mixer.Run();
             shooter.Run();
+            myLogger.Update();
         }
+        myLogger.close();
     }
 }

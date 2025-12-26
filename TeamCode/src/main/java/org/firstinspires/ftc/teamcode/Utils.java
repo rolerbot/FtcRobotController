@@ -23,33 +23,6 @@ public class Utils
         return "Purple";
     }
 
-    private static boolean updatedThisLoop = false;
-    private static boolean dataAddedThisLoop = false;
-
-    public static void Telem(Telemetry telemetry, String caption, Object value)
-    {
-        if (telemetry != null && value != null)
-        {
-            telemetry.addData(caption, value);
-            dataAddedThisLoop = true;
-        }
-    }
-
-    public static void TelemUpdate(Telemetry telemetry)
-    {
-        if (telemetry != null && dataAddedThisLoop && !updatedThisLoop)
-        {
-            telemetry.update();
-            updatedThisLoop = true;
-        }
-    }
-
-    public static void TelemReset()
-    {
-        updatedThisLoop = false;
-        dataAddedThisLoop = false;
-    }
-
     public static void GasirePozitii1(ButtonReader x, ButtonReader y, Servo Test, Servo test)
     {
         x.readValue();

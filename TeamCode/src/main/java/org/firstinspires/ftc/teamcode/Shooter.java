@@ -13,6 +13,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Shooter implements Subsystem{
     private ButtonReader Aruncare;
     private final GamepadEx ct1;
+    private TelemetryCustom logger;
+    private double currentPosition, offsetPosition;
     private final double initialPosition = 0; // 0 si 0.032 - final
     private final double finalPosition = 0.37;
     //private final double currentPosition = initialPosition;
@@ -22,17 +24,19 @@ public class Shooter implements Subsystem{
     boolean shooterPrepare = false;
     private final Mixer mixer;
     private final Intake intake;
+    private final TelemetryCustom telemetry;
     private boolean preparingLaunch = false;
     public Servo ServoRidicare = null;
     /// Motor Aruncare
     public DcMotorEx MotorAruncare1 = null;
     public DcMotorEx MotorAruncare2 = null;
     private double motorPower = 0.6;
-    public Shooter(Mixer mixer,Intake intk,GamepadEx ct1)
+    public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,GamepadEx ct1)
     {
         this.ct1 = ct1;
         this.mixer = mixer;
         this.intake = intk;
+        this.telemetry = tl;
     }
      public void LinkComponents(HardwareMap hardwareMap)
      {
@@ -62,7 +66,10 @@ public class Shooter implements Subsystem{
             PrepareLaunch();
         }
         if(Aruncare.wasJustPressed())
+        {
             preparingLaunch = true;
+            mixer.ReverseIncrement();
+        }
         ArtifactShooting();
     }
     public void SetPositionLever(double position){
@@ -77,6 +84,7 @@ public class Shooter implements Subsystem{
         MotorAruncare1.setPower(power);
         MotorAruncare2.setPower(power);
     }
+
     private void StopShooterMotors(){PowerShooterMotors(0);}
 
     public boolean GetIsShooting() {return isShooting;}
@@ -104,11 +112,14 @@ public class Shooter implements Subsystem{
                 if(intake.IsForward())
                     intake.SetPowerMax();
                 mixer.ResetServoPosition();
+                telemetry.Log("Poz Servos", mixer.GetServoPosition());
                 shooterPrepare = false;
+                mixer.ReverseIncrement();
             }
             else
                 mixer.NextPosition();
             ResetTimer();
+
         }
     }
     private void PrepareLaunch()

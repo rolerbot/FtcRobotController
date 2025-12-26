@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Mixer implements Subsystem{
     public Servo ServoMixer1 = null;
     public Servo ServoMixer2 = null;
+    private TelemetryCustom logger;
     private final Intake intake;
     private final ElapsedTime runtime = new ElapsedTime();
     private boolean isRunning = false;
@@ -21,7 +22,11 @@ public class Mixer implements Subsystem{
     Color[] artifacte= {Color.None, Color.None, Color.None};
 
     int lenPozitii = 0;
-    public Mixer(Intake intake){this.intake = intake;}
+    public Mixer(TelemetryCustom lg, Intake intake)
+    {
+        this.intake = intake;
+        this.logger = lg;
+    }
     public void ResetTimer(){
         runtime.reset();
     }
@@ -54,13 +59,16 @@ public class Mixer implements Subsystem{
     {
         return cSensor.red();
     }
-    double GetCurrentPosition(){
+    public double GetCurrentPosition(){
         return currentPosition;
+    }
+
+    public void ReverseIncrement()
+    {
+        offsetPosition *= (-1);
     }
     private void IncrementPosition()
     {
-        if(this.currentPosition + offsetPosition > 1.0 || this.currentPosition + offsetPosition < 0)
-            this.offsetPosition *= (-1);
         this.currentPosition += this.offsetPosition;
     }
     ///  Rotates the Mixer 60 degrees to a side, depending on servo limits.
@@ -86,18 +94,18 @@ public class Mixer implements Subsystem{
 
             if(detectedColor != Color.None)
             {
-                Utils.Telem(telemetry, "Detected Color", Utils.ColorToString(detectedColor));
-                Utils.Telem(telemetry, "Nr. Bile in mixer", lenPozitii);
-                int index = 0;
-                for (Color col : artifacte)
-                {
-                    Utils.Telem(telemetry, String.format("Bila mixer pozitie %d", index), Utils.ColorToString(col));
-                    index++;
-                }
-                Utils.TelemReset();
+                logger.Log("Detected Color", Utils.ColorToString(detectedColor));
+                logger.Log("Nr. Bile in mixer", lenPozitii);
                 artifacte[lenPozitii++] = detectedColor;
                 isRunning = true;
                 isWaitingForBall = true;
+                int index = 0;
+                for (Color col : artifacte) {
+                    if (col != null) { // Safety check
+                        logger.Log(String.format("Bila mixer pozitie %d", index), Utils.ColorToString(col));
+                    }
+                    index++;
+                }
             }
         }
         else if (isRunning && isWaitingForBall && GetTimerElapsed() > 0.3 && isWaitingForBall) //&&iswaitingforball

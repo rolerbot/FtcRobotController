@@ -22,7 +22,7 @@ public class TelemetryCustom {
         this.runtime = new ElapsedTime();
         try {
             // Define the folder path: /sdcard/FIRST/logs/
-            String path = Environment.getStorageDirectory() .getAbsolutePath() + "/FIRST/logs";
+            String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/FIRST/logs";
             File dir = new File(path);
 
             // Create directory if it doesn't exist

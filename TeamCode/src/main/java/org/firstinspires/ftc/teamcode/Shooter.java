@@ -68,7 +68,7 @@ public class Shooter implements Subsystem{
         if(Aruncare.wasJustPressed())
         {
             preparingLaunch = true;
-            mixer.ReverseIncrement();
+            //mixer.ReverseIncrement();
         }
         ArtifactShooting();
     }
@@ -114,12 +114,11 @@ public class Shooter implements Subsystem{
                 mixer.ResetServoPosition();
                 telemetry.Log("Poz Servos", mixer.GetServoPosition());
                 shooterPrepare = false;
-                mixer.ReverseIncrement();
+                //mixer.ReverseIncrement();
             }
             else
                 mixer.NextPosition();
             ResetTimer();
-
         }
     }
     private void PrepareLaunch()

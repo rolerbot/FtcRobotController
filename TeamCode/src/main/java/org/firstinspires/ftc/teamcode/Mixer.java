@@ -69,6 +69,8 @@ public class Mixer implements Subsystem{
     }
     private void IncrementPosition()
     {
+        if(this.currentPosition + this.offsetPosition > 1.0 || this.currentPosition + this.offsetPosition < -1.0)
+            this.offsetPosition *= (-1);
         this.currentPosition += this.offsetPosition;
     }
     ///  Rotates the Mixer 60 degrees to a side, depending on servo limits.
@@ -84,6 +86,14 @@ public class Mixer implements Subsystem{
     {
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
+        currentPosition = initialPosition;
+        lenPozitii = 0;
+        isRunning = false;
+        isWaitingForBall = false;
+        if(offsetPosition < 0)
+            offsetPosition *= (-1);
+        for (int i = 0; i <= 2; i++)
+            artifacte[i] = Color.None;
     }
     void ArtifacteIndx()
     {

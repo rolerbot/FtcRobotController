@@ -22,7 +22,8 @@ public class Husky implements Subsystem
     private boolean huskyRead = false;
     private int ID = 0;
     private boolean completeArtifact = false;
-    public Color[] artifactOrder = new Color[3];
+    public Color[] artifactOrder = {Color.None, Color.None, Color.None};
+    public ArtifactArrangement arrangement;
     private final TelemetryCustom telemetry;
     ButtonReader Allign;
     GamepadEx ct1;
@@ -45,7 +46,6 @@ public class Husky implements Subsystem
     public void Run() {ReadHusky();}
     private void ReadHusky()
     {
-        telemetry.Log("ID:", GetID());
         if(!huskyRead)
         {
             HuskyLens.Block[] blocuri = huskyLens.blocks();
@@ -54,6 +54,7 @@ public class Husky implements Subsystem
                 {
                     ID = blocuri[i].id;
                     huskyRead = true;
+                    telemetry.Log("ID:", GetID());
                     break;
                 }
         }
@@ -69,25 +70,32 @@ public class Husky implements Subsystem
             artifactOrder[0] = Color.Green;
             artifactOrder[1] = Color.Purple;
             artifactOrder[2] = Color.Purple;
+            arrangement = ArtifactArrangement.GPP;
         }
         else if(ID == 2)
         {
             artifactOrder[0] = Color.Purple;
             artifactOrder[1] = Color.Green;
             artifactOrder[2] = Color.Purple;
+            arrangement = ArtifactArrangement.PGP;
         }
         else if(ID == 3)
         {
             artifactOrder[0] = Color.Purple;
-            artifactOrder[1] = Color.Green;
-            artifactOrder[2] = Color.Purple;
-        }
-        else
-        {
-            artifactOrder[0] = Color.Purple;
             artifactOrder[1] = Color.Purple;
             artifactOrder[2] = Color.Green;
+            arrangement = ArtifactArrangement.PPG;
         }
+        else {
+            artifactOrder[0] = Color.None;
+            artifactOrder[1] = Color.None;
+            artifactOrder[2] = Color.None;
+            arrangement = ArtifactArrangement.None;
+        }
+    }
+    public ArtifactArrangement GetTargetArrangement()
+    {
+        return this.arrangement;
     }
 
     private void AutoAllign()

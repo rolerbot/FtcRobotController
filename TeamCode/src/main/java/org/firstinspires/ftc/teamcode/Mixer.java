@@ -23,7 +23,7 @@ public class Mixer implements Subsystem{
     ColorSensor cSensor;
     public Color[] artifacte= {Color.None, Color.None, Color.None};
 
-    int lenPozitii = 0;
+    int artifactCount = 0;
     public Mixer(TelemetryCustom lg, Intake intake)
     {
         this.intake = intake;
@@ -89,7 +89,7 @@ public class Mixer implements Subsystem{
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
         currentPosition = initialPosition;
-        lenPozitii = 0;
+        artifactCount = 0;
         isRunning = false;
         isWaitingForBall = false;
         if(offsetPosition < 0)
@@ -99,18 +99,19 @@ public class Mixer implements Subsystem{
     }
     void ArtifacteIndx()
     {
-        if (!intake.IsStopped() && !isRunning && !isWaitingForBall && lenPozitii < 3)
+        if (!intake.IsStopped() && !isRunning && !isWaitingForBall && artifactCount < 3)
         {
             StartTimer();
             Color detectedColor = Culoare(cSensor);
 
             if(detectedColor != Color.None)
             {
-                logger.Log("Detected Color", Utils.ColorToString(detectedColor));
-                logger.Log("Nr. Bile in mixer", lenPozitii);
-                artifacte[lenPozitii++] = detectedColor;
+                artifacte[artifactCount++] = detectedColor;
+                CalculateFrequency();
                 isRunning = true;
                 isWaitingForBall = true;
+                logger.Log("Detected Color", Utils.ColorToString(detectedColor));
+                logger.Log("Nr. Bile in mixer", artifactCount);
                 int index = 0;
                 for (Color col : artifacte) {
                     if (col != null) { // Safety check
@@ -123,10 +124,9 @@ public class Mixer implements Subsystem{
         else if (isRunning && isWaitingForBall && GetTimerElapsed() > 0.2 && isWaitingForBall) //&&iswaitingforball
         {
             isWaitingForBall = false;
-            if (lenPozitii == 3)
+            if (artifactCount == 3)
             {
                  intake.SetMotorPower(0.3);
-                    CalculateFrequency();
             }
             else
             {
@@ -155,6 +155,16 @@ public class Mixer implements Subsystem{
         logger.Log("Nr. bile verzi", countGreen);
     }
 
+    public int GetColorPosition(Color color)
+    {
+        for (int i = 0; i < artifactCount; i++)
+        {
+            if (artifacte[i] == color)
+                return i;
+        }
+        return -1;
+    }
+
     public int GetCountGreen(){return countGreen;}
     public int GetCountPurple(){return countPurple;}
     private Color Culoare(ColorSensor cSensor)
@@ -171,13 +181,23 @@ public class Mixer implements Subsystem{
 
         return Color.None;
     }
-    public boolean IsEmpty(){return lenPozitii == 0;}
+    public boolean IsEmpty()
+    {
+        return artifactCount == 0;
+    }
     public void RemoveArtifact()
     {
         if (this.IsEmpty())
             return;
-        lenPozitii--;
-        artifacte[lenPozitii] = Color.None;
+        artifactCount--;
+        CalculateFrequency();
+    }
+    public void RemoveArtifact(int position)
+    {
+        if (this.IsEmpty() || position < 0 || position >= artifactCount)
+            return;
+        artifactCount--;
+        artifacte[position] = Color.None;
     }
 
     public void SetPozition(double pos)

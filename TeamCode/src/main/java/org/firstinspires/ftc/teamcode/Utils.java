@@ -12,7 +12,20 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-enum Color{None, Purple, Green};
+enum Color
+{
+    None,
+    Purple,
+    Green
+};
+
+enum ArtifactArrangement
+{
+    None,
+    GPP,
+    PGP,
+    PPG
+};
 
 public class Utils
 {

@@ -28,8 +28,11 @@ public class TeleOp extends LinearOpMode
     private void Initialize()
     {
         myLogger = new TelemetryCustom(telemetry);
-
         MapControlerButtons();
+
+        huskyLens = new Husky(myLogger,ct1);
+        huskyLens.Initialize(hardwareMap);
+
         drivetrain = new Drivetrain(ct1, ct2);
         drivetrain.Initialize(hardwareMap);
         drivetrain.schimbator = 1.4 - drivetrain.schimbator;
@@ -40,11 +43,8 @@ public class TeleOp extends LinearOpMode
         mixer = new Mixer(myLogger, intake);
         mixer.Initialize(hardwareMap);
 
-        shooter = new Shooter(myLogger, mixer, intake, ct1);
+        shooter = new Shooter(myLogger, mixer, intake, huskyLens,ct1);
         shooter.Initialize(hardwareMap);
-
-        huskyLens = new Husky(myLogger,ct1);
-        huskyLens.Initialize(hardwareMap);
     }
 
     public void runOpMode()
@@ -59,7 +59,7 @@ public class TeleOp extends LinearOpMode
             huskyLens.Run();
             intake.Run();
             drivetrain.Run();
-            if(!shooter.GetIsShooting())
+            if(shooter.IsNotShooting())
                 mixer.Run();
             shooter.Run();
             myLogger.Update();

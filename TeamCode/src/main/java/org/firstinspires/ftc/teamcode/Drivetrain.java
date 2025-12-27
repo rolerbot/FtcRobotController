@@ -41,13 +41,13 @@ public class Drivetrain implements Subsystem {
         MotorFD.setDirection(DcMotorSimple.Direction.FORWARD);
         MotorFS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorFS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorFS.setDirection(DcMotorSimple.Direction.FORWARD);
+        MotorFS.setDirection(DcMotorSimple.Direction.REVERSE);
         MotorSD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorSD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorSD.setDirection(DcMotorSimple.Direction.FORWARD);
         MotorSS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorSS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorSS.setDirection(DcMotorSimple.Direction.FORWARD);
+        MotorSS.setDirection(DcMotorSimple.Direction.REVERSE);
     }
     public void Run()
     {

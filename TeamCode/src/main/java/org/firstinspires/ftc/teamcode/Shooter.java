@@ -45,6 +45,8 @@ public class Shooter implements Subsystem{
      public void LinkComponents(HardwareMap hardwareMap)
      {
         Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
+        ThrowGreen = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
+        ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         ServoRidicare = hardwareMap.get(Servo.class, "ServoRidicare");
         MotorAruncare1 = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
         MotorAruncare2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");

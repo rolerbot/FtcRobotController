@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class Shooter implements Subsystem{
     private ButtonReader Aruncare;
+    private ButtonReader ThrowGreen, ThrowPurple;
     private final GamepadEx ct1;
     private TelemetryCustom logger;
     private Husky husky;
@@ -76,8 +77,9 @@ public class Shooter implements Subsystem{
                 artifactArangement = 2;
             else artifactArangement = 1;*/ //Test dupa functionarea huskyului
         }
-        ArangedShooting();
+        //ArangedShooting();
         Shooting();
+        LaunchArtifactColor();
     }
     public void SetPositionLever(double position){
         ServoRidicare.setPosition(position);
@@ -131,34 +133,43 @@ public class Shooter implements Subsystem{
             }
         }
     }
-
-    private boolean CanShootAranged()
+    private boolean CanShootAranged() //verifica daca poate trage in ordinea data de husky
     {
-        for(int i = 0; i < 3; i++)
-        {
-            if(mixer.artifacte[i] != husky.artifactOrder[i])
-                return false;
-        }
+        if(mixer.GetCountGreen() != 1 || mixer.GetCountPurple() != 2)
+            return false;
         return true;
     }
 
-    private void ArangedShooting()
+    private void ColorLaunch(Color color) //arunca un singur artifact de o anumita culoare
+    {
+        int j;
+        for (j = 0; j < 3 && mixer.artifacte[j] != color; j++);
+        if(j == 3)
+            return;
+        LaunchArtifact(j);
+    }
+
+    private void ArangedShooting() // arunca in ordinea data de husky
     {
         if(artifactArangement == 2 && CanShootAranged())
-        {
             for (int i = 0; i < 3; i++)
-            {
-                int j;
-                for (j = 0; j < 3 && mixer.artifacte[j] != husky.artifactOrder[i]; j++);
-                LaunchArtifact(j);
-            }
-        }
+                ColorLaunch(husky.artifactOrder[i]);
         else artifactArangement = 0;
     }
 
-    private void LaunchArtifact(int index)
+    private void LaunchArtifactColor()
     {
-        if (preparingLaunch && !isShooting && !mixer.IsEmpty())
+        ThrowGreen.readValue();
+        ThrowPurple.readValue();
+        if(ThrowGreen.wasJustPressed())
+            ColorLaunch(Color.Green);
+        else if(ThrowPurple.wasJustPressed())
+            ColorLaunch(Color.Purple);
+    }
+
+    private void LaunchArtifact(int index) //arunca un singur artifact
+    {
+        if (!isShooting && !mixer.IsEmpty())
         {
             isShooting = true;
             PowerShooterMotors(this.motorPower);
@@ -176,7 +187,6 @@ public class Shooter implements Subsystem{
             if (mixer.IsEmpty())
             {
                 StopShooterMotors();
-                preparingLaunch = false;
                 if (intake.IsForward())
                     intake.SetPowerMax();
                 mixer.ResetServoPosition();

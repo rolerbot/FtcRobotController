@@ -142,9 +142,11 @@ public class Shooter implements Subsystem{
 
     private void ColorLaunch(Color color) //arunca un singur artifact de o anumita culoare
     {
+        if(mixer.IsEmpty())
+            return;
         int j;
-        for (j = 0; j < 3 && mixer.artifacte[j] != color; j++);
-        if(j == 3)
+        for (j = 0; j < 2 && mixer.artifacte[j] != color; j++);
+        if(j == 2 && mixer.artifacte[j] != color)
             return;
         LaunchArtifact(j);
     }

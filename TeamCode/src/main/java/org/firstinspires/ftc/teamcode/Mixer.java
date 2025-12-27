@@ -18,8 +18,10 @@ public class Mixer implements Subsystem{
     private final double initialPosition = 0.0206;
     private double currentPosition = initialPosition;
     private double offsetPosition = 0.3834 / 2;
+    private int countPurple = 0;
+    private int countGreen = 0;
     ColorSensor cSensor;
-    Color[] artifacte= {Color.None, Color.None, Color.None};
+    public Color[] artifacte= {Color.None, Color.None, Color.None};
 
     int lenPozitii = 0;
     public Mixer(TelemetryCustom lg, Intake intake)
@@ -124,6 +126,7 @@ public class Mixer implements Subsystem{
             if (lenPozitii == 3)
             {
                  intake.SetMotorPower(0.3);
+                    CalculateFrequency();
             }
             else
             {
@@ -136,6 +139,24 @@ public class Mixer implements Subsystem{
             isRunning = false;
         }
     }
+
+    private void CalculateFrequency()
+    {
+        countPurple = 0;
+        countGreen = 0;
+        for (Color col : artifacte)
+        {
+            if (col == Color.Purple)
+                countPurple++;
+            else if (col == Color.Green)
+                countGreen++;
+        }
+        logger.Log("Nr. bile mov", countPurple);
+        logger.Log("Nr. bile verzi", countGreen);
+    }
+
+    public int GetCountGreen(){return countGreen;}
+    public int GetCountPurple(){return countPurple;}
     private Color Culoare(ColorSensor cSensor)
     {
         int red = cSensor.red();
@@ -156,6 +177,15 @@ public class Mixer implements Subsystem{
         if (this.IsEmpty())
             return;
         lenPozitii--;
+        artifacte[lenPozitii] = Color.None;
+    }
+
+    public void SetPozition(double pos)
+    {
+        if (pos < 0.0 || pos > 1.0)
+            return;
+        ServoMixer1.setPosition(pos);
+        ServoMixer2.setPosition(pos);
     }
     public double GetTimerElapsed(){return runtime.seconds();}
     public void Run(){ArtifacteIndx();}

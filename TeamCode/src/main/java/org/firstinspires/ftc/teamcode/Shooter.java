@@ -14,6 +14,7 @@ public class Shooter implements Subsystem{
     private ButtonReader Aruncare;
     private final GamepadEx ct1;
     private TelemetryCustom logger;
+    private Husky husky;
     private double currentPosition, offsetPosition;
     private final double initialPosition = 0; // 0 si 0.032 - final
     private final double finalPosition = 0.37;
@@ -31,6 +32,8 @@ public class Shooter implements Subsystem{
     public DcMotorEx MotorAruncare1 = null;
     public DcMotorEx MotorAruncare2 = null;
     private double motorPower = 0.6;
+    private int artifactArangement = 0;
+    private double[] artPoz = {0.0206 + 0.3834, 0.0206, 0.0206 + 2 * 0.3834}; //pregatire
     public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,GamepadEx ct1)
     {
         this.ct1 = ct1;
@@ -68,9 +71,13 @@ public class Shooter implements Subsystem{
         if(Aruncare.wasJustPressed())
         {
             preparingLaunch = true;
-            //mixer.ReverseIncrement();
+            artifactArangement = 1;
+           /* if(mixer.GetCountGreen() == 1 && mixer.GetCountPurple() == 2)
+                artifactArangement = 2;
+            else artifactArangement = 1;*/ //Test dupa functionarea huskyului
         }
-        ArtifactShooting();
+        ArangedShooting();
+        Shooting();
     }
     public void SetPositionLever(double position){
         ServoRidicare.setPosition(position);
@@ -88,36 +95,96 @@ public class Shooter implements Subsystem{
     private void StopShooterMotors(){PowerShooterMotors(0);}
 
     public boolean GetIsShooting() {return isShooting;}
-    private void ArtifactShooting()
+    private void Shooting()
+    {
+        if(artifactArangement == 1)
+        {
+            if (preparingLaunch && !isShooting && !mixer.IsEmpty())
+            {
+                isShooting = true;
+                PowerShooterMotors(this.motorPower);
+                ResetTimer();
+                mixer.NextPosition(); // pregateste sa traga
+            }
+            if (isShooting && runtime.seconds() > 0.7 && runtime.seconds() <= 1) // trage
+                SetPositionLever(finalPosition);
+            else if (isShooting && runtime.seconds() > 1 && runtime.seconds() <= 1.25) // coboara
+                SetPositionLever(initialPosition);
+            else if (isShooting && runtime.seconds() > 1.25 && runtime.seconds() < 1.5) //se roteste
+            {
+                isShooting = false;
+                mixer.RemoveArtifact();
+                if (mixer.IsEmpty())
+                {
+                    StopShooterMotors();
+                    preparingLaunch = false;
+                    if (intake.IsForward())
+                        intake.SetPowerMax();
+                    mixer.ResetServoPosition();
+                    telemetry.Log("Poz Servos", mixer.GetServoPosition());
+                    shooterPrepare = false;
+                    artifactArangement = 0;
+                    //mixer.ReverseIncrement();
+                } else
+                    mixer.NextPosition();
+                ResetTimer();
+            }
+        }
+    }
+
+    private boolean CanShootAranged()
+    {
+        for(int i = 0; i < 3; i++)
+        {
+            if(mixer.artifacte[i] != husky.artifactOrder[i])
+                return false;
+        }
+        return true;
+    }
+
+    private void ArangedShooting()
+    {
+        if(artifactArangement == 2 && CanShootAranged())
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                int j;
+                for (j = 0; j < 3 && mixer.artifacte[j] != husky.artifactOrder[i]; j++);
+                LaunchArtifact(j);
+            }
+        }
+        else artifactArangement = 0;
+    }
+
+    private void LaunchArtifact(int index)
     {
         if (preparingLaunch && !isShooting && !mixer.IsEmpty())
         {
             isShooting = true;
             PowerShooterMotors(this.motorPower);
             ResetTimer();
-            mixer.NextPosition(); // pregateste sa traga
+            mixer.SetPozition(artPoz[index]); // pregateste sa traga
         }
         if (isShooting && runtime.seconds() > 0.7 && runtime.seconds() <= 1) // trage
             SetPositionLever(finalPosition);
-        else if(isShooting && runtime.seconds() > 1 && runtime.seconds() <= 1.25) // coboara
+        else if (isShooting && runtime.seconds() > 1 && runtime.seconds() <= 1.25) // coboara
             SetPositionLever(initialPosition);
-        else if(isShooting && runtime.seconds() > 1.25 && runtime.seconds() < 1.5) //se roteste
+        else if (isShooting && runtime.seconds() > 1.25 && runtime.seconds() < 1.5) //se roteste
         {
             isShooting = false;
             mixer.RemoveArtifact();
-            if(mixer.IsEmpty())
+            if (mixer.IsEmpty())
             {
                 StopShooterMotors();
                 preparingLaunch = false;
-                if(intake.IsForward())
+                if (intake.IsForward())
                     intake.SetPowerMax();
                 mixer.ResetServoPosition();
                 telemetry.Log("Poz Servos", mixer.GetServoPosition());
                 shooterPrepare = false;
-                //mixer.ReverseIncrement();
-            }
-            else
-                mixer.NextPosition();
+                artifactArangement = 0;
+            } else
+                mixer.SetPozition(artPoz[index] + 0.3834 / 2);
             ResetTimer();
         }
     }

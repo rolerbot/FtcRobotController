@@ -72,10 +72,9 @@ public class Shooter implements Subsystem{
         if(Aruncare.wasJustPressed())
         {
             preparingLaunch = true;
-            artifactArangement = 1;
-           /* if(mixer.GetCountGreen() == 1 && mixer.GetCountPurple() == 2)
+            /*if(CanShootAranged())
                 artifactArangement = 2;
-            else artifactArangement = 1;*/ //Test dupa functionarea huskyului
+            else*/ artifactArangement = 1;
         }
         //ArangedShooting();
         Shooting();
@@ -97,7 +96,7 @@ public class Shooter implements Subsystem{
     private void StopShooterMotors(){PowerShooterMotors(0);}
 
     public boolean GetIsShooting() {return isShooting;}
-    private void Shooting()
+    private void Shooting() // arunca fara ordine mingile
     {
         if(artifactArangement == 1)
         {
@@ -126,7 +125,6 @@ public class Shooter implements Subsystem{
                     telemetry.Log("Poz Servos", mixer.GetServoPosition());
                     shooterPrepare = false;
                     artifactArangement = 0;
-                    //mixer.ReverseIncrement();
                 } else
                     mixer.NextPosition();
                 ResetTimer();
@@ -153,13 +151,12 @@ public class Shooter implements Subsystem{
 
     private void ArangedShooting() // arunca in ordinea data de husky
     {
-        if(artifactArangement == 2 && CanShootAranged())
+        if(artifactArangement == 2)
             for (int i = 0; i < 3; i++)
                 ColorLaunch(husky.artifactOrder[i]);
-        else artifactArangement = 0;
     }
 
-    private void LaunchArtifactColor()
+    private void LaunchArtifactColor() //arunca in functie de culoarea apasata
     {
         ThrowGreen.readValue();
         ThrowPurple.readValue();
@@ -169,7 +166,7 @@ public class Shooter implements Subsystem{
             ColorLaunch(Color.Purple);
     }
 
-    private void LaunchArtifact(int index) //arunca un singur artifact
+    private void LaunchArtifact(int index) //arunca un singur artifact dupa index
     {
         if (!isShooting && !mixer.IsEmpty())
         {

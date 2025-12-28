@@ -38,16 +38,20 @@ public class Drivetrain implements Subsystem {
 
         MotorFD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorFD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorFD.setDirection(DcMotorSimple.Direction.FORWARD);
         MotorFS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorFS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorFS.setDirection(DcMotorSimple.Direction.REVERSE);
         MotorSD.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorSD.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorSD.setDirection(DcMotorSimple.Direction.FORWARD);
         MotorSS.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorSS.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        MotorFS.setDirection(DcMotorSimple.Direction.REVERSE);
+        MotorFD.setDirection(DcMotorSimple.Direction.FORWARD);
         MotorSS.setDirection(DcMotorSimple.Direction.REVERSE);
+        MotorSD.setDirection(DcMotorSimple.Direction.FORWARD);
+
+
+
     }
     public void Run()
     {
@@ -60,11 +64,11 @@ public class Drivetrain implements Subsystem {
         }
         drive = -ct1.getLeftY()  * schimbator;
         strafe = ct1.getLeftX() * schimbator;
-        twist = schimbator * (ct1.gamepad.right_trigger - ct1.gamepad.left_trigger);
-        speeds[0] = (drive + strafe + twist);//FS
-        speeds[1] = (drive - strafe - twist);//FD
-        speeds[2] = (drive - strafe + twist);//SS
-        speeds[3] = (drive + strafe - twist);//SD
+        twist = schimbator * (ct1.gamepad.left_trigger - ct1.gamepad.right_trigger);
+        speeds[0] = (drive - strafe + twist); // FS
+        speeds[1] = (drive + strafe - twist); // FD
+        speeds[2] = (drive + strafe + twist); // SS
+        speeds[3] = (drive - strafe - twist); // SD
         double max = Math.abs(speeds[0]);
         for (int i = 0; i < speeds.length; i++)
         {

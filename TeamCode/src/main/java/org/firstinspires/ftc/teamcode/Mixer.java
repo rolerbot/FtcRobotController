@@ -164,6 +164,16 @@ public class Mixer implements Subsystem{
         return -1;
     }
 
+    public int GetFirstAvailablePosition()
+    {
+        for(int i = 0; i < artifacte.length; i++)
+        {
+            if(artifacte[i] != Color.None)
+                return i;
+        }
+        return -1;
+    }
+
     public int GetCountGreen(){return countGreen;}
     public int GetCountPurple(){return countPurple;}
     private Color Culoare(ColorSensor cSensor)
@@ -193,11 +203,12 @@ public class Mixer implements Subsystem{
     }
     public void RemoveArtifact(int position)
     {
-        if (this.IsEmpty() || position < 0 || position >= 3)
-            return;
-        artifactCount--;
-        artifacte[position] = Color.None;
-        CalculateFrequency();
+        if(position >= 0 && position < artifacte.length)
+        {
+            artifacte[position] = Color.None;
+            artifactCount--;
+            CalculateFrequency();
+        }
     }
 
     public void SetPozition(double pos)

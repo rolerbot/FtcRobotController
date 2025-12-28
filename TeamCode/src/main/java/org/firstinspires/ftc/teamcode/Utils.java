@@ -16,6 +16,7 @@ enum ShootingState
     Green,
     Purple,
     Unarranged,
+    None
 };
 
 public class Utils

@@ -37,6 +37,7 @@ public class Shooter implements Subsystem{
     private double motorPower = 0.6;
     private double offsetPosition = 0.3834 / 2;
     private final double initialPosMixer = 0.0206;
+    private ShootingState shootType = ShootingState.None;
     private double[] artPoz = {initialPosMixer + 3 * offsetPosition, initialPosMixer + 5 * offsetPosition, initialPosMixer + offsetPosition};
     private ElapsedTime launchTime = new ElapsedTime();
     private boolean launchtest = false;
@@ -92,7 +93,7 @@ public class Shooter implements Subsystem{
         ServoRidicare.setDirection(Servo.Direction.REVERSE);
         ServoRidicare.setPosition(initialPosition);
     }
-    public void Run()
+    /*public void Run()
     {
         ReadButtons();
         if(Aruncare.wasJustPressed())
@@ -102,7 +103,11 @@ public class Shooter implements Subsystem{
             arrangedIndex = 0;
             telemetry.Log("arranged:", arranged);
         }
-        if(ThrowGreen.wasJustPressed())
+        else if(ThrowGreen.wasJustPressed())
+        {
+
+        }
+        else if(ThrowPurple.wasJustPressed())
         {
 
         }
@@ -111,7 +116,43 @@ public class Shooter implements Subsystem{
             PrepareLaunch();
             Shoot();
         }
+    }*/
+
+    public void Run()
+    {
+        ReadButtons();
+        if(Aruncare.wasJustPressed())
+        {
+            shootingAllowed = true;
+            if (CanShootArranged()) // Elimină verificarea shootType != None
+            {
+                shootType = ShootingState.Arranged;
+                arrangedIndex = 0;
+            }
+            else // Dacă nu poate aranja, aruncă nearanjat
+            {
+                shootType = ShootingState.Unarranged;
+                arrangedIndex = 0;
+            }
+            telemetry.Log("ShootType:", shootType);
+        }
+        else if(ThrowGreen.wasJustPressed())
+        {
+            shootType = ShootingState.Green;
+            shootingAllowed = true;
+        }
+        else if(ThrowPurple.wasJustPressed())
+        {
+            shootType = ShootingState.Purple;
+            shootingAllowed = true;
+        }
+        if (shootingAllowed)
+        {
+            PrepareLaunch();
+            Shooting();
+        }
     }
+
 
     private void ReadButtons()
     {
@@ -134,23 +175,108 @@ public class Shooter implements Subsystem{
         preparingLaunch = false;
         PowerShooterMotors(0);
     }
-    public boolean IsNotShooting() {return !isShooting;}
 
-    private void Shoot()
+    private void Shooting()
     {
-        Color targetColor = husky.artifactOrder[arrangedIndex];
-        ShootColor(targetColor);
+        switch (shootType)
+        {
+            case Arranged:
+                Ordered();
+                break;
+            case Unarranged:
+                Unordered();
+                break;
+            case Purple:
+            case Green:
+                PurpleGreen();
+                break;
+            default:
+                break;
+        }
     }
 
-    private void ShootColor(Color color)
+    private void Unordered()
+    {
+        telemetry.Log("Unordered", "");
+        if (preparingLaunch && !isShooting && !mixer.IsEmpty())
+        {
+            if(mixer.GetCountPurple() > 0)
+                currentShootingPosition = mixer.GetColorPosition(Color.Purple);
+            else if(mixer.GetCountGreen() > 0)
+                currentShootingPosition = mixer.GetColorPosition(Color.Green);
+            else
+                currentShootingPosition = -1;
+            telemetry.Log("ShootingPose:", currentShootingPosition);
+        }
+        ShootColor();
+    }
+
+
+
+    private void Ordered()
+    {
+        if (preparingLaunch && !isShooting && !mixer.IsEmpty())
+        {
+            currentShootingPosition = mixer.GetColorPosition(husky.artifactOrder[arrangedIndex]);
+            telemetry.Log("Target Color", ColorToString(husky.artifactOrder[arrangedIndex]));
+        }
+        ShootColor();
+    }
+
+    private void PurpleGreen()
+    {
+        if (preparingLaunch && !isShooting && !mixer.IsEmpty())
+        {
+            if(shootType == ShootingState.Green && mixer.GetCountGreen() > 0)
+                currentShootingPosition = mixer.GetColorPosition(Color.Green);
+            else if(shootType == ShootingState.Purple && mixer.GetCountPurple() > 0)
+                currentShootingPosition = mixer.GetColorPosition(Color.Purple);
+            else
+                currentShootingPosition = -1;
+        }
+        ShootColor();
+    }
+
+    private void ShootColor()
+    {
+        if (preparingLaunch && !isShooting && !mixer.IsEmpty() && currentShootingPosition >= 0)
+        {
+            isShooting = true;
+            PowerShooterMotors(motorPower);
+            ResetTimer();
+            mixer.SetPozition(artPoz[currentShootingPosition]);
+            telemetry.Log("Shooting position", currentShootingPosition);
+        }
+
+        if (isShooting)
+        {
+            switch (GetShootingState())
+            {
+                case 1:
+                    SetPositionLever(finalPosition);
+                    break;
+                case 2:
+                    SetPositionLever(initialPosition);
+                    break;
+                case 3:
+                    CompleteShot(currentShootingPosition);
+                    HandleNextShot();
+                    telemetry.Log("Nr Mingi", mixer.artifactCount);
+                    break;
+            }
+        }
+    }
+
+    public boolean IsNotShooting() {return !isShooting;}
+    /*private void Shoot()
     {
         if (preparingLaunch && !isShooting && !mixer.IsEmpty())
         {
             // Calculează poziția DOAR când începe shooting-ul
             if (arranged)
             {
-                currentShootingPosition = mixer.GetColorPosition(color);
-                telemetry.Log("Target Color", ColorToString(color));
+                currentShootingPosition = mixer.GetColorPosition(husky.artifactOrder[arrangedIndex]);
+                telemetry.Log("Target Color", ColorToString(husky.artifactOrder[arrangedIndex]));
                 telemetry.Log("Position in mixer", currentShootingPosition);
             }
             else
@@ -198,9 +324,51 @@ public class Shooter implements Subsystem{
             arrangedIndex++;
         else mixer.NextPosition();
         if (mixer.IsEmpty())
+        {
             ResetShooter();
+            shootingAllowed = false;
+        }
         isShooting = false;
+    }*/
+
+    private void CompleteShot(int position)
+    {
+        telemetry.Log("Culoare aruncată", ColorToString(mixer.artifacte[position]));
+        mixer.RemoveArtifact(position);
+        ResetTimer();
     }
+
+
+    private void HandleNextShot()
+    {
+        if (mixer.IsEmpty())
+        {
+            ResetShooter();
+            shootingAllowed = false;
+            arrangedIndex = 0;
+            shootType = ShootingState.None;
+        }
+        else if(shootType == ShootingState.Green || shootType == ShootingState.Purple)
+        {
+
+            if((shootType == ShootingState.Green && mixer.GetCountGreen() == 0) || (shootType == ShootingState.Purple && mixer.GetCountPurple() == 0))
+            {
+                shootType = ShootingState.None;
+                shootingAllowed = false;
+                ResetShooter();
+            }
+            else
+            {
+                shootingAllowed = false; // Oprește shooting-ul curent
+                isShooting = false;      // Permite reapăsarea butonului
+            }
+        }
+        else arrangedIndex++;
+
+        if(shootType != ShootingState.Green && shootType != ShootingState.Purple)
+            isShooting = false;
+    }
+
 
     private void ResetShooter()
     {

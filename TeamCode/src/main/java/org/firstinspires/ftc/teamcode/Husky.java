@@ -5,10 +5,7 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.hardware.dfrobot.HuskyLens;
 
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 // ID 1 - Green, Purple, Purple
 // ID 2 - Purple, Green, Purple
@@ -20,10 +17,12 @@ public class Husky implements Subsystem
     private HuskyLens huskyLens;
     private boolean allignPrepare = false;
     private boolean huskyRead = false;
-    private int ID = 0;
+    private int IdArranged = 0;
+    private int IdTeam = 0;
     private boolean completeArtifact = false;
     public Color[] artifactOrder = {Color.None, Color.None, Color.None};
-    public ArtifactArrangement arrangement;
+    String[] arrCol = {"GPP", "PGP", "PPG"};
+
     private final TelemetryCustom telemetry;
     ButtonReader Allign;
     GamepadEx ct1;
@@ -42,6 +41,7 @@ public class Husky implements Subsystem
         LinkComponents(hwMap);
         huskyLens.selectAlgorithm(HuskyLens.Algorithm.TAG_RECOGNITION);
         Allign = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
+
     }
     public void Run() {ReadHusky();}
     private void ReadHusky()
@@ -52,50 +52,37 @@ public class Husky implements Subsystem
              for (int i = 0; i < blocuri.length; i++)
                 if(blocuri[i].id != 0 && blocuri[i].id <= 3)
                 {
-                    ID = blocuri[i].id;
+                    IdArranged = blocuri[i].id;
                     huskyRead = true;
                     telemetry.Log("ID:", GetID());
                     break;
                 }
         }
         if(huskyRead && !completeArtifact)
-            CompleteColor();
+            CompleteColor(IdArranged);
     }
-    public int GetID() {return ID;}
-    private void CompleteColor()
+    public int GetID() {return IdArranged;}
+    private void CompleteColor(int id)
     {
         completeArtifact = true;
-        if(ID == 1)
+        for(int i = 0; i < arrCol[id - 1].length(); i++)
         {
-            artifactOrder[0] = Color.Green;
-            artifactOrder[1] = Color.Purple;
-            artifactOrder[2] = Color.Purple;
-            arrangement = ArtifactArrangement.GPP;
-        }
-        else if(ID == 2)
-        {
-            artifactOrder[0] = Color.Purple;
-            artifactOrder[1] = Color.Green;
-            artifactOrder[2] = Color.Purple;
-            arrangement = ArtifactArrangement.PGP;
-        }
-        else if(ID == 3)
-        {
-            artifactOrder[0] = Color.Purple;
-            artifactOrder[1] = Color.Purple;
-            artifactOrder[2] = Color.Green;
-            arrangement = ArtifactArrangement.PPG;
-        }
-        else {
-            artifactOrder[0] = Color.None;
-            artifactOrder[1] = Color.None;
-            artifactOrder[2] = Color.None;
-            arrangement = ArtifactArrangement.None;
+            char c = arrCol[id - 1].charAt(i);
+            artifactOrder[i] = CharToColor(c);
         }
     }
-    public ArtifactArrangement GetTargetArrangement()
+
+    private Color CharToColor(char c)
     {
-        return this.arrangement;
+        switch(c)
+        {
+            case 'G':
+                return Color.Green;
+            case 'P':
+                return Color.Purple;
+            default:
+                return Color.None;
+        }
     }
 
     private void AutoAllign()

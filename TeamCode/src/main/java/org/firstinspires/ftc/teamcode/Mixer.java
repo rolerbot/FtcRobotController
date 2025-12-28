@@ -1,8 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
-import android.os.Debug;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -14,7 +11,6 @@ public class Mixer implements Subsystem{
     private final Intake intake;
     private final ElapsedTime runtime = new ElapsedTime();
     private boolean isRunning = false;
-    private boolean isWaitingForBall = false;
     private final double initialPosition = 0.0206;
     private double currentPosition = initialPosition;
     private double offsetPosition = 0.3834 / 2;
@@ -91,7 +87,6 @@ public class Mixer implements Subsystem{
         currentPosition = initialPosition;
         artifactCount = 0;
         isRunning = false;
-        isWaitingForBall = false;
         if(offsetPosition < 0)
             offsetPosition *= (-1);
         for (int i = 0; i <= 2; i++)
@@ -99,17 +94,15 @@ public class Mixer implements Subsystem{
     }
     void ArtifacteIndx()
     {
-        if (!intake.IsStopped() && !isRunning && !isWaitingForBall && artifactCount < 3)
+        if (!intake.IsStopped() && !isRunning && artifactCount < 3)
         {
             StartTimer();
             Color detectedColor = Culoare(cSensor);
-
             if(detectedColor != Color.None)
             {
                 artifacte[artifactCount++] = detectedColor;
                 CalculateFrequency();
                 isRunning = true;
-                isWaitingForBall = true;
                 logger.Log("Detected Color", Utils.ColorToString(detectedColor));
                 logger.Log("Nr. Bile in mixer", artifactCount);
                 int index = 0;
@@ -121,23 +114,18 @@ public class Mixer implements Subsystem{
                 }
             }
         }
-        else if (isRunning && isWaitingForBall && GetTimerElapsed() > 0.2 && isWaitingForBall) //&&iswaitingforball
+        else if (isRunning && GetTimerElapsed() > 0.2 && GetTimerElapsed() < 0.4)
         {
-            isWaitingForBall = false;
             if (artifactCount == 3)
-            {
                  intake.SetMotorPower(0.3);
-            }
             else
             {
                 IncrementPosition();
                 NextPosition();
             }
         }
-        else if (isRunning && !isWaitingForBall && GetTimerElapsed() > 0.4)
-        {
+        else if (isRunning && GetTimerElapsed() > 0.4)
             isRunning = false;
-        }
     }
 
     private void CalculateFrequency()

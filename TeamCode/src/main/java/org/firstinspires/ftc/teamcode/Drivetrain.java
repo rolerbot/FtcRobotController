@@ -83,4 +83,25 @@ public class Drivetrain implements Subsystem {
         MotorSS.setPower(speeds[2]);
         MotorSD.setPower(speeds[3]);
     }
+    public void Rotate(double power)
+    {
+        MotorFS.setPower(power);
+        MotorFD.setPower(-power);
+        MotorSS.setPower(power);
+        MotorSD.setPower(-power);
+    }
+    public void MoveForward(double power)
+    {
+        MotorFS.setPower(power);
+        MotorFD.setPower(power);
+        MotorSS.setPower(power);
+        MotorSD.setPower(power);
+    }
+    public void Stop()
+    {
+        MotorFS.setPower(0);
+        MotorFD.setPower(0);
+        MotorSS.setPower(0);
+        MotorSD.setPower(0);
+    }
 }

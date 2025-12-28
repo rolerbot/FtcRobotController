@@ -19,6 +19,14 @@ enum ShootingState
     None
 };
 
+enum AlignmentState
+{
+    IDLE,
+    ROTATING,
+    ADJUSTING_DISTANCE,
+    COMPLETED
+}
+
 public class Utils
 {
     public static String ColorToString(Color color)

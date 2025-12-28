@@ -13,7 +13,7 @@ public class ShooterTuning extends OpMode
 {
 
     private DcMotor shooterMotor1, shooterMotor2;
-    private double highVelocity = 6000;
+    private double highVelocity = 3500;
     private double lowVelocity = 1500;
     private double currenttargetVelocity = highVelocity;
     double F = 0;
@@ -30,7 +30,7 @@ public class ShooterTuning extends OpMode
         shooterMotor1  = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
         shooterMotor2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
         shooterMotor1.setDirection(DcMotor.Direction.FORWARD);
-        shooterMotor2.setDirection(DcMotor.Direction.FORWARD);
+        shooterMotor2.setDirection(DcMotor.Direction.REVERSE);
         shooterMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooterMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         PIDFCoefficients pidfCoefficients = new  PIDFCoefficients(P,0, 0, F);
@@ -101,5 +101,4 @@ public class ShooterTuning extends OpMode
         telemetry.update();
 
     }
-
 }

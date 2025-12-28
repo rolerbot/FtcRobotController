@@ -30,12 +30,12 @@ public class TeleOp extends LinearOpMode
         myLogger = new TelemetryCustom(telemetry);
         MapControlerButtons();
 
-        huskyLens = new Husky(myLogger,ct1);
-        huskyLens.Initialize(hardwareMap);
-
         drivetrain = new Drivetrain(ct1, ct2);
         drivetrain.Initialize(hardwareMap);
         drivetrain.schimbator = 1.4 - drivetrain.schimbator;
+
+        huskyLens = new Husky(myLogger,ct1, drivetrain);
+        huskyLens.Initialize(hardwareMap);
 
         intake = new Intake(myLogger, ct1);
         intake.Initialize(hardwareMap);

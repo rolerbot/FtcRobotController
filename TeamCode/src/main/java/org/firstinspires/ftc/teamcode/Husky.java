@@ -71,7 +71,6 @@ public class Husky implements Subsystem
             artifactOrder[i] = CharToColor(c);
         }
     }
-
     private Color CharToColor(char c)
     {
         switch(c)

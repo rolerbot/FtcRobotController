@@ -10,6 +10,14 @@ enum Color
     Green
 };
 
+enum ShootingState
+{
+    Arranged,
+    Green,
+    Purple,
+    Unarranged,
+};
+
 public class Utils
 {
     public static String ColorToString(Color color)

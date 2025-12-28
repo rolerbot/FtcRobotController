@@ -11,6 +11,7 @@ public class Mixer implements Subsystem{
     private final Intake intake;
     private final ElapsedTime runtime = new ElapsedTime();
     private boolean isRunning = false;
+    private boolean waitForBall = false;
     private final double initialPosition = 0.0206;
     private double currentPosition = initialPosition;
     private double offsetPosition = 0.3834 / 2;
@@ -18,7 +19,6 @@ public class Mixer implements Subsystem{
     private int countGreen = 0;
     ColorSensor cSensor;
     public Color[] artifacte= {Color.None, Color.None, Color.None};
-
     int artifactCount = 0;
     public Mixer(TelemetryCustom lg, Intake intake)
     {
@@ -94,7 +94,7 @@ public class Mixer implements Subsystem{
     }
     void ArtifacteIndx()
     {
-        if (!intake.IsStopped() && !isRunning && artifactCount < 3)
+        if (!intake.IsStopped() && !isRunning && !waitForBall && artifactCount < 3)
         {
             StartTimer();
             Color detectedColor = Culoare(cSensor);
@@ -114,8 +114,9 @@ public class Mixer implements Subsystem{
                 }
             }
         }
-        else if (isRunning && GetTimerElapsed() > 0.2 && GetTimerElapsed() < 0.4)
+        else if (isRunning && !waitForBall && GetTimerElapsed() > 0.3 && GetTimerElapsed() < 0.6)
         {
+            waitForBall = true;
             if (artifactCount == 3)
                  intake.SetMotorPower(0.3);
             else
@@ -124,8 +125,12 @@ public class Mixer implements Subsystem{
                 NextPosition();
             }
         }
-        else if (isRunning && GetTimerElapsed() > 0.4)
+        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.6)
+        {
             isRunning = false;
+            waitForBall = false;
+            CalculateFrequency();
+        }
     }
 
     private void CalculateFrequency()
@@ -145,11 +150,17 @@ public class Mixer implements Subsystem{
 
     public int GetColorPosition(Color color)
     {
-        for (int i = 0; i < artifactCount; i++)
+        logger.Log("Searching for", Utils.ColorToString(color));
+        for (int i = 0; i < 3; i++)
         {
-            if (artifacte[i] == color)
+            logger.Log(String.format("Slot %d", i), Utils.ColorToString(artifacte[i]));
+            if (artifacte[i] != Color.None && artifacte[i] == color)
+            {
+                logger.Log("Found at position", i);
                 return i;
+            }
         }
+        logger.Log("Color not found", -1);
         return -1;
     }
 
@@ -182,10 +193,11 @@ public class Mixer implements Subsystem{
     }
     public void RemoveArtifact(int position)
     {
-        if (this.IsEmpty() || position < 0 || position >= artifactCount)
+        if (this.IsEmpty() || position < 0 || position >= 3)
             return;
         artifactCount--;
         artifacte[position] = Color.None;
+        CalculateFrequency();
     }
 
     public void SetPozition(double pos)

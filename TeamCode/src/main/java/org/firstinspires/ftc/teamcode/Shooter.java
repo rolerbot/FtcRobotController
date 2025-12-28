@@ -10,36 +10,41 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import static org.firstinspires.ftc.teamcode.Utils.ColorToString;
+
 public class Shooter implements Subsystem{
     private ButtonReader Aruncare;
     private ButtonReader ThrowGreen, ThrowPurple;
+    private ButtonReader aruncare2;
     private final GamepadEx ct1;
-    private Husky husky;
     private final double initialPosition = 0.0;
     private final double finalPosition = 0.37;
     private ElapsedTime runtime = new ElapsedTime();
     boolean isShooting = false;
     private int arrangedIndex = 0;
+    private int currentShootingPosition = 0; // Poziția curentă care se aruncă
     private final Mixer mixer;
     private final Intake intake;
     private final TelemetryCustom telemetry;
+    private final Husky husky;
     private boolean preparingLaunch = false;
-    public Servo ServoRidicare = null;
-    /// Motor Aruncare
-    public DcMotorEx MotorAruncare1 = null;
-    public DcMotorEx MotorAruncare2 = null;
-    private double motorPower = 0.6;
-    private  boolean arranged = false;
-    private double[] artPoz = {0.4040, 0.2123, 0.5957};
+    private boolean arranged = false;
     private boolean shootingAllowed = false;
+    private Servo ServoRidicare = null;
+    /// Motor Aruncare
+    private DcMotorEx MotorAruncare1 = null;
+    private DcMotorEx MotorAruncare2 = null;
+    private double motorPower = 0.6;
+    private double offsetPosition = 0.3834 / 2;
+    private final double initialPosMixer = 0.0206;
+    private double[] artPoz = {initialPosMixer + 3 * offsetPosition, initialPosMixer + 5 * offsetPosition, initialPosMixer + offsetPosition};
     private ElapsedTime launchTime = new ElapsedTime();
-    ButtonReader Aruncare2;
     private boolean launchtest = false;
 
     private void PozTester()
     {
-        Aruncare2.readValue();
-        if(Aruncare2.wasJustPressed())
+        aruncare2.readValue();
+        if(aruncare2.wasJustPressed())
         {
             intake.SetMotorPower(0.5);
             launchtest = true;
@@ -50,8 +55,10 @@ public class Shooter implements Subsystem{
         else if(launchtest &&  launchTime.seconds() > 2 && launchTime.seconds() < 3)
             mixer.SetPozition(artPoz[1]);
         else if(launchtest &&  launchTime.seconds() > 3 && launchTime.seconds() < 4)
-        {
             mixer.SetPozition(artPoz[2]);
+        else if(launchtest &&  launchTime.seconds() > 4 && launchTime.seconds() < 6)
+        {
+            mixer.SetPozition(initialPosMixer);
             launchtest = false;
         }
     }
@@ -65,14 +72,14 @@ public class Shooter implements Subsystem{
     }
      public void LinkComponents(HardwareMap hardwareMap)
      {
-        Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
-        ThrowGreen = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
-        ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
-        Aruncare2 = new  ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
-        ServoRidicare = hardwareMap.get(Servo.class, "ServoRidicare");
-        MotorAruncare1 = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
-        MotorAruncare2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
-    }
+         Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
+         ThrowGreen = new ButtonReader(ct1, GamepadKeys.Button.Y);
+         ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.X);
+         aruncare2 = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
+         ServoRidicare = hardwareMap.get(Servo.class, "ServoRidicare");
+         MotorAruncare1 = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
+         MotorAruncare2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
+     }
     public void Initialize(HardwareMap hwMap)
     {
         LinkComponents(hwMap);
@@ -87,26 +94,34 @@ public class Shooter implements Subsystem{
     }
     public void Run()
     {
-        Aruncare.readValue();
-
+        ReadButtons();
         if(Aruncare.wasJustPressed())
         {
             if (CanShootArranged()) arranged = true;
             shootingAllowed = true;
             arrangedIndex = 0;
+            telemetry.Log("arranged:", arranged);
+        }
+        if(ThrowGreen.wasJustPressed())
+        {
+
         }
         if (shootingAllowed)
         {
             PrepareLaunch();
-            arranged = Shoot(arranged);
+            Shoot();
         }
-         //PozTester();
     }
 
+    private void ReadButtons()
+    {
+        Aruncare.readValue();
+        ThrowGreen.readValue();
+        ThrowPurple.readValue();
+    }
     public void SetPositionLever(double position){
         ServoRidicare.setPosition(position);
     }
-
     private void ResetTimer(){
         runtime.reset();
     }
@@ -115,82 +130,105 @@ public class Shooter implements Subsystem{
         MotorAruncare1.setPower(power);
         MotorAruncare2.setPower(power);
     }
-
     private void StopShooterMotors(){
         preparingLaunch = false;
         PowerShooterMotors(0);
     }
-
     public boolean IsNotShooting() {return !isShooting;}
 
-    private boolean Shoot(boolean arranged)
+    private void Shoot()
     {
-        boolean finalArranged = arranged;
-        int position;
+        Color targetColor = husky.artifactOrder[arrangedIndex];
+        ShootColor(targetColor);
+    }
 
-        if (arranged)
-            position = mixer.GetColorPosition(husky.artifactOrder[arrangedIndex]);
-        else position = 0;
-
-        double servoPosition = artPoz[position];
+    private void ShootColor(Color color)
+    {
         if (preparingLaunch && !isShooting && !mixer.IsEmpty())
         {
-            isShooting = true;
-            PowerShooterMotors(this.motorPower);
-            ResetTimer();
-            if(arranged)
+            // Calculează poziția DOAR când începe shooting-ul
+            if (arranged)
             {
-                mixer.SetPozition(servoPosition);
+                currentShootingPosition = mixer.GetColorPosition(color);
+                telemetry.Log("Target Color", ColorToString(color));
+                telemetry.Log("Position in mixer", currentShootingPosition);
             }
+            else
+            {
+                currentShootingPosition = 0; // Nu contează pentru non-arranged
+            }
+            isShooting = true;
+            PowerShooterMotors(motorPower);
+            ResetTimer();
+            if (arranged) mixer.SetPozition(artPoz[currentShootingPosition]);
             else mixer.NextPosition();
         }
 
-        if (!isShooting) return finalArranged;
-
-        int state = GetShootingState();
-        switch (state)
+        switch (GetShootingState())
         {
             case 1: // trage (0.8 - 1.2s)
                 SetPositionLever(finalPosition);
                 break;
-            case 2: // coboara (1.2 - 1.4s)
+            case 2: // coboară (1.2 - 1.4s)
                 SetPositionLever(initialPosition);
                 break;
-            case 3: // se roteste (> 1.4s)
-                isShooting = false;
-                mixer.RemoveArtifact(position);
-                if (mixer.IsEmpty())
-                {
-                    StopShooterMotors();
-                    preparingLaunch = false;
-                    if (intake.IsForward())
-                        intake.SetPowerMax();
-                    mixer.ResetServoPosition();
-                    shootingAllowed = false;
-                    finalArranged = false;
-                    arrangedIndex = 0;
-                }
-                else if (!arranged)
-                    mixer.NextPosition();
-                else arrangedIndex++;
-                ResetTimer();
+            case 3: // se rotește (> 1.4s)
+                CompleteShot(currentShootingPosition, arranged);
+                HandleNextShot(arranged);
+                telemetry.Log("Nr Mingi", mixer.artifactCount);
                 break;
         }
-        return finalArranged;
+    }
+
+    private void CompleteShot(int position, boolean arranged)
+    {
+        if(arranged)
+        {
+            telemetry.Log("Aruncând poziția", position);
+            telemetry.Log("Culoare aruncată", ColorToString(mixer.artifacte[position]));
+            mixer.RemoveArtifact(position);
+        }
+        else mixer.RemoveArtifact();
+        ResetTimer();
+    }
+
+    private void HandleNextShot(boolean arranged)
+    {
+        if (arranged)
+            arrangedIndex++;
+        else mixer.NextPosition();
+        if (mixer.IsEmpty())
+            ResetShooter();
+        isShooting = false;
+    }
+
+    private void ResetShooter()
+    {
+        StopShooterMotors();
+        preparingLaunch = false;
+        if (intake.IsForward())
+            intake.SetPowerMax();
+        mixer.ResetServoPosition();
+        shootingAllowed = false;
+        arrangedIndex = 0;
+        arranged = false;
     }
 
     private int GetShootingState()
     {
-        double time = runtime.seconds();
-        if (time >= 0.8 && time < 1.2)
-            return 1;
-        else if (time >= 1.2 && time < 1.4)
-            return 2;
-        else if (time >= 1.4)
-            return 3;
+        if(isShooting)
+        {
+            double time = runtime.seconds();
+            if (time >= 0.8 && time < 1.2)
+                return 1;
+            else if (time >= 1.2 && time < 1.4)
+                return 2;
+            else if (time >= 1.4)
+                return 3;
+        }
         return 0;
     }
-    private boolean CanShootArranged() //verifica daca poate trage in ordinea data de husky
+    private boolean CanShootArranged() // verifica daca poate trage in ordinea data de husky
     {
         if (mixer.IsEmpty())
             return false;

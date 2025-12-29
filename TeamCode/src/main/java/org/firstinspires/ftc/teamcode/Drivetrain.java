@@ -71,13 +71,9 @@ public class Drivetrain implements Subsystem {
         speeds[3] = (drive - strafe - twist); // SD
         double max = Math.abs(speeds[0]);
         for (int i = 0; i < speeds.length; i++)
-        {
             if (max < Math.abs(speeds[i])) max = Math.abs(speeds[i]);
-        }
         if (max > 1)
-        {
             for (int i = 0; i < speeds.length; i++) speeds[i] /= max;
-        }
         MotorFS.setPower(speeds[0]);
         MotorFD.setPower(speeds[1]);
         MotorSS.setPower(speeds[2]);

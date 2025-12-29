@@ -93,7 +93,7 @@ public class Husky implements Subsystem
         }
 
         // Afișează telemetria
-        DisplayTelemetry();
+        //DisplayTelemetry();
     }
     private void ReadHusky(HuskyLens.Block[] blocuri)
     {

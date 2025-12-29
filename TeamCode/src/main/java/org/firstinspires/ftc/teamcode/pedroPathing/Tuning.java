@@ -330,7 +330,7 @@ class TurnTuner extends OpMode {
  */
 class ForwardVelocityTuner extends OpMode {
     private final ArrayList<Double> velocities = new ArrayList<>();
-    public static double DISTANCE = 48;
+    public static double DISTANCE = 20;
     public static double RECORD_NUMBER = 10;
 
     private boolean end;
@@ -413,6 +413,7 @@ class ForwardVelocityTuner extends OpMode {
             if (gamepad1.aWasPressed()) {
                 follower.setXVelocity(average);
                 String message = "XMovement: " + average;
+                telemetryM.debug("XMovement: ", average);
                 changes.add(message);
             }
         }

@@ -13,8 +13,8 @@ public class ShooterTuning extends OpMode
 {
 
     private DcMotor shooterMotor1, shooterMotor2;
-    private double highVelocity = 3500;
-    private double lowVelocity = 1500;
+    private double highVelocity = 1600;
+    private double lowVelocity = 1000;
     private double currenttargetVelocity = highVelocity;
     double F = 0;
     double P = 0;

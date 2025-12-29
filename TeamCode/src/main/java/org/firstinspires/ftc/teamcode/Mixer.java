@@ -98,6 +98,7 @@ public class Mixer implements Subsystem{
         {
             StartTimer();
             Color detectedColor = Culoare(cSensor);
+
             if(detectedColor != Color.None)
             {
                 artifacte[artifactCount++] = detectedColor;
@@ -114,7 +115,7 @@ public class Mixer implements Subsystem{
                 }
             }
         }
-        else if (isRunning && !waitForBall && GetTimerElapsed() > 0.3 && GetTimerElapsed() < 0.6)
+        else if (isRunning && !waitForBall && GetTimerElapsed() > 0.3 && GetTimerElapsed() < 0.75)
         {
             waitForBall = true;
             if (artifactCount == 3)
@@ -125,7 +126,7 @@ public class Mixer implements Subsystem{
                 NextPosition();
             }
         }
-        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.6)
+        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.75)
         {
             isRunning = false;
             waitForBall = false;
@@ -194,13 +195,6 @@ public class Mixer implements Subsystem{
     {
         return artifactCount == 0;
     }
-    public void RemoveArtifact()
-    {
-        if (this.IsEmpty())
-            return;
-        artifactCount--;
-        CalculateFrequency();
-    }
     public void RemoveArtifact(int position)
     {
         if(position >= 0 && position < artifacte.length)
@@ -209,6 +203,14 @@ public class Mixer implements Subsystem{
             artifactCount--;
             CalculateFrequency();
         }
+    }
+
+    public void SetArtifacts(Color c1, Color c2, Color c3)
+    {
+        artifacte[0] = c1;
+        artifacte[1] = c2;
+        artifacte[2] = c3;
+        artifactCount = 3;
     }
 
     public void SetPozition(double pos)

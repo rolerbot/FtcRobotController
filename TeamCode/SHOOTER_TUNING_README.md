@@ -9,6 +9,43 @@
 
 ---
 
+## ⚙️ SETĂRI INIȚIALE
+
+În `ShooterTuning.java` sunt definite:
+- **highVelocity = 3000** (viteza mare, pentru aruncări de putere)
+- **lowVelocity = 1500** (viteza redusă, pentru aruncări scurte sau teste)
+
+### De ce două viteze?
+
+**POȚI folosi doar o singură viteză** dacă:
+- ✅ Robotul tău folosește întotdeauna aceeași putere de aruncare
+- ✅ Nu ai nevoie de aruncări la distanțe diferite
+- ✅ Vrei un tuning mai simplu și mai rapid
+
+**Folosește DOUĂ viteze** dacă:
+- 🎯 Ai nevoie de aruncări la distanțe diferite (aproape vs. departe)
+- 🎯 Vrei să testezi consistența tuning-ului pe un interval mai larg
+- 🎯 Vrei să verifici că valorile PIDF sunt stabile la diferite puteri
+- 🎯 Ai nevoie de viteze intermediare (ex: 2000, 2500 RPM)
+
+### Ce se întâmplă cu vitezele intermediare?
+
+**Veste bună:** Dacă tunezi la 3000 și 1500, vitezele intermediare (2000, 2200, 2500, etc.) vor funcționa **destul de bine** cu aceleași valori PIDF!
+
+**De ce?** 
+- Valorile PIDF sunt *aproximativ liniare* pentru motoarele DC
+- Dacă funcționează la capetele intervalului (1500 și 3000), vor funcționa și la mijloc
+
+**Așteptări realiste:**
+- ✅ La 3000 RPM: Error < 30 (tunat perfect)
+- ✅ La 1500 RPM: Error < 30 (tunat perfect)
+- ✔️ La 2250 RPM: Error 30-75 (netestas, dar acceptabil)
+- ✔️ La 2000 RPM: Error 30-75 (netestas, dar acceptabil)
+
+**💡 Concluzie:** Dacă folosești 2-3 viteze diferite în joc (ex: tir scurt, mediu, lung), tunează la viteza cea mai mare și cea mai mică, iar cele intermediare vor funcționa automat!
+
+---
+
 ## PAȘII DE TUNING
 
 ### ⚡ PAS 1: Tunează F (FeedForward) - CEL MAI IMPORTANT!
@@ -25,23 +62,23 @@
    - Urmărește pe telemetrie cum crește `Current Velocity`
 
 3. **Continuă până când:**
-   - `Current Velocity` se apropie de `Target Velocity` (6000)
-   - `Error` devine sub 300-400
+   - `Current Velocity` se apropie de `Target Velocity` (3000)
+   - `Error` devine sub 150-200
 
 4. **Ajustare fină:**
-   - Când Error < 500, apasă **B** pentru step size 1.0
+   - Când Error < 250, apasă **B** pentru step size 1.0
    - Când Error < 100, apasă **B** pentru step size 0.1
    - Continuă să ajustezi F cu **D-PAD LEFT/RIGHT**
 
 5. **F este bun când:**
-   - Error este între -100 și +100
+   - Error este între -50 și +50
    - Viteza este stabilă (nu oscilează)
 
 **Exemplu:**
 ```
-Target Velocity: 6000
-Current Velocity: 5750  ← prea mic, crește F
-Error: 250              ← când scade sub 100, ești gata cu F
+Target Velocity: 3000
+Current Velocity: 2950  ← aproape, doar mai ajustează puțin F
+Error: 50               ← când scade sub 50, ești gata cu F
 ```
 
 ---
@@ -65,29 +102,33 @@ Error: 250              ← când scade sub 100, ești gata cu F
    - ⚠️ Error rămâne constant → Mai mult P necesar
 
 4. **P este bun când:**
-   - Error < 50
+   - Error < 30
    - Nu există oscilații
    - Viteza se stabilizează rapid (sub 1 secundă)
 
 **Exemplu:**
 ```
-Error: 45     ← excelent!
+Error: 25     ← excelent!
 F: 12.340
 P: 2.500      ← valoare bună
 ```
 
 ---
 
-### 🔄 PAS 3: Testează la viteza joasă
+### 🔄 PAS 3: (OPȚIONAL) Testează la viteza joasă
+
+**NOTĂ:** Acest pas este opțional. Poți să-l sari dacă folosești doar o singură viteză.
 
 1. **Apasă A** pentru a schimba la viteza joasă (1500)
-2. **Verifică** dacă Error rămâne mic (sub 50-100)
-3. **Dacă Error > 100:**
+2. **Verifică** dacă Error rămâne mic (sub 50-75)
+3. **Dacă Error > 75:**
    - Ajustează ușor F (step size 0.1)
    - Ajustează ușor P dacă e necesar
 
-4. **Apasă A** din nou pentru a reveni la viteza mare (6000)
+4. **Apasă A** din nou pentru a reveni la viteza mare (3000)
 5. **Verifică** că totul e încă bun
+
+**💡 Dacă nu folosești viteza joasă:** Ignoră acest pas și continuă direct la PAS 4.
 
 ---
 
@@ -111,7 +152,7 @@ Când totul arată bine la ambele viteze:
 
 | Buton | Funcție | Când să-l folosești |
 |-------|---------|---------------------|
-| **A** | Schimbă viteza (6000 ↔ 1500) | Pentru a testa la ambele viteze |
+| **A** | Schimbă viteza (3000 ↔ 1500) | Pentru a testa la ambele viteze (OPȚIONAL) |
 | **B** | Schimbă step size (10 → 1 → 0.1 → 0.01 → 0.001) | La început folosește 10, apoi scade treptat |
 | **D-PAD LEFT** | Crește F | Când viteza e prea mică |
 | **D-PAD RIGHT** | Scade F | Când viteza e prea mare |
@@ -123,9 +164,9 @@ Când totul arată bine la ambele viteze:
 ## TELEMETRIE - CE ÎNSEAMNĂ
 
 ```
-Target Velocity: 6000        ← Viteza dorită
-Current Velocity: 5950       ← Viteza actuală a motorului
-Error: 50                    ← Diferența (cât mai mică = mai bine)
+Target Velocity: 3000        ← Viteza dorită (3000 sau 1500)
+Current Velocity: 2975       ← Viteza actuală a motorului
+Error: 25                    ← Diferența (cât mai mică = mai bine)
 -------------------------
 F(D-left): 12.340           ← Valoarea F curentă
 P(D-UP): 2.500              ← Valoarea P curentă
@@ -137,17 +178,17 @@ Step Size: 0.1              ← Cât se schimbă la fiecare apăsare
 ## INDICATORI DE PERFORMANȚĂ
 
 ### ✅ EXCELENT
-- Error: < 50
+- Error: < 30
 - Fără oscilații
 - Stabilizare rapidă (< 0.5s)
 
 ### ✔️ BUN
-- Error: 50-100
+- Error: 30-75
 - Oscilații minime
 - Stabilizare acceptabilă (< 1s)
 
 ### ❌ SLAB
-- Error: > 200
+- Error: > 150
 - Oscilații vizibile
 - Stabilizare lentă (> 1.5s)
 
@@ -171,7 +212,7 @@ Step Size: 0.1              ← Cât se schimbă la fiecare apăsare
 **Cauză:** P prea mic  
 **Soluție:** Crește P cu D-PAD UP (dar nu prea mult!)
 
-### Problema: Error rămâne constant la ~100-200
+### Problema: Error rămâne constant la ~50-100
 **Cauză:** F nu e perfect ajustat  
 **Soluție:** Ajustează fin F cu step size 0.1
 
@@ -184,6 +225,8 @@ Acestea sunt doar estimări - valorile tale vor varia!
 - **F:** între 11-15 (depinde de baterie și motoare)
 - **P:** între 1-5 (start cu 2-3)
 
+**NOTĂ:** Pentru velocități mai mici (3000 vs 6000), este posibil să ai nevoie de valori F ușor diferite.
+
 ---
 
 ## SFATURI IMPORTANTE
@@ -193,31 +236,47 @@ Acestea sunt doar estimări - valorile tale vor varia!
 - ✅ Folosește step size mare (10) la început
 - ✅ Scade step size pe măsură ce te apropii de valoarea optimă
 - ✅ Așteaptă 2-3 secunde după fiecare ajustare
-- ✅ Testează la AMBELE viteze (high și low)
+- ✅ Testează la AMBELE viteze dacă folosești două (OPȚIONAL)
 - ✅ Notează valorile când găsești setări bune
+- ✅ Dacă folosești o singură viteză, tunează doar la highVelocity (3000)
 
 ### ❌ DON'T (Nu face):
 - ❌ Nu modifica P înainte de F
 - ❌ Nu face schimbări mari când ești aproape de optim
 - ❌ Nu te grăbi - tuning-ul durează 5-10 minute
 - ❌ Nu ignora oscilațiile - înseamnă P prea mare
-- ❌ Nu uita să testezi la viteza joasă
+- ❌ Nu complicați lucrurile - dacă o viteză e suficientă, nu folosi două
 
 ---
 
 ## SECVENȚA COMPLETĂ (Rezumat)
 
+### Varianta SIMPLĂ (o singură viteză - RECOMANDAT pentru începători):
+
 1. **START** → Rulează OpMode-ul
 2. **B** → Setează step size 10.0
-3. **D-PAD LEFT** (repetat) → Crește F până Error < 300
+3. **D-PAD LEFT** (repetat) → Crește F până Error < 150
 4. **B** → Setează step size 1.0
-5. **D-PAD LEFT/RIGHT** → Ajustează fin F până Error < 100
+5. **D-PAD LEFT/RIGHT** → Ajustează fin F până Error < 50
 6. **B** → Setează step size 0.01
 7. **D-PAD UP** (3-5 ori) → Crește P pentru stabilizare
 8. **Observă** → Dacă oscilează, scade P
-9. **A** → Schimbă la viteza joasă
+9. **NOTEAZĂ** → Valorile F și P finale
+10. **GATA!** 🎉
+
+### Varianta AVANSATĂ (două viteze - pentru validare suplimentară):
+
+1. **START** → Rulează OpMode-ul
+2. **B** → Setează step size 10.0
+3. **D-PAD LEFT** (repetat) → Crește F până Error < 150
+4. **B** → Setează step size 1.0
+5. **D-PAD LEFT/RIGHT** → Ajustează fin F până Error < 50
+6. **B** → Setează step size 0.01
+7. **D-PAD UP** (3-5 ori) → Crește P pentru stabilizare
+8. **Observă** → Dacă oscilează, scade P
+9. **A** → Schimbă la viteza joasă (1500)
 10. **Verifică** → Error ar trebui să rămână mic
-11. **A** → Înapoi la viteza mare
+11. **A** → Înapoi la viteza mare (3000)
 12. **NOTEAZĂ** → Valorile F și P finale
 
 ---
@@ -238,6 +297,27 @@ Acestea sunt doar estimări - valorile tale vor varia!
 - **Recomandare:** Re-tunează înainte de fiecare competiție
 
 - **Salvează valorile** pentru fiecare baterie dacă observi diferențe mari
+
+### 🎯 Despre vitezele intermediare:
+
+- Dacă ai tunat la **3000** și **1500**, orice viteză între ele (2000, 2200, 2500, etc.) va funcționa **suficient de bine** cu aceleași valori PIDF
+- **Nu este nevoie** să tunezi pentru fiecare viteză în parte
+- Eroarea poate fi ușor mai mare (50-100 RPM) la viteze neprobate, dar în general este acceptabil
+- Dacă observi probleme la o anumită viteză intermediară, poți face un tuning fin specific pentru acea viteză
+
+### 📊 Exemplu practic:
+
+```
+Tunat la 3000 RPM: F=12.5, P=2.8 → Error < 30 ✅
+Tunat la 1500 RPM: F=12.5, P=2.8 → Error < 30 ✅
+
+Folosind aceleași valori:
+La 2500 RPM: Error ≈ 40-60 ✔️ (acceptabil, fără tuning)
+La 2000 RPM: Error ≈ 40-70 ✔️ (acceptabil, fără tuning)
+La 2250 RPM: Error ≈ 35-65 ✔️ (acceptabil, fără tuning)
+```
+
+**Concluzie:** Testarea la două viteze extreme garantează performanță bună pe tot intervalul!
 
 ---
 

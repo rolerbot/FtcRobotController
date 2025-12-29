@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -15,8 +16,9 @@ import static org.firstinspires.ftc.teamcode.Utils.ColorToString;
 public class Shooter implements Subsystem{
     private ButtonReader Aruncare;
     private ButtonReader ThrowGreen, ThrowPurple;
-    private ButtonReader aruncare2;
-    private final GamepadEx ct1;
+    private ButtonReader OvverideShooting;
+    private ButtonReader VelocityChange;
+    private final GamepadEx ct1, ct2;
     private final double initialPosition = 0.0;
     private final double finalPosition = 0.37;
     private ElapsedTime runtime = new ElapsedTime();
@@ -33,41 +35,81 @@ public class Shooter implements Subsystem{
     /// Motor Aruncare
     private DcMotorEx MotorAruncare1 = null;
     private DcMotorEx MotorAruncare2 = null;
-    private double motorPower = 0.6;
+
+    // PIDF Configuration - valori din tuning
+    private final double shooterF = 13.8;
+    private final double shooterP = 0.0;
+    private final double shooterI = 0.0;
+    private final double shooterD = 0.0;
+
+    // Velocity targets (RPM) - ajustează după nevoie
+    private final double highVelocity = 1700;  // Viteza pentru aruncare normală
+    private final double lowVelocity = 1500;   // Viteza pentru aruncare ușoară
+    private double motorPower = lowVelocity;
+
     private double offsetPosition = 0.3834 / 2;
     private final double initialPosMixer = 0.0206;
     private ShootingState shootType = ShootingState.None;
     private double[] artPoz = {initialPosMixer + 3 * offsetPosition, initialPosMixer + 5 * offsetPosition, initialPosMixer + offsetPosition};
-    public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,Husky husky,GamepadEx ct1)
+    public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,Husky husky,GamepadEx ct1, GamepadEx ct2)
     {
         this.ct1 = ct1;
         this.mixer = mixer;
         this.intake = intk;
         this.telemetry = tl;
         this.husky = husky;
+        this.ct2 = ct2;
     }
      public void LinkComponents(HardwareMap hardwareMap)
      {
          Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
          ThrowGreen = new ButtonReader(ct1, GamepadKeys.Button.Y);
          ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.X);
-         aruncare2 = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
+         VelocityChange = new ButtonReader(ct2, GamepadKeys.Button.B);
+         OvverideShooting = new ButtonReader(ct2, GamepadKeys.Button.X);
          ServoRidicare = hardwareMap.get(Servo.class, "ServoRidicare");
          MotorAruncare1 = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
          MotorAruncare2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
      }
+     private void ChangeVelocity()
+     {
+         if (VelocityChange.wasJustPressed())
+         {
+             if (motorPower == highVelocity)
+             {
+                 motorPower = lowVelocity;
+                 SetShooterVelocity(motorPower);
+             }
+             else
+             {
+                 motorPower = highVelocity;
+                 SetShooterVelocity(motorPower);
+             }
+         }
+     }
     public void Initialize(HardwareMap hwMap)
     {
         LinkComponents(hwMap);
-        MotorAruncare1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        // Configurare PIDF pentru ambele motoare
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
+
+        MotorAruncare1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         MotorAruncare1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorAruncare1.setDirection(DcMotorSimple.Direction.FORWARD);
-        MotorAruncare2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        MotorAruncare1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+        MotorAruncare2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         MotorAruncare2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorAruncare2.setDirection(DcMotorSimple.Direction.REVERSE);
+        MotorAruncare2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
         ServoRidicare.setDirection(Servo.Direction.REVERSE);
         ServoRidicare.setPosition(initialPosition);
     }
+
+    public double GetCurentPower() {return motorPower;}
+    public ShootingState GetShootingType(){return shootType;};
 
     public void Run()
     {
@@ -97,14 +139,24 @@ public class Shooter implements Subsystem{
             shootType = ShootingState.Purple;
             shootingAllowed = true;
         }
+        else if(OvverideShooting.wasJustPressed())
+        {
+            mixer.SetArtifacts(Color.Purple, Color.Purple, Color.Purple);
+            shootType = ShootingState.Unarranged;
+            shootingAllowed = true;
+        }
+
         if (shootingAllowed)
         {
-            PrepareLaunch();
             Shooting();
         }
+        PrepareLaunch();
+        ChangeVelocity();
     }
     private void ReadButtons()
     {
+        OvverideShooting.readValue();
+        VelocityChange.readValue();
         Aruncare.readValue();
         ThrowGreen.readValue();
         ThrowPurple.readValue();
@@ -115,14 +167,17 @@ public class Shooter implements Subsystem{
     private void ResetTimer(){
         runtime.reset();
     }
-    public void PowerShooterMotors(double power)
+
+    // Controlează motoarele cu velocity (RPM) în loc de power
+    public void SetShooterVelocity(double velocity)
     {
-        MotorAruncare1.setPower(power);
-        MotorAruncare2.setPower(power);
+        MotorAruncare1.setVelocity(velocity);
+        MotorAruncare2.setVelocity(velocity);
     }
+
     private void StopShooterMotors(){
         preparingLaunch = false;
-        PowerShooterMotors(0);
+        SetShooterVelocity(0);
     }
 
     private void Shooting()
@@ -160,8 +215,6 @@ public class Shooter implements Subsystem{
         ShootColor();
     }
 
-
-
     private void Ordered()
     {
         if (preparingLaunch && !isShooting && !mixer.IsEmpty())
@@ -191,7 +244,7 @@ public class Shooter implements Subsystem{
         if (preparingLaunch && !isShooting && !mixer.IsEmpty() && currentShootingPosition >= 0)
         {
             isShooting = true;
-            PowerShooterMotors(motorPower);
+            SetShooterVelocity(motorPower);
             ResetTimer();
             mixer.SetPozition(artPoz[currentShootingPosition]);
             telemetry.Log("Shooting position", currentShootingPosition);
@@ -256,6 +309,8 @@ public class Shooter implements Subsystem{
             isShooting = false;
     }
 
+    public boolean GetShootingAllow(){return shootingAllowed;};
+
 
     private void ResetShooter()
     {
@@ -273,11 +328,11 @@ public class Shooter implements Subsystem{
         if(isShooting)
         {
             double time = runtime.seconds();
-            if (time >= 0.8 && time < 1.2)
+            if (time >= 1 && time < 1.35)
                 return 1;
-            else if (time >= 1.2 && time < 1.4)
+            else if (time >= 1.35 && time < 1.5)
                 return 2;
-            else if (time >= 1.4)
+            else if (time >= 1.5)
                 return 3;
         }
         return 0;
@@ -293,7 +348,7 @@ public class Shooter implements Subsystem{
         if(!mixer.IsEmpty() && !preparingLaunch)
         {
             preparingLaunch = true;
-            PowerShooterMotors(0.45);
+            SetShooterVelocity(motorPower);
         }
     }
 }

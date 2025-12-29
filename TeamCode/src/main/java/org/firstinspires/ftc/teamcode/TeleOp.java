@@ -43,7 +43,7 @@ public class TeleOp extends LinearOpMode
         mixer = new Mixer(myLogger, intake);
         mixer.Initialize(hardwareMap);
 
-        shooter = new Shooter(myLogger, mixer, intake, huskyLens,ct1);
+        shooter = new Shooter(myLogger, mixer, intake, huskyLens, ct1, ct2);
         shooter.Initialize(hardwareMap);
     }
 
@@ -51,6 +51,7 @@ public class TeleOp extends LinearOpMode
     {
         Initialize();
         myLogger.Log("Status", "Initialized and Ready");
+        myLogger.Log("Actual power:", shooter.GetCurentPower());
         waitForStart();
         left = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
         right = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
@@ -59,7 +60,7 @@ public class TeleOp extends LinearOpMode
             huskyLens.Run();
             intake.Run();
             drivetrain.Run();
-            if(shooter.IsNotShooting())
+            if(shooter.GetShootingType() == ShootingState.None && !shooter.GetShootingAllow())
                 mixer.Run();
             shooter.Run();
             myLogger.Update();

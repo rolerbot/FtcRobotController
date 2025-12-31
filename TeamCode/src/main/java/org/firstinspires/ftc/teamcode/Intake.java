@@ -24,6 +24,8 @@ public class Intake implements Subsystem
         this.telemetry = tl;
     }
 
+    public Intake(TelemetryCustom tl) {this.telemetry = tl;};
+
     public void LinkComponents(HardwareMap hwMap)
     {
         MotorIN = hwMap.get(DcMotorEx.class, "MotorIN");
@@ -33,8 +35,12 @@ public class Intake implements Subsystem
     {
         LinkComponents(hwMap);
 
-        ButtonSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
-        ButtonJos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        // Only initialize buttons if gamepad exists (teleop mode)
+        if (ct1 != null)
+        {
+            ButtonSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+            ButtonJos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        }
 
         MotorIN.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -43,14 +49,19 @@ public class Intake implements Subsystem
 
     private void ReadButtons()
     {
-        ButtonSus.readValue();
-        ButtonJos.readValue();
+        if (ButtonSus != null && ButtonJos != null)
+        {
+            ButtonSus.readValue();
+            ButtonJos.readValue();
+        }
     }
 
     public void SetPowerMax()
     {
         MotorIN.setPower(motorPower);
     }
+
+    public void SetForward(){isForward = true;};
 
     private void MotorIntake()
     {

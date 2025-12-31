@@ -63,6 +63,8 @@ public class Husky implements Subsystem
         this.drivetrain = drivetrain;
     }
 
+    public Husky(TelemetryCustom tl) {this.telemetry = tl;};
+
     public void LinkComponents(HardwareMap hardwareMap)
     {
         huskyLens = hardwareMap.get(HuskyLens.class, "huskylens");
@@ -71,7 +73,12 @@ public class Husky implements Subsystem
     {
         LinkComponents(hwMap);
         huskyLens.selectAlgorithm(HuskyLens.Algorithm.TAG_RECOGNITION);
-        AlignButton = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
+
+        // Only initialize button if gamepad exists (teleop mode)
+        if (ct1 != null)
+        {
+            AlignButton = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
+        }
     }
     public void Run()
     {
@@ -226,6 +233,9 @@ public class Husky implements Subsystem
     }
     private void CheckAlignmentButton()
     {
+        // Only check button if it exists (teleop mode)
+        if (AlignButton == null) return;
+
         AlignButton.readValue();
         if (AlignButton.wasJustPressed())
         {
@@ -245,6 +255,13 @@ public class Husky implements Subsystem
     }
     private void PerformAlignment()
     {
+        // Only perform alignment if drivetrain is available (teleop mode)
+        if (drivetrain == null)
+        {
+            isAligning = false;
+            return;
+        }
+
         if (!tagDetected)
         {
             telemetry.Log("Auto-Align", "NO TAG DETECTED!");

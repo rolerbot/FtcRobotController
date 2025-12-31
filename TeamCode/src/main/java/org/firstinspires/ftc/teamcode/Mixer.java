@@ -25,9 +25,6 @@ public class Mixer implements Subsystem{
         this.intake = intake;
         this.logger = lg;
     }
-    public void ResetTimer(){
-        runtime.reset();
-    }
     public void LinkComponents(HardwareMap hardwareMap)
     {
 
@@ -42,7 +39,7 @@ public class Mixer implements Subsystem{
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
     }
-    public void StartTimer() {ResetTimer(); runtime.startTime();}
+    public void StartTimer() {runtime.reset(); runtime.startTime();}
     public int GetColorBlue()
     {
         return cSensor.blue();
@@ -221,5 +218,6 @@ public class Mixer implements Subsystem{
         ServoMixer2.setPosition(pos);
     }
     public double GetTimerElapsed(){return runtime.seconds();}
+    public int GetArtifactCount(){return artifactCount;}
     public void Run(){ArtifacteIndx();}
 }

@@ -14,6 +14,16 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
+    // ROBOT DIMENSIONS (in inches) - IMPORTANT for path planning!
+    // Measure your robot and update these values
+    public static final double ROBOT_LENGTH = 18.0;  // Front to back (inches)
+    public static final double ROBOT_WIDTH = 18.0;   // Left to right (inches)
+    public static final double ROBOT_DIAGONAL = Math.sqrt(ROBOT_LENGTH * ROBOT_LENGTH + ROBOT_WIDTH * ROBOT_WIDTH);
+
+    // Calculated offsets from center to edges
+    public static final double HALF_LENGTH = ROBOT_LENGTH / 2.0;  // 9 inches
+    public static final double HALF_WIDTH = ROBOT_WIDTH / 2.0;    // 9 inches
+
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(10.15)
             .forwardZeroPowerAcceleration(-29)
@@ -38,8 +48,8 @@ public class Constants {
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(-3.62)
-            .strafePodX(-6.65)
+            .forwardPodY(-6.65)
+            .strafePodX(-3.62)
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)

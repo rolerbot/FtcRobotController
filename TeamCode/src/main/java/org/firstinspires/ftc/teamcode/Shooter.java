@@ -375,11 +375,11 @@ public class Shooter implements Subsystem{
         if(isShooting)
         {
             double time = runtime.seconds();
-            if (time >= 1 && time < 1.35)
+            if (time >= 1 && time < 3 || MotorAruncare1.getVelocity() == motorPower)
                 return 1;
-            else if (time >= 1.35 && time < 1.5)
+            else if (time >= 3 && time < 5)
                 return 2;
-            else if (time >= 1.5)
+            else if (time >= 5)
                 return 3;
         }
         return 0;

@@ -21,7 +21,7 @@ public class Shooter implements Subsystem{
     private ButtonReader VelocityChange;
     private final GamepadEx ct1, ct2;
     private final double initialPosition = 0.3;
-    private final double finalPosition = 0.42;
+    private final double finalPosition = 0.47;
     private ElapsedTime runtime = new ElapsedTime();
     boolean isShooting = false;
     private int arrangedIndex = 0;
@@ -401,9 +401,8 @@ public class Shooter implements Subsystem{
 
     private void SetMotorPower()
     {
-        motorPower = 5.37375 * constDist + 248.92027;
-        MotorAruncare1.setVelocity(motorPower);
-        MotorAruncare2.setVelocity(motorPower);
+        motorPower = 156.941*constDist*constDist*constDist-1305.23*constDist*constDist+3731.892*constDist-2203.82786;
+        SetShooterVelocity(motorPower);
 
     } // Example linear relation
 

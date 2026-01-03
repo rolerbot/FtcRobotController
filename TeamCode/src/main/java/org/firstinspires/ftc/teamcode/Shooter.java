@@ -20,8 +20,8 @@ public class Shooter implements Subsystem{
     private ButtonReader OvverideShooting;
     private ButtonReader VelocityChange;
     private final GamepadEx ct1, ct2;
-    private final double initialPosition = 0.0;
-    private final double finalPosition = 0.37;
+    private final double initialPosition = 0.3;
+    private final double finalPosition = 0.42;
     private ElapsedTime runtime = new ElapsedTime();
     boolean isShooting = false;
     private int arrangedIndex = 0;
@@ -30,9 +30,11 @@ public class Shooter implements Subsystem{
     private final Intake intake;
     private final TelemetryCustom telemetry;
     private final Husky husky;
+    private final RobotAllignment robotAllignment;
     private boolean preparingLaunch = false;
     private boolean shootingAllowed = false;
     private Servo ServoRidicare = null;
+    private double constDist = 0.0;
     /// Motor Aruncare
     private DcMotorEx MotorAruncare1 = null;
     private DcMotorEx MotorAruncare2 = null;
@@ -46,15 +48,14 @@ public class Shooter implements Subsystem{
     // Velocity targets (RPM) - ajustează după nevoie
     private final double highVelocity = 1700;  // Viteza pentru aruncare normală
     private final double lowVelocity = 1500;   // Viteza pentru aruncare ușoară
-    private double motorPower = highVelocity;
-
+    private double motorPower = lowVelocity;
     private double offsetPosition = 0.3834 / 2;
     private final double initialPosMixer = 0.0206;
     private ShootingState shootType = ShootingState.None;
     private double[] artPoz = {initialPosMixer + 3 * offsetPosition, initialPosMixer + 5 * offsetPosition, initialPosMixer + offsetPosition};
 
     // Constructor for TeleOp with gamepads
-    public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,Husky husky,GamepadEx ct1, GamepadEx ct2)
+    public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,Husky husky,RobotAllignment robotAllignment,GamepadEx ct1, GamepadEx ct2)
     {
         this.ct1 = ct1;
         this.ct2 = ct2;
@@ -62,10 +63,11 @@ public class Shooter implements Subsystem{
         this.intake = intk;
         this.telemetry = tl;
         this.husky = husky;
+        this.robotAllignment = robotAllignment;
     }
 
     // Constructor for Autonomous without gamepads
-    public Shooter(TelemetryCustom tl, Mixer mixer, Intake intk, Husky husky)
+    public Shooter(TelemetryCustom tl, Mixer mixer, Intake intk, Husky husky, RobotAllignment robotAllignment)
     {
         this.ct1 = null;
         this.ct2 = null;
@@ -73,6 +75,7 @@ public class Shooter implements Subsystem{
         this.intake = intk;
         this.telemetry = tl;
         this.husky = husky;
+        this.robotAllignment = robotAllignment;
     }
      public void LinkComponents(HardwareMap hardwareMap)
      {
@@ -99,9 +102,14 @@ public class Shooter implements Subsystem{
                  motorPower = lowVelocity;
                  SetShooterVelocity(motorPower);
              }
-             else
+             else if(motorPower == lowVelocity)
              {
                  motorPower = highVelocity;
+                 SetShooterVelocity(motorPower);
+             }
+             else
+             {
+                 motorPower = lowVelocity;
                  SetShooterVelocity(motorPower);
              }
          }
@@ -124,7 +132,11 @@ public class Shooter implements Subsystem{
         MotorAruncare2.setDirection(DcMotorSimple.Direction.REVERSE);
         MotorAruncare2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
-        ServoRidicare.setDirection(Servo.Direction.REVERSE);
+        // CRITICAL: Ensure motors start at 0 velocity (don't retain previous commands)
+        MotorAruncare1.setVelocity(0);
+        MotorAruncare2.setVelocity(0);
+
+        ServoRidicare.setDirection(Servo.Direction.FORWARD);
         ServoRidicare.setPosition(initialPosition);
     }
 
@@ -134,7 +146,7 @@ public class Shooter implements Subsystem{
     public void Run()
     {
         ReadButtons();
-
+        constDist = robotAllignment.GetDistanceToTarget();
         // Only process button inputs if buttons exist (teleop mode)
         if (Aruncare != null && Aruncare.wasJustPressed() && !mixer.IsEmpty())
         {
@@ -236,6 +248,7 @@ public class Shooter implements Subsystem{
         telemetry.Log("Unordered", "");
         if (preparingLaunch && !isShooting && !mixer.IsEmpty())
         {
+            SetMotorPower();
             if(mixer.GetCountPurple() > 0)
                 currentShootingPosition = mixer.GetColorPosition(Color.Purple);
             else if(mixer.GetCountGreen() > 0)
@@ -251,6 +264,7 @@ public class Shooter implements Subsystem{
     {
         if (preparingLaunch && !isShooting && !mixer.IsEmpty())
         {
+            SetMotorPower();
             currentShootingPosition = mixer.GetColorPosition(husky.artifactOrder[arrangedIndex]);
             telemetry.Log("Target Color", ColorToString(husky.artifactOrder[arrangedIndex]));
         }
@@ -261,6 +275,7 @@ public class Shooter implements Subsystem{
     {
         if (preparingLaunch && !isShooting && !mixer.IsEmpty())
         {
+            SetMotorPower();
             if(shootType == ShootingState.Green && mixer.GetCountGreen() > 0)
                 currentShootingPosition = mixer.GetColorPosition(Color.Green);
             else if(shootType == ShootingState.Purple && mixer.GetCountPurple() > 0)
@@ -276,7 +291,7 @@ public class Shooter implements Subsystem{
         if (preparingLaunch && !isShooting && !mixer.IsEmpty() && currentShootingPosition >= 0)
         {
             isShooting = true;
-            SetShooterVelocity(motorPower);
+            SetMotorPower();
             ResetTimer();
             mixer.SetPozition(artPoz[currentShootingPosition]);
             telemetry.Log("Shooting position", currentShootingPosition);
@@ -383,6 +398,14 @@ public class Shooter implements Subsystem{
             SetShooterVelocity(motorPower);
         }
     }
+
+    private void SetMotorPower()
+    {
+        motorPower = 5.37375 * constDist + 248.92027;
+        MotorAruncare1.setVelocity(motorPower);
+        MotorAruncare2.setVelocity(motorPower);
+
+    } // Example linear relation
 
     // ==================== AUTONOMOUS SHOOTING - SIMPLIFIED ====================
 
@@ -618,11 +641,6 @@ public class Shooter implements Subsystem{
         {
             telemetry.Log("Cannot shoot", "Mixer is empty!");
         }
-    }
-
-    public boolean IsShooting()
-    {
-        return isShooting || shootingAllowed;
     }
 
     public void VelocityOverride()

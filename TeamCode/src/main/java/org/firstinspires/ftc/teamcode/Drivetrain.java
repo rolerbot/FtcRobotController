@@ -100,4 +100,13 @@ public class Drivetrain implements Subsystem {
         MotorSS.setPower(0);
         MotorSD.setPower(0);
     }
+
+    public void ApplyHeadingLockPowers(double[] lockPowers) {
+        if (lockPowers == null || lockPowers.length != 4) return;
+
+        MotorFS.setPower(lockPowers[0]);  // Left Front
+        MotorFD.setPower(lockPowers[1]);  // Right Front
+        MotorSS.setPower(lockPowers[2]);  // Left Back
+        MotorSD.setPower(lockPowers[3]);  // Right Back
+    }
 }

@@ -56,6 +56,7 @@ public class Husky implements Subsystem
     private static final double ROTATION_SPEED = 0.5;
     private static final double APPROACH_SPEED = 0.7;
 
+    // Constructor with all parameters
     public Husky(TelemetryCustom tl, GamepadEx ct1, Drivetrain drivetrain)
     {
         this.ct1 = ct1;
@@ -63,7 +64,13 @@ public class Husky implements Subsystem
         this.drivetrain = drivetrain;
     }
 
-    public Husky(TelemetryCustom tl) {this.telemetry = tl;};
+    // Constructor with just telemetry (for autonomous)
+    public Husky(TelemetryCustom tl)
+    {
+        this.telemetry = tl;
+        this.ct1 = null;
+        this.drivetrain = null;
+    }
 
     public void LinkComponents(HardwareMap hardwareMap)
     {
@@ -96,7 +103,7 @@ public class Husky implements Subsystem
         // Execută auto-aliniearea dacă este activată
         if (isAligning)
         {
-            PerformAlignment();
+           // PerformAlignment();
         }
 
         // Afișează telemetria

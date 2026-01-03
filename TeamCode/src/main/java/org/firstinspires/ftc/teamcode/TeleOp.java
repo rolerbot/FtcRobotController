@@ -16,9 +16,11 @@ public class TeleOp extends LinearOpMode
     Mixer mixer;
     Shooter shooter;
     OpenCvCamera camera;
+    RobotAllignment shooterAiming;
     Husky huskyLens;
     ButtonReader left;
     ButtonReader right;
+    private Servo testServo;
     private GamepadEx ct1, ct2;
     private void MapControlerButtons()
     {
@@ -30,6 +32,10 @@ public class TeleOp extends LinearOpMode
         myLogger = new TelemetryCustom(telemetry);
         MapControlerButtons();
 
+    }
+
+    private void InitAfter()
+    {
         drivetrain = new Drivetrain(ct1, ct2);
         drivetrain.Initialize(hardwareMap);
         drivetrain.schimbator = 1.4 - drivetrain.schimbator;
@@ -43,28 +49,40 @@ public class TeleOp extends LinearOpMode
         mixer = new Mixer(myLogger, intake);
         mixer.Initialize(hardwareMap);
 
-        shooter = new Shooter(myLogger, mixer, intake, huskyLens, ct1, ct2);
+        shooterAiming = new RobotAllignment(myLogger, ct1, ct2, drivetrain, false);
+        shooterAiming.Initialize(hardwareMap);
+
+        shooter = new Shooter(myLogger, mixer, intake, huskyLens, shooterAiming ,ct1, ct2);
         shooter.Initialize(hardwareMap);
+
     }
 
     public void runOpMode()
     {
         Initialize();
-        myLogger.Log("Status", "Initialized and Ready");
-        myLogger.Log("Actual power:", shooter.GetCurentPower());
         waitForStart();
+        InitAfter();
+        myLogger.Log("Actual power:", shooter.GetCurentPower());
         left = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
         right = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         while (opModeIsActive())
         {
+            // Utils.GasirePozitii(left, right, testServo);
             huskyLens.Run();
             intake.Run();
             drivetrain.Run();
             if(shooter.GetShootingType() == ShootingState.None && !shooter.GetShootingAllow())
                 mixer.Run();
             shooter.Run();
+            shooterAiming.Run();
+
+            // Display distance to target on telemetry
+            myLogger.Log("Distance to Target", String.format("%.2f m", shooterAiming.GetDistanceToTarget()));
+            myLogger.Log("Robot Position", String.format("X:%.1f Y:%.1f cm", shooterAiming.GetRobotX(), shooterAiming.GetRobotY()));
+
             myLogger.Update();
         }
+        telemetry.update();
         myLogger.close();
     }
 }

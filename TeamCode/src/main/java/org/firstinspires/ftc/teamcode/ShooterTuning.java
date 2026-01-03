@@ -13,20 +13,25 @@ public class ShooterTuning extends OpMode
 {
 
     private DcMotor shooterMotor1, shooterMotor2;
-    private double highVelocity = 1600;
-    private double lowVelocity = 1000;
+    private RobotAllignment robotAllignment;
+    private Drivetrain drivetrain;
+    private TelemetryCustom tl;
+    private double highVelocity = 1700; // 140-150 cm
+    private double lowVelocity = 1000; // 50-60 cm
     private double currenttargetVelocity = highVelocity;
     double F = 0;
     double P = 0;
     double[] stepsizes = {10.0, 1.0, 0.1, 0.01, 0.001};
     int stepIndex = 1;
     ButtonReader switchCurrentVelocity, stepIncrease, Fincrease, Fdescrease, Pincrease, Pdecrease;
-    GamepadEx ct1;
+    GamepadEx ct1, ct2;
 
     @Override
     public void init()
     {
         ct1 = new GamepadEx(gamepad1);
+        ct2 = new GamepadEx(gamepad2);
+        tl = new TelemetryCustom(telemetry);
         shooterMotor1  = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
         shooterMotor2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
         shooterMotor1.setDirection(DcMotor.Direction.FORWARD);
@@ -42,6 +47,11 @@ public class ShooterTuning extends OpMode
         Fdescrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         Pincrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
         Pdecrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+
+        drivetrain = new Drivetrain(ct1, ct2);
+        drivetrain.Initialize(hardwareMap);
+        robotAllignment = new RobotAllignment(tl, ct1, ct2,drivetrain,true);
+        robotAllignment.Initialize(hardwareMap);
         telemetry.addLine("Initialized");
     }
 

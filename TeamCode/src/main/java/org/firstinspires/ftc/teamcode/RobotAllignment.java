@@ -4,17 +4,14 @@ import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.IMU;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
 public class RobotAllignment implements Subsystem
 {
-    private IMU imu;
-    private GoBildaPinpointDriver pinpoint;  // Odometry computer for position tracking
+    private GoBildaPinpointDriver pinpoint;  // Odometry computer for position tracking (includes IMU)
     private final TelemetryCustom telemetry;
     private GamepadEx ct1, ct2;
     private Drivetrain drivetrain;  // Reference to drivetrain for applying heading lock
@@ -25,20 +22,31 @@ public class RobotAllignment implements Subsystem
 
     // PID coefficients for rotation - using Pedro Pathing's tuned heading PID
     private final double kP;
+    // PID coefficients for position hold
+    private final double kP_position = 0.09;  // Proportional gain for position (gentler than rotation)
 
     // Target position for distance calculation
     // (in INCHES - Pedro Pathing units) X:
-    private double targetX = 1;
-    private double targetY = 142.056;
+    private double targetX = 0;
+    private double targetY = 143;
 
     // Robot's current position on field (in INCHES - Pedro Pathing units)
     private double robotX = 9.000;  // Default starting X position in inches
     private double robotY = 9.000;    // Default starting Y position in inches
 
-    // Heading lock feature - maintains heading continuously
-    private boolean headingLockEnabled = false;  // Set to true to enable continuous heading correction
+    // Heading lock feature - maintains heading continuously (only when stationary)
+    private boolean headingLockEnabled = false;  // DISABLED by default - press DPAD_LEFT to enable
     private double lockedHeading = 0;
     private boolean isRobotMoving = false;  // Track if robot is currently moving
+
+    // Strafe lock feature - maintains heading while moving (strafing/forward/back allowed)
+    private boolean strafeLockEnabled = false;  // DISABLED by default - press DPAD_RIGHT to enable
+    private double strafeLockedHeading = 0;
+
+    // Position lock feature - maintains X,Y position when hit by another robot
+    private boolean positionLockEnabled = false;  // DISABLED by default - press DPAD_UP to enable
+    private double lockedX = 0;
+    private double lockedY = 0;
 
     private boolean resetIMUOnInit = true;
 
@@ -62,38 +70,31 @@ public class RobotAllignment implements Subsystem
     }
 
     public void LinkComponents(HardwareMap hardwareMap) {
-        imu = hardwareMap.get(IMU.class, "imu");
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
         // Only initialize button readers if gamepads exist (teleop mode)
         if (ct1 != null && ct2 != null) {
             resetPositionButton = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
-            toggleHeadingLockButton = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
+            toggleHeadingLockButton = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
         }
     }
 
     public void Initialize(HardwareMap hardwareMap) {
         LinkComponents(hardwareMap);
 
-        // Initialize IMU (backup - Pinpoint has its own IMU)
-        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
-        imu.initialize(parameters);
-
         // ===== CRITICAL: Configure Pinpoint Odometry Computer =====
         ConfigurePinpoint();
 
         // Optionally reset position and IMU (useful for autonomous start)
-        if (resetIMUOnInit) {
+        if (resetIMUOnInit)
+        {
             pinpoint.resetPosAndIMU();  // Resets position to (0,0,0) and recalibrates IMU
-            imu.resetYaw();  // Also reset backup IMU
-            telemetry.Log("ShooterDistance", "Pinpoint & IMU reset to 0°");
-        } else {
-            telemetry.Log("ShooterDistance", "Pinpoint preserving heading: " + GetCurrentHeading() + "°");
+            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 9, 9, AngleUnit.DEGREES, 90));
+            pinpoint.recalibrateIMU();
+            robotX = 9;
+            robotY = 9;
+            telemetry.Log("RobotAllignment", "Pinpoint reset: X:9\" Y:9\" Heading:90°");
         }
-
-        telemetry.Log("ShooterDistance", "Init: PID_kP=" + kP);
     }
 
     /**
@@ -137,12 +138,42 @@ public class RobotAllignment implements Subsystem
             );
         }
 
-        // HEADING LOCK: Only lock heading when robot is stationary
-        if (!isRobotMoving) {
+        // PRIORITY ORDER: Position Lock > Heading Lock > Strafe Lock
+        // Position lock takes highest priority (actively drives back to position)
+        // POSITION LOCK: Maintain X,Y position when hit (commented out by default)
+        /*
+        if (positionLockEnabled && !isRobotMoving && drivetrain != null) {
+            // Robot is stationary AND position locked - maintain position
+            double[] positionPowers = RunPositionLock();
+            if (positionPowers != null) {
+                drivetrain.ApplyMovementPowers(positionPowers);
+                return; // Skip other locks
+            }
+        }
+        */
+
+        // HEADING LOCK: Continuously point towards target when stationary
+        if (headingLockEnabled && !isRobotMoving && drivetrain != null) {
+            // Robot is stationary - apply heading lock to point at target
             double[] lockPowers = RunHeadingLock();
             if (lockPowers != null) {
-                 drivetrain.ApplyHeadingLockPowers(lockPowers);
+                drivetrain.ApplyHeadingLockPowers(lockPowers);
             }
+        }
+        // STRAFE LOCK: Maintain heading while moving (allows movement but keeps pointing at target)
+        // Comment out the lines below to disable strafe lock
+        /*
+        else if (strafeLockEnabled && isRobotMoving && drivetrain != null) {
+            // Robot is moving - apply strafe lock to maintain heading towards target
+            double[] lockPowers = RunStrafeLock();
+            if (lockPowers != null) {
+                drivetrain.ApplyHeadingLockPowers(lockPowers);
+            }
+        }
+        */
+        else if (drivetrain != null) {
+            // All locks disabled - clear corrections
+            drivetrain.ApplyHeadingLockPowers(null);
         }
     }
 
@@ -163,7 +194,6 @@ public class RobotAllignment implements Subsystem
         telemetry.Log("=== POSITION DEBUG ===", "");
         telemetry.Log("Robot Position", String.format("X:%.1f\" Y:%.1f\"", robotX, robotY));
         telemetry.Log("Target Position", String.format("X:%.1f\" Y:%.1f\"", targetX, targetY));
-        telemetry.Log("Delta to Target", String.format("ΔX:%.1f\" ΔY:%.1f\"", targetX - robotX, targetY - robotY));
         telemetry.Log("Distance", String.format("%.2fm (%.1fin)", GetDistanceToTarget(), GetDistanceToTarget() / 0.0254));
 
         // Heading debug
@@ -175,6 +205,8 @@ public class RobotAllignment implements Subsystem
         telemetry.Log("Target Heading", String.format("%.1f°", targetHeading));
         telemetry.Log("Heading Error", String.format("%.1f°", headingError));
         telemetry.Log("Heading Lock", headingLockEnabled ? "ENABLED" : "DISABLED");
+        telemetry.Log("Strafe Lock", strafeLockEnabled ? "ENABLED" : "DISABLED");
+        telemetry.Log("Position Lock", positionLockEnabled ? String.format("ENABLED (X:%.1f\" Y:%.1f\")", lockedX, lockedY) : "DISABLED");
     }
 
     /**
@@ -198,13 +230,11 @@ public class RobotAllignment implements Subsystem
             robotX = 9;
             robotY = 9;
 
-            // Reset backup IMU too
-            imu.resetYaw();
 
             telemetry.Log("Position Reset", "X:9\" Y:9\" Heading:90° (IMU recalibrated)");
         }
 
-        // DPAD_LEFT: Toggle heading lock on/off
+        // DPAD_LEFT: Toggle heading lock on/off (only works when stationary)
         if (toggleHeadingLockButton.wasJustPressed()) {
             if (headingLockEnabled) {
                 UnlockHeading();
@@ -212,7 +242,25 @@ public class RobotAllignment implements Subsystem
                 LockCurrentHeading();
             }
         }
+/*
+        // DPAD_RIGHT: Toggle strafe lock on/off (maintains heading while moving)
+        if (toggleStrafeLockButton.wasJustPressed()) {
+            if (strafeLockEnabled) {
+                UnlockStrafeLock();
+            } else {
+                LockStrafeLock();
+            }
+        }
 
+        // DPAD_UP: Toggle position lock on/off (maintains X,Y position when hit)
+        if (togglePositionLockButton.wasJustPressed()) {
+            if (positionLockEnabled) {
+                UnlockPosition();
+            } else {
+                LockCurrentPosition();
+            }
+        }
+*/
     }
 
     /**
@@ -277,39 +325,166 @@ public class RobotAllignment implements Subsystem
 
     // ==================== HEADING LOCK FEATURE ====================
 
-    /**
-     * Enable heading lock towards target point
-     * Robot will continuously try to point towards the target (straight line from front to target)
-     * This maintains orientation even if robot is hit by another robot
-     */
-    public void LockCurrentHeading() {
+    public void LockCurrentHeading()
+    {
         lockedHeading = GetHeadingToTarget();  // Lock to heading towards target
         headingLockEnabled = true;
         telemetry.Log("Heading Lock", String.format("ENABLED - Pointing to target at %.1f°", lockedHeading));
     }
-
-    /**
-     * Disable heading lock
-     * Robot will stop trying to maintain heading
-     */
-    public void UnlockHeading() {
+    public void UnlockHeading()
+    {
         headingLockEnabled = false;
         telemetry.Log("Heading Lock", "DISABLED");
     }
 
-    /**
-     * Check if heading lock is active
-     */
     public boolean IsHeadingLocked() {return headingLockEnabled;}
 
 
+    // ==================== STRAFE LOCK FEATURE ====================
+
+    public void LockStrafeLock()
+    {
+        strafeLockedHeading = GetHeadingToTarget();  // Lock to heading towards target
+        strafeLockEnabled = true;
+        telemetry.Log("Strafe Lock", String.format("ENABLED - Maintaining heading to target at %.1f°", strafeLockedHeading));
+    }
+
+    public void UnlockStrafeLock()
+    {
+        strafeLockEnabled = false;
+        telemetry.Log("Strafe Lock", "DISABLED");
+    }
+    public boolean IsStrafeLocked() {return strafeLockEnabled;}
+
+    private double[] RunStrafeLock()
+    {
+        if (!strafeLockEnabled) return null;
+
+        // Continuously update locked heading to point towards target
+        // This ensures robot always aims at target, even as it moves around the field
+        strafeLockedHeading = GetHeadingToTarget();
+
+        // Get current robot heading from Pinpoint
+        double currentAngle = GetCurrentHeading();
+        double error = NormalizeAngle(strafeLockedHeading - currentAngle);
+
+        // LARGER deadband to prevent oscillation while moving
+        if (Math.abs(error) < 3.0) {
+            return null; // Within 5°, no correction needed - return null to clear corrections
+        }
+
+        // Exponential scaling for smoother correction while moving
+        double errorSign = Math.signum(error);
+        double errorMagnitude = Math.abs(error);
+        double scaledError = errorSign * Math.pow(errorMagnitude / 180.0, 1.5) * 180.0;
+
+        // Even gentler P gain for strafe lock (12.5% instead of 25%)
+        double rotationPower = kP * scaledError * 0.125;
+
+        // Clamp to ±0.15 for very gentle correction while moving
+        rotationPower = Math.max(-0.15, Math.min(0.15, rotationPower));
+
+        // Return rotation powers to maintain heading towards target
+        // Pattern matches Drivetrain.Rotate(): FS=+power, FD=-power, SS=+power, SD=-power
+        return new double[]{
+            rotationPower,   // leftFront (FS)
+            -rotationPower,  // rightFront (FD)
+            rotationPower,   // leftBack (SS)
+            -rotationPower   // rightBack (SD)
+        };
+    }
+
+
+    // ==================== POSITION LOCK FEATURE ====================
+
     /**
-     * HEADING LOCK FEATURE - Run heading lock correction
-     * Continuously points robot towards target point (straight line from front to target)
-     * Updates target heading in real-time as robot or target moves
-     * Manual controls (joystick/triggers) have priority and temporarily disable this
-     * @return Motor powers if heading lock is active, null otherwise
+     * Enable position lock at current location
+     * Robot will actively drive back to this position if pushed by another robot
+     * Only works when stationary (manual controls override)
      */
+    public void LockCurrentPosition() {
+        lockedX = robotX;  // Lock current X position
+        lockedY = robotY;  // Lock current Y position
+        positionLockEnabled = true;
+        telemetry.Log("Position Lock", String.format("ENABLED at X:%.1f\" Y:%.1f\"", lockedX, lockedY));
+    }
+
+    /**
+     * Disable position lock
+     * Robot will stop trying to maintain position
+     */
+    public void UnlockPosition() {
+        positionLockEnabled = false;
+        telemetry.Log("Position Lock", "DISABLED");
+    }
+
+    /**
+     * Check if position lock is active
+     */
+    public boolean IsPositionLocked() {return positionLockEnabled;}
+
+    /**
+     * POSITION LOCK FEATURE - Maintain X,Y position when robot is pushed
+     * Actively drives robot back to locked position using mecanum drive
+     * Uses field-centric control to correct position drift
+     * @return Motor powers [FS, FD, SS, SD] for all 4 motors, null if lock disabled
+     */
+    private double[] RunPositionLock()
+    {
+        if (!positionLockEnabled) return null;
+
+        // Calculate position error (how far we've been pushed from locked position)
+        double errorX = lockedX - robotX;  // Error in X (inches)
+        double errorY = lockedY - robotY;  // Error in Y (inches)
+
+        // Calculate total position error magnitude
+        double totalError = Math.sqrt(errorX * errorX + errorY * errorY);
+
+        // Deadband: if within 1 inch, no correction needed
+        if (totalError < 1.0) {
+            return new double[]{0, 0, 0, 0};
+        }
+
+        // Convert field-relative error to robot-relative using current heading
+        double currentHeading = GetCurrentHeading();
+        double headingRad = Math.toRadians(currentHeading);
+
+        // Rotate error vector by -heading to get robot-relative coordinates
+        // This makes the correction field-centric (always drives toward locked position)
+        double robotRelativeX = errorX * Math.cos(-headingRad) - errorY * Math.sin(-headingRad);
+        double robotRelativeY = errorX * Math.sin(-headingRad) + errorY * Math.cos(-headingRad);
+
+        // P control for position correction (proportional to error)
+        double powerX = kP_position * robotRelativeX;  // Strafe power
+        double powerY = kP_position * robotRelativeY;  // Forward/back power
+
+        // Clamp individual powers to ±0.3 for gentle correction
+        powerX = Math.max(-0.3, Math.min(0.3, powerX));
+        powerY = Math.max(-0.3, Math.min(0.3, powerY));
+
+        // Convert strafe/forward powers to individual motor powers (mecanum drive)
+        // Mecanum formula: FS = Y + X, FD = Y - X, SS = Y - X, SD = Y + X
+        double frontLeft = powerY + powerX;   // FS (MotorFS)
+        double frontRight = powerY - powerX;  // FD (MotorFD)
+        double backLeft = powerY - powerX;    // SS (MotorSS)
+        double backRight = powerY + powerX;   // SD (MotorSD)
+
+        // Find max power to normalize if needed (prevent any motor from exceeding 1.0)
+        double maxPower = Math.max(Math.max(Math.abs(frontLeft), Math.abs(frontRight)),
+                                  Math.max(Math.abs(backLeft), Math.abs(backRight)));
+        if (maxPower > 0.3) {
+            double scale = 0.3 / maxPower;
+            frontLeft *= scale;
+            frontRight *= scale;
+            backLeft *= scale;
+            backRight *= scale;
+        }
+
+        // Return motor powers for position correction
+        return new double[]{frontLeft, frontRight, backLeft, backRight};
+    }
+
+
     private double[] RunHeadingLock()
     {
         if (!headingLockEnabled) return null;
@@ -322,21 +497,32 @@ public class RobotAllignment implements Subsystem
         double currentAngle = GetCurrentHeading();
         double error = NormalizeAngle(lockedHeading - currentAngle);
 
-        // Small deadband to avoid micro-corrections
-        if (Math.abs(error) < 1.0) {
-            return new double[]{0, 0, 0, 0}; // Within 1°, no correction needed
+        // LARGER deadband to prevent oscillation (5° is more forgiving)
+        if (Math.abs(error) < 3.0) {
+            return null; // Within 5°, no correction needed - return null to clear corrections
         }
 
-        // Simple P control for heading lock (no I or D to keep it smooth)
-        double rotationPower = kP * error * 0.3;  // 30% of normal P gain for gentler correction
-        rotationPower = Math.max(-0.3, Math.min(0.3, rotationPower)); // Clamp to ±0.3
+        // Exponential scaling: small errors get even smaller corrections
+        // This prevents aggressive micro-corrections near the target
+        double errorSign = Math.signum(error);
+        double errorMagnitude = Math.abs(error);
+
+        // Quadratic scaling for smoother approach (error^1.5 instead of linear)
+        double scaledError = errorSign * Math.pow(errorMagnitude / 180.0, 1.5) * 180.0;
+
+        // Reduced P gain (15% instead of 30%) for very gentle correction
+        double rotationPower = kP * scaledError * 0.15;
+
+        // Clamp to ±0.2 (reduced from 0.3) for slower, smoother rotation
+        rotationPower = Math.max(-0.2, Math.min(0.2, rotationPower));
 
         // Return rotation powers to point towards target
+        // Pattern matches Drivetrain.Rotate(): FS=+power, FD=-power, SS=+power, SD=-power
         return new double[]{
-            -rotationPower,  // leftFront
-            rotationPower,   // rightFront
-            -rotationPower,  // leftBack
-            rotationPower    // rightBack
+            rotationPower,   // leftFront (FS)
+            -rotationPower,  // rightFront (FD)
+            rotationPower,   // leftBack (SS)
+            -rotationPower   // rightBack (SD)
         };
     }
 

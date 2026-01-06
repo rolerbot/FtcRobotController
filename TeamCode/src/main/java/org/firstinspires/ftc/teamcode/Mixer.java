@@ -90,6 +90,7 @@ public class Mixer implements Subsystem{
         for (int i = 0; i <= 2; i++)
             artifacte[i] = Color.None;
     }
+
     void ArtifacteIndx()
     {
         if (!intake.IsStopped() && !isRunning && !waitForBall && artifactCount < 3)
@@ -203,12 +204,13 @@ public class Mixer implements Subsystem{
         }
     }
 
-    public void SetArtifacts(Color c1, Color c2, Color c3)
+    public void SetArtifacts()
     {
-        artifacte[0] = c1;
-        artifacte[1] = c2;
-        artifacte[2] = c3;
+        artifacte[0] = Color.Green;
+        artifacte[1] = Color.Purple;
+        artifacte[2] = Color.Purple;
         artifactCount = 3;
+        CalculateFrequency();
     }
 
     public void SetPozition(double pos)

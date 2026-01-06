@@ -59,9 +59,15 @@ public class Intake implements Subsystem
     public void SetPowerMax()
     {
         MotorIN.setPower(motorPower);
+        isForward = true;
+        isReversed = false;
     }
 
-    public void SetForward(){isForward = true;};
+    public void SetForward()
+    {
+        isForward = true;
+        isReversed = false;
+    }
 
     private void MotorIntake()
     {
@@ -85,12 +91,23 @@ public class Intake implements Subsystem
             SetMotorPower(0);
     }
 
-    protected void SetMotorPower(double pow)
+    public void SetMotorPower(double pow)
     {
         if (pow > 1 || pow < -1)
             return;
         MotorIN.setPower(pow);
-        isReversed = false;
+
+        // Update state flags to match actual motor state
+        if (pow > 0) {
+            isForward = true;
+            isReversed = false;
+        } else if (pow < 0) {
+            isForward = false;
+            isReversed = true;
+        } else {
+            isForward = false;
+            isReversed = false;
+        }
     }
 
     public boolean IsForward()

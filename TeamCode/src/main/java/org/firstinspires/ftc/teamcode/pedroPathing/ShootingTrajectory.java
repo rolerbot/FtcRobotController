@@ -73,13 +73,6 @@ public class ShootingTrajectory extends OpMode {
 
         // Starting position from trajectory.pp: x=56, y=8, heading=90 degrees
         follower.setStartingPose(new Pose(56, 9, Math.toRadians(90)));
-
-        telemetry.addData("Status", "Initialized");
-        telemetry.addData("Start Position", "X=56, Y=8, H=90°");
-        telemetry.addData("Max Power", "40% (Rotation Control)");
-        telemetry.addData("Localizer", "✅ Pinpoint Odometry Active");
-        telemetry.addData("Tracking", "REAL position (not path target)");
-        telemetry.addData("Shooting", "Enabled");
         telemetry.update();
     }
 
@@ -139,26 +132,6 @@ public class ShootingTrajectory extends OpMode {
         // CRITICAL: Get velocity to verify odometry is working
         Vector velocity = follower.getVelocity();
         double speed = velocity.getMagnitude();
-
-        telemetry.addData("=== POSITION (PINPOINT ODOMETRY) ===", "");
-        telemetry.addData("📍 X (REAL)", "%.2f in", currentPose.getX());
-        telemetry.addData("📍 Y (REAL)", "%.2f in", currentPose.getY());
-        telemetry.addData("📍 Heading (REAL)", "%.1f°", Math.toDegrees(currentPose.getHeading()));
-        telemetry.addData("🚀 Speed", "%.2f in/s", speed);
-        telemetry.addData("🎯 Dist to Wait", "%.2f in", distToWait);
-        telemetry.addData("✅ Odometry Active", follower.getPose() != null);
-
-        telemetry.addData("=== MIXER STATUS ===", "");
-        telemetry.addData("Artifacts", mixer.GetArtifactCount());
-        telemetry.addData("Purple Count", mixer.GetCountPurple());
-        telemetry.addData("Green Count", mixer.GetCountGreen());
-        telemetry.addData("Mixer Empty", mixer.IsEmpty());
-
-        telemetry.addData("=== SHOOTING ===", "");
-        telemetry.addData("Wait Pos", currentWaitPosition);
-        telemetry.addData("Shooting Started", shootingStarted);
-        telemetry.addData("Motors Started", motorsStarted);
-        telemetry.addData("Auto Shooting", shooter.IsAutoShooting());
 
         // Check if at wait position (within 10 inches tolerance)
         if (targetWait != null && distToWait < 10.0) {

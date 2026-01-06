@@ -23,6 +23,8 @@ public class Drivetrain implements Subsystem {
     double schimbator = 0.4;//Viteza 0.4
     double[] speeds = new double[4];
     double drive, strafe, twist;
+    private double[] headingLockCorrection = {0, 0, 0, 0}; // Heading lock corrections
+    private double[] positionLockCorrection = {0, 0, 0, 0}; // Position lock corrections (takes priority)
     public Drivetrain(GamepadEx ct1, GamepadEx ct2) {this.ct1 = ct1; this.ct2 = ct2;}
     public void LinkComponents(HardwareMap hardwareMap)
     {
@@ -49,9 +51,6 @@ public class Drivetrain implements Subsystem {
         MotorFD.setDirection(DcMotorSimple.Direction.FORWARD);
         MotorSS.setDirection(DcMotorSimple.Direction.REVERSE);
         MotorSD.setDirection(DcMotorSimple.Direction.FORWARD);
-
-
-
     }
     public void Run()
     {
@@ -69,6 +68,19 @@ public class Drivetrain implements Subsystem {
         speeds[1] = (drive + strafe - twist); // FD
         speeds[2] = (drive + strafe + twist); // SS
         speeds[3] = (drive - strafe - twist); // SD
+
+        // Add position lock corrections (takes PRIORITY - overrides manual if active)
+        speeds[0] += positionLockCorrection[0];
+        speeds[1] += positionLockCorrection[1];
+        speeds[2] += positionLockCorrection[2];
+        speeds[3] += positionLockCorrection[3];
+
+        // Add heading lock corrections (only active when robot is stationary)
+        speeds[0] += headingLockCorrection[0];
+        speeds[1] += headingLockCorrection[1];
+        speeds[2] += headingLockCorrection[2];
+        speeds[3] += headingLockCorrection[3];
+
         double max = Math.abs(speeds[0]);
         for (int i = 0; i < speeds.length; i++)
             if (max < Math.abs(speeds[i])) max = Math.abs(speeds[i]);
@@ -102,11 +114,37 @@ public class Drivetrain implements Subsystem {
     }
 
     public void ApplyHeadingLockPowers(double[] lockPowers) {
-        if (lockPowers == null || lockPowers.length != 4) return;
+        if (lockPowers == null || lockPowers.length != 4) {
+            // Clear heading lock corrections
+            headingLockCorrection[0] = 0;
+            headingLockCorrection[1] = 0;
+            headingLockCorrection[2] = 0;
+            headingLockCorrection[3] = 0;
+            return;
+        }
 
-        MotorFS.setPower(lockPowers[0]);  // Left Front
-        MotorFD.setPower(lockPowers[1]);  // Right Front
-        MotorSS.setPower(lockPowers[2]);  // Left Back
-        MotorSD.setPower(lockPowers[3]);  // Right Back
+        // Store heading lock corrections to be applied in Run()
+        headingLockCorrection[0] = lockPowers[0];  // Left Front
+        headingLockCorrection[1] = lockPowers[1];  // Right Front
+        headingLockCorrection[2] = lockPowers[2];  // Left Back
+        headingLockCorrection[3] = lockPowers[3];  // Right Back
+    }
+
+    public void ApplyMovementPowers(double[] movementPowers) {
+        if (movementPowers == null || movementPowers.length != 4) {
+            // Clear position lock corrections
+            positionLockCorrection[0] = 0;
+            positionLockCorrection[1] = 0;
+            positionLockCorrection[2] = 0;
+            positionLockCorrection[3] = 0;
+            return;
+        }
+
+        // Store position lock corrections to be applied in Run()
+        // Position lock takes PRIORITY over manual controls and heading lock
+        positionLockCorrection[0] = movementPowers[0];  // Left Front
+        positionLockCorrection[1] = movementPowers[1];  // Right Front
+        positionLockCorrection[2] = movementPowers[2];  // Left Back
+        positionLockCorrection[3] = movementPowers[3];  // Right Back
     }
 }

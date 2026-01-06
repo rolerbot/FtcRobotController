@@ -5,110 +5,83 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.*;
-
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 @TeleOp
-public class ShooterTuning extends OpMode
-{
+public class ShooterTuning extends OpMode {
 
-    private DcMotor shooterMotor1, shooterMotor2;
-    private RobotAllignment robotAllignment;
-    private Drivetrain drivetrain;
-    private TelemetryCustom tl;
-    private double highVelocity = 1700; // 140-150 cm
-    private double lowVelocity = 1000; // 50-60 cm
-    private double currenttargetVelocity = highVelocity;
-    double F = 0;
-    double P = 0;
-    double[] stepsizes = {10.0, 1.0, 0.1, 0.01, 0.001};
-    int stepIndex = 1;
-    ButtonReader switchCurrentVelocity, stepIncrease, Fincrease, Fdescrease, Pincrease, Pdecrease;
-    GamepadEx ct1, ct2;
+    private DcMotorEx shooterMotor1, shooterMotor2;
+
+    // PIDF values tuned for your measured max velocity
+    private double F = 15.16;  // F = 32767 / max velocity (740 ticks/sec)
+    private double P = 0.002; // small P to help low-speed shots
+    private double I = 0.0;
+    private double D = 0.0;
+
+    // Velocities to test (all ≤ max physical velocity)
+    private double testVelocities = 1100;
+    private int currentIndex = 0;
+
+    // Gamepad buttons
+    private ButtonReader nextVelocity, prevVelocity;
+    private GamepadEx ct1;
 
     @Override
-    public void init()
-    {
+    public void init() {
         ct1 = new GamepadEx(gamepad1);
-        ct2 = new GamepadEx(gamepad2);
-        tl = new TelemetryCustom(telemetry);
+
         shooterMotor1  = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
         shooterMotor2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
-        shooterMotor1.setDirection(DcMotor.Direction.FORWARD);
-        shooterMotor2.setDirection(DcMotor.Direction.REVERSE);
-        shooterMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        shooterMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        PIDFCoefficients pidfCoefficients = new  PIDFCoefficients(P,0, 0, F);
-        ((DcMotorEx) shooterMotor1).setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
-        ((DcMotorEx) shooterMotor2).setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
-        switchCurrentVelocity = new ButtonReader(ct1, GamepadKeys.Button.A);
-        stepIncrease = new  ButtonReader(ct1, GamepadKeys.Button.B);
-        Fincrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
-        Fdescrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
-        Pincrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
-        Pdecrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
 
-        drivetrain = new Drivetrain(ct1, ct2);
-        drivetrain.Initialize(hardwareMap);
-        robotAllignment = new RobotAllignment(tl, ct1, ct2,drivetrain,true);
-        robotAllignment.Initialize(hardwareMap);
-        telemetry.addLine("Initialized");
+        shooterMotor1.setDirection(DcMotorEx.Direction.FORWARD);
+        shooterMotor2.setDirection(DcMotorEx.Direction.REVERSE);
+
+        shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        shooterMotor2.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, I, D, F);
+        shooterMotor1.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+        shooterMotor2.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+        // Buttons to cycle velocities
+        nextVelocity = new ButtonReader(ct1, GamepadKeys.Button.B);
+        prevVelocity = new ButtonReader(ct1, GamepadKeys.Button.X);
+
+        telemetry.addLine("Initialized. Use B/X to change test velocity.");
     }
 
     @Override
-    public void loop()
-    {
-        //get button inputs
-        switchCurrentVelocity.readValue();
-        stepIncrease.readValue();
-        Fincrease.readValue();
-        Fdescrease.readValue();
-        Pincrease.readValue();
-        Pdecrease.readValue();
-        if(switchCurrentVelocity.wasJustPressed())
-        {
-            if(currenttargetVelocity == highVelocity)
-                currenttargetVelocity = lowVelocity;
-            else
-                currenttargetVelocity = highVelocity;
-        }
+    public void loop() {
+        // Read buttons
+        nextVelocity.readValue();
+        prevVelocity.readValue();
 
-        if(stepIncrease.wasJustPressed())
-            stepIndex = (stepIndex + 1) % stepsizes.length;
+        if (nextVelocity.wasJustPressed())
+            testVelocities -= 50;
+        if (prevVelocity.wasJustPressed())
+            testVelocities += 50;
 
-        if(Fincrease.wasJustPressed())
-            F += stepsizes[stepIndex];
+        double currentTarget = testVelocities;
 
-        if(Fdescrease.wasJustPressed())
-            F -= stepsizes[stepIndex];
+        // Set motors to target velocity
+        shooterMotor1.setVelocity(currentTarget);
+        shooterMotor2.setVelocity(currentTarget);
 
-        if(Pincrease.wasJustPressed())
-            P += stepsizes[stepIndex];
+        // Read actual velocity
+        double curVel1 = shooterMotor1.getVelocity();
+        double curVel2 = shooterMotor2.getVelocity();
+        double error1 = currentTarget - curVel1;
+        double error2 = currentTarget - curVel2;
 
-        if(Pdecrease.wasJustPressed())
-            P -= stepsizes[stepIndex];
-
-        //set new PIDF values
-        PIDFCoefficients pidfCoefficients = new  PIDFCoefficients(P,0, 0, F);
-        ((DcMotorEx) shooterMotor1).setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
-        ((DcMotorEx) shooterMotor2).setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
-
-        //set velocity
-        ((DcMotorEx) shooterMotor1).setVelocity(currenttargetVelocity);
-        ((DcMotorEx) shooterMotor2).setVelocity(currenttargetVelocity);
-
-        double curVel = ((DcMotorEx) shooterMotor1).getVelocity();
-        double error = currenttargetVelocity - curVel;
-
-        //telemetry
-        telemetry.addData("Target Velocity: ", currenttargetVelocity);
-        telemetry.addData("Current Velocity: ", curVel);
-        telemetry.addData("Error: ", error);
-        telemetry.addLine("PIDF Tuning------------");
-        telemetry.addData("F(D-left): ", F);
-        telemetry.addData("P(D-UP): ", P);
-        telemetry.addData("(B-increase)Step Size: ", stepsizes[stepIndex]);
+        // Telemetry
+        telemetry.addData("Test Index", currentIndex);
+        telemetry.addData("Target Velocity", currentTarget);
+        telemetry.addData("Motor1 Velocity", curVel1);
+        telemetry.addData("Motor2 Velocity", curVel2);
+        telemetry.addData("Motor1 Error", error1);
+        telemetry.addData("Motor2 Error", error2);
+        telemetry.addData("PIDF", "P: %.4f  I: %.4f  D: %.4f  F: %.4f", P, I, D, F);
         telemetry.update();
-
     }
 }

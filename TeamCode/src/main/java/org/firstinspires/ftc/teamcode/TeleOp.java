@@ -20,8 +20,8 @@ public class TeleOp extends LinearOpMode
     Husky huskyLens;
     ButtonReader left;
     ButtonReader right;
-    private Servo testServo;
     private GamepadEx ct1, ct2;
+
     private void MapControlerButtons()
     {
         ct1 = new GamepadEx(gamepad1);
@@ -40,7 +40,7 @@ public class TeleOp extends LinearOpMode
         drivetrain.Initialize(hardwareMap);
         drivetrain.schimbator = 1.4 - drivetrain.schimbator;
 
-        huskyLens = new Husky(myLogger,ct1, drivetrain);
+        huskyLens = new Husky(myLogger,ct1);
         huskyLens.Initialize(hardwareMap);
 
         intake = new Intake(myLogger, ct1);
@@ -62,7 +62,6 @@ public class TeleOp extends LinearOpMode
         Initialize();
         waitForStart();
         InitAfter();
-        myLogger.Log("Actual power:", shooter.GetCurentPower());
         left = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
         right = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
         while (opModeIsActive())
@@ -71,7 +70,7 @@ public class TeleOp extends LinearOpMode
             huskyLens.Run();
             intake.Run();
             drivetrain.Run();
-            if(shooter.GetShootingType() == ShootingState.None && !shooter.GetShootingAllow())
+            if(!shooter.GetShootingAllow())
                 mixer.Run();
             shooter.Run();
             shooterAiming.Run();
@@ -79,8 +78,11 @@ public class TeleOp extends LinearOpMode
             // Display distance to target on telemetry
             myLogger.Log("Distance to Target", String.format("%.2f m", shooterAiming.GetDistanceToTarget()));
             myLogger.Log("Robot Position", String.format("X:%.1f Y:%.1f cm", shooterAiming.GetRobotX(), shooterAiming.GetRobotY()));
-
             myLogger.Update();
+
+            telemetry.addData("CurrntVel", shooter.GetVelocityCurrent());
+            telemetry.addData("TargetVel", shooter.GetVelocityTarget());
+            telemetry.update();
         }
         telemetry.update();
         myLogger.close();

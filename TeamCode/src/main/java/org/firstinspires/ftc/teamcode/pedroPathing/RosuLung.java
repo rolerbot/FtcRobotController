@@ -119,11 +119,13 @@ public class RosuLung extends OpMode {
         telemetry.addData("📍 Heading", "%.1f°", Math.toDegrees(currentPose.getHeading()));
         telemetry.addData("🚀 Speed", "%.2f in/s", speed);
         telemetry.addData("🎯 Dist to Wait", "%.2f in", distToWait);
+        telemetry.addData("Path Following", follower.isBusy() ? "BUSY" : "IDLE");
 
         telemetry.addData("=== MIXER ===", "");
         telemetry.addData("Artifacts", mixer.GetArtifactCount());
         telemetry.addData("Wait Pos", currentWaitPosition);
         telemetry.addData("Shooting", shootingStarted);
+        telemetry.addData("Motors Started", motorsStarted);
 
         // Shooting logic at wait positions
         if (targetWait != null && distToWait < 10.0) {
@@ -152,9 +154,10 @@ public class RosuLung extends OpMode {
     }
 
     private Pose getTargetWaitPosition() {
-        if (waitPos1 != null) return waitPos1;
-        if (waitPos2 != null) return waitPos2;
-        if (waitPos3 != null) return waitPos3;
+        // When currentWaitPosition == 0, we're looking for the NEXT wait (waitPos1)
+        if (currentWaitPosition == 0 && waitPos1 != null) return waitPos1;
+        if (currentWaitPosition == 1 && waitPos2 != null) return waitPos2;
+        if (currentWaitPosition == 2 && waitPos3 != null) return waitPos3;
         return null;
     }
 

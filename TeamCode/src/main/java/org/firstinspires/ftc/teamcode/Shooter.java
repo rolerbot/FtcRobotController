@@ -87,6 +87,7 @@ public class Shooter implements Subsystem{
              OvverideShooting = new ButtonReader(ct2, GamepadKeys.Button.A);
          }
 
+         ServoHood = hardwareMap.get(Servo.class, "ServoHood");
          ServoRidicare = hardwareMap.get(Servo.class, "ServoRidicare");
          MotorAruncare1 = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
          MotorAruncare2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");

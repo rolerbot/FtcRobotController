@@ -54,7 +54,7 @@ public class ShootingTrajectory extends OpMode {
         husky.Initialize(hardwareMap);
 
         //TelemetryCustom telemetry, GamepadEx ct1, GamepadEx ct2, Drivetrain drivetrain, boolean resetIMU
-        robotAllignment = new RobotAllignment(tl, true);
+        robotAllignment = new RobotAllignment(tl, true, true);
         robotAllignment.Initialize(hardwareMap);
 
         // Initialize shooter for autonomous

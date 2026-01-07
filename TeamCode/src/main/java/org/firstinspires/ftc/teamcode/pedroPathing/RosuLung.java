@@ -45,7 +45,7 @@ public class RosuLung extends OpMode {
         husky = new Husky(tl);
         husky.Initialize(hardwareMap);
 
-        robotAllignment = new RobotAllignment(tl, true);
+        robotAllignment = new RobotAllignment(tl, true, false);
         robotAllignment.Initialize(hardwareMap);
 
         shooter = new Shooter(tl, mixer, intake, husky, robotAllignment);

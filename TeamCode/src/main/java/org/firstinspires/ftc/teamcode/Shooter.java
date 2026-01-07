@@ -17,7 +17,7 @@ public class Shooter implements Subsystem{
     private final GamepadEx ct1, ct2;
     private final double initialPosition = 0.3;
     private final double finalPosition = 0.47;
-    private final double hoodInitialPosition = 0.5;
+    private final double hoodInitialPosition = 0.5; //0.5294 -45 grade
     private ElapsedTime runtime = new ElapsedTime();
     boolean isShooting = false;
     private int arrangedIndex = 0;
@@ -29,7 +29,7 @@ public class Shooter implements Subsystem{
     private final RobotAllignment robotAllignment;
     private boolean shootingAllowed = false;
     private Servo ServoRidicare = null;
-    private Servo ServoHood = null;
+    public Servo ServoHood = null;
     private double constDist = 0.0;
     private int caseSwitch = 0;
     /// Motor Aruncare
@@ -38,8 +38,9 @@ public class Shooter implements Subsystem{
     private HardwareMap hardwareMap = null;  // For battery voltage reading
 
     // PIDF Configuration - valori din tuning
-    private final double shooterF = 15.16;;
-    private final double shooterP = 0.003;
+    // shooterF is updated periodically in Run() based on battery voltage
+    private double shooterF = 13.3;  // Will be calculated dynamically based on battery voltage
+    private final double shooterP = 0.01;  // Increased from 0.003 to help correct any remaining error
     private final double shooterI = 0.0;
     private final double shooterD = 0.0;
 
@@ -98,7 +99,8 @@ public class Shooter implements Subsystem{
         this.hardwareMap = hwMap;  // Store reference for battery voltage reading
         LinkComponents(hwMap);
 
-        // Configurare PIDF pentru ambele motoare
+        // Start with lower F value (13.5) since overshooting - will be adjusted automatically
+        shooterF = 13.5;
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
 
         MotorAruncare1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -120,6 +122,8 @@ public class Shooter implements Subsystem{
 
         ServoHood.setDirection(Servo.Direction.FORWARD);
         ServoHood.setPosition(hoodInitialPosition);
+
+        telemetry.Log("Shooter Init", String.format("Starting F: %.2f (will auto-adjust)", shooterF));
     }
     public ShootingState GetShootingType(){return shootType;};
     public void TriggerAutonomousShooting()
@@ -143,17 +147,20 @@ public class Shooter implements Subsystem{
 
     public void Run()
     {
+        // Update PIDF coefficients periodically to adapt to battery voltage changes
+        UpdatePIDFCoefficients();
+
         ReadButtons();
         // Only process button inputs if buttons exist (teleop mode)
         if (Aruncare != null && Aruncare.wasJustPressed() && !mixer.IsEmpty())
         {
             shootingAllowed = true;
-            if (CanShootArranged()) // Elimină verificarea shootType != None
+            if (CanShootArranged())
             {
                 shootType = ShootingState.Arranged;
                 arrangedIndex = 0;
             }
-            else // Dacă nu poate aranja, aruncă nearanjat
+            else
             {
                 shootType = ShootingState.Unarranged;
                 arrangedIndex = 0;
@@ -182,6 +189,7 @@ public class Shooter implements Subsystem{
         if (shootingAllowed)
             Shooting();
         PrepareLaunch();
+        HoodPosition();
     }
     private void ReadButtons()
     {
@@ -204,6 +212,7 @@ public class Shooter implements Subsystem{
     }
 
     // Controlează motoarele cu velocity (RPM) în loc de power
+    // Uses higher P coefficient (0.01) to correct overshoot when battery voltage is high
     public void SetShooterVelocity(double velocity)
     {
         MotorAruncare1.setVelocity(velocity);
@@ -228,6 +237,108 @@ public class Shooter implements Subsystem{
             }
         }
         return result == Double.POSITIVE_INFINITY ? 13.0 : result;
+    }
+
+    // F calibration state - continuous automatic calibration
+    private double velocityErrorSum = 0.0;
+    private int errorSampleCount = 0;
+    private static final int CALIBRATION_SAMPLES = 10; // Reduced from 15 for faster response
+    private static final double VELOCITY_ERROR_THRESHOLD = 20; // Reduced from 30 for more sensitive adjustment
+
+    /**
+     * Continuous F calibration - runs automatically when conditions are met
+     * Only calibrates when:
+     * 1. Motors are spinning (target > 100 RPM)
+     * 2. Mixer is NOT empty (has balls to shoot)
+     * 3. NOT actively shooting (no ball resistance affecting velocity)
+     *
+     * This allows F to continuously adapt to battery drain throughout the match
+     * while only measuring when motors are at steady-state
+     *
+     * @param targetVelocity Target RPM
+     * @param currentVelocity Actual RPM
+     */
+    private void CalibrateShooterF(double targetVelocity, double currentVelocity)
+    {
+        // Only calibrate when motors are running, mixer has balls, and NOT shooting
+        if (targetVelocity < 100 || mixer.IsEmpty() || isShooting) {
+            // Reset error tracking when conditions aren't met
+            velocityErrorSum = 0.0;
+            errorSampleCount = 0;
+            return;
+        }
+
+        double velocityError = currentVelocity - targetVelocity;
+
+        // Accumulate error samples
+        velocityErrorSum += velocityError;
+        errorSampleCount++;
+
+        // Only adjust after collecting enough samples
+        if (errorSampleCount >= CALIBRATION_SAMPLES) {
+            // Calculate average error over sample period
+            double avgError = velocityErrorSum / errorSampleCount;
+
+            // Reset for next sample period
+            velocityErrorSum = 0.0;
+            errorSampleCount = 0;
+
+            // Only adjust if average error is significant
+            if (Math.abs(avgError) > VELOCITY_ERROR_THRESHOLD) {
+                double fAdjustment = 0.0;
+
+                // More aggressive adjustments based on error magnitude
+                if (avgError > 80) {
+                    // Large overshoot (80+ RPM) - make big correction
+                    fAdjustment = -0.15;
+                } else if (avgError > 40) {
+                    // Medium overshoot (40-80 RPM) - medium correction
+                    fAdjustment = -0.1;
+                } else if (avgError > VELOCITY_ERROR_THRESHOLD) {
+                    // Small overshoot (20-40 RPM) - small correction
+                    fAdjustment = -0.05;
+                } else if (avgError < -80) {
+                    // Large undershoot
+                    fAdjustment = 0.15;
+                } else if (avgError < -40) {
+                    // Medium undershoot
+                    fAdjustment = 0.1;
+                } else if (avgError < -VELOCITY_ERROR_THRESHOLD) {
+                    // Small undershoot
+                    fAdjustment = 0.05;
+                }
+
+                double newShooterF = shooterF + fAdjustment;
+
+                // Clamp F between reasonable bounds (12.5 to 15.5)
+                newShooterF = Math.max(12.5, Math.min(15.5, newShooterF));
+
+                if (Math.abs(newShooterF - shooterF) > 0.01) {
+                    shooterF = newShooterF;
+                    PIDFCoefficients pidfCoefficients = new PIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
+                    MotorAruncare1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+                    MotorAruncare2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+                    telemetry.Log("F Auto-Adjusted", String.format("Error: %.0f → F: %.2f (Δ%.2f)", avgError, shooterF, fAdjustment));
+                }
+            }
+        }
+    }
+
+    /**
+     * Continuous F calibration system - runs every loop cycle
+     * Automatically adjusts F based on velocity error when:
+     * - Motors are spinning (ready to shoot)
+     * - Mixer has balls (not empty)
+     * - NOT actively shooting (steady-state, no ball resistance)
+     */
+    private void UpdatePIDFCoefficients()
+    {
+        // Run continuous calibration when conditions are met
+        double currentVelocity = GetVelocityCurrent();
+        double targetVelocity = GetVelocityTarget();
+
+        CalibrateShooterF(targetVelocity, currentVelocity);
     }
     public double GetMotorPower() {return motorPower;}
 
@@ -461,6 +572,14 @@ public class Shooter implements Subsystem{
         if(constDist > 2 && constDist < 5)
             motorPower = -(2.07771/10000000)*dist*dist*dist*dist+0.000254073*dist*dist*dist-0.118373*dist*dist + 26.72314*dist - 1158.4306;
         SetShooterVelocity(motorPower);
+    }
+
+    private void HoodPosition()
+    {
+        if (constDist > 3 && ServoHood.getPosition() != 0.5294)
+            ServoHood.setPosition(0.5294);
+        else if (constDist <= 3 && ServoHood.getPosition() != 0.5)
+            ServoHood.setPosition(0.5);
     }
 
     public double GetVelocityCurrent() {return MotorAruncare1.getVelocity();}

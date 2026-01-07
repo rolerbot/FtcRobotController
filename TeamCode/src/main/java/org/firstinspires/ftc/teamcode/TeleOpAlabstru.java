@@ -4,18 +4,16 @@ import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.Servo;
 import org.openftc.easyopencv.OpenCvCamera;
 
-@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotFTC", group="Linear Opmode")
-public class TeleOp extends LinearOpMode
+@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotAlbastru", group="Linear Opmode")
+public class TeleOpAlabstru extends LinearOpMode
 {
     TelemetryCustom myLogger;
     Drivetrain drivetrain;
     Intake intake;
     Mixer mixer;
     Shooter shooter;
-    OpenCvCamera camera;
     RobotAllignment shooterAiming;
     Husky huskyLens;
     ButtonReader left;
@@ -49,11 +47,14 @@ public class TeleOp extends LinearOpMode
         mixer = new Mixer(myLogger, intake);
         mixer.Initialize(hardwareMap);
 
-        shooterAiming = new RobotAllignment(myLogger, ct1, ct2, drivetrain, false);
+        shooterAiming = new RobotAllignment(myLogger, ct1, ct2, drivetrain, false, true);
         shooterAiming.Initialize(hardwareMap);
 
         shooter = new Shooter(myLogger, mixer, intake, huskyLens, shooterAiming ,ct1, ct2);
         shooter.Initialize(hardwareMap);
+
+        left = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
+        right = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
 
     }
 
@@ -62,11 +63,10 @@ public class TeleOp extends LinearOpMode
         Initialize();
         waitForStart();
         InitAfter();
-        left = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
-        right = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
+
         while (opModeIsActive())
         {
-            // Utils.GasirePozitii(left, right, testServo);
+            Utils.GasirePozitii(left, right, shooter.ServoHood);
             huskyLens.Run();
             intake.Run();
             drivetrain.Run();
@@ -82,6 +82,7 @@ public class TeleOp extends LinearOpMode
 
             telemetry.addData("CurrntVel", shooter.GetVelocityCurrent());
             telemetry.addData("TargetVel", shooter.GetVelocityTarget());
+            telemetry.addData("PozServo", shooter.ServoHood.getPosition());
             telemetry.update();
         }
         telemetry.update();

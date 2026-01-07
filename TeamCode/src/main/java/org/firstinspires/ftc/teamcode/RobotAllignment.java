@@ -27,12 +27,14 @@ public class RobotAllignment implements Subsystem
 
     // Target position for distance calculation
     // (in INCHES - Pedro Pathing units) X:
-    private double targetX = 0;
-    private double targetY = 143;
+    private double targetX;
+    private double targetY;
 
     // Robot's current position on field (in INCHES - Pedro Pathing units)
-    private double robotX = 9.000;  // Default starting X position in inches
-    private double robotY = 9.000;    // Default starting Y position in inches
+    private double robotX;  // Default starting X position in inches
+    private double robotY;    // Default starting Y position in inches
+    private double robotInitX;
+    private double robotInitY;
 
     // Heading lock feature - maintains heading continuously (only when stationary)
     private boolean headingLockEnabled = false;  // DISABLED by default - press DPAD_LEFT to enable
@@ -50,20 +52,50 @@ public class RobotAllignment implements Subsystem
 
     private boolean resetIMUOnInit = true;
 
-    public RobotAllignment(TelemetryCustom telemetry, GamepadEx ct1, GamepadEx ct2, Drivetrain drivetrain, boolean resetIMU) {
+    public RobotAllignment(TelemetryCustom telemetry, GamepadEx ct1, GamepadEx ct2, Drivetrain drivetrain, boolean resetIMU, boolean id) {
         this.telemetry = telemetry;
         this.ct1 = ct1;
         this.ct2 = ct2;
         this.drivetrain = drivetrain;
         this.resetIMUOnInit = resetIMU;
 
-        // Use Pedro Pathing's tuned heading PID coefficient
+        //true albastru false rosu
+        if(id)
+        {
+            robotInitX = 143.6 - 9;
+            robotInitY = 9;
+            targetX = 0;
+            targetY = 143.6;
+        }
+        else
+        {
+            robotInitX = 9;
+            robotInitY = 9;
+            targetX = 143.6;
+            targetY = 143.6;
+        }
         this.kP = 0.65;   // Proportional gain
     }
 
-    public RobotAllignment(TelemetryCustom telemetry, boolean resetIMU) {
+    public RobotAllignment(TelemetryCustom telemetry, boolean resetIMU, boolean id) {
         this.telemetry = telemetry;
         this.resetIMUOnInit = resetIMU;
+
+        //true albastru false rosu
+        if(id)
+        {
+            robotInitX = 143.6 - 9;
+            robotInitY = 9;
+            targetX = 0;
+            targetY = 143.6;
+        }
+        else
+        {
+            robotInitX = 9;
+            robotInitY = 9;
+            targetX = 143.6;
+            targetY = 143.6;
+        }
 
         // Use Pedro Pathing's tuned heading PID coefficient
         this.kP = 0.65;   // Proportional gain
@@ -89,10 +121,10 @@ public class RobotAllignment implements Subsystem
         if (resetIMUOnInit)
         {
             pinpoint.resetPosAndIMU();  // Resets position to (0,0,0) and recalibrates IMU
-            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 9, 9, AngleUnit.DEGREES, 90));
+            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, robotInitX, robotInitY, AngleUnit.DEGREES, 90));
+            robotX = robotInitX;
+            robotY = robotInitY;
             pinpoint.recalibrateIMU();
-            robotX = 9;
-            robotY = 9;
             telemetry.Log("RobotAllignment", "Pinpoint reset: X:9\" Y:9\" Heading:90°");
         }
     }
@@ -219,17 +251,15 @@ public class RobotAllignment implements Subsystem
         resetPositionButton.readValue();
         toggleHeadingLockButton.readValue();
 
-        // DPAD_DOWN: Reset robot position to default (9, 9) in INCHES
         if (resetPositionButton.wasJustPressed()) {
             // Reset Pinpoint position AND recalibrate IMU for best accuracy
             // Use 90° heading to match autonomous starting pose (90° = facing forward in Pedro Pathing)
-            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 9, 9, AngleUnit.DEGREES, 90));
+            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, robotInitX, robotInitY, AngleUnit.DEGREES, 90));
             pinpoint.recalibrateIMU();  // CRITICAL: Recalibrate IMU to reduce drift
 
-            // Update local variables
-            robotX = 9;
-            robotY = 9;
-
+            // Vibrate both controllers for feedback (70% power on both motors for 500ms)
+            ct1.gamepad.rumble(0.6, 0.6, 500);  // Left motor 70%, Right motor 70%, 500ms duration
+            ct2.gamepad.rumble(0.7, 0.7, 500);  // Left motor 70%, Right motor 70%, 500ms duration
 
             telemetry.Log("Position Reset", "X:9\" Y:9\" Heading:90° (IMU recalibrated)");
         }

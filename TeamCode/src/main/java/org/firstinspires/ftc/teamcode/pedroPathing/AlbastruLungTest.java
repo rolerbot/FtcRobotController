@@ -52,7 +52,7 @@ public class AlbastruLungTest extends OpMode {
         mixer.Initialize(hardwareMap);
         husky = new Husky(tl);
         husky.Initialize(hardwareMap);
-        robotAllignment = new RobotAllignment(tl, true);
+        robotAllignment = new RobotAllignment(tl, true, true);
         robotAllignment.Initialize(hardwareMap);
         shooter = new Shooter(tl, mixer, intake, husky, robotAllignment);
         shooter.Initialize(hardwareMap);

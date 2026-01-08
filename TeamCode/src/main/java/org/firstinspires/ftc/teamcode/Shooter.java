@@ -15,7 +15,7 @@ public class Shooter implements Subsystem{
     private ButtonReader VelocityChange;
     private final GamepadEx ct1, ct2;
     private final double initialPosition = 0.3;
-    private final double finalPosition = 0.47;
+    private final double finalPosition = 0.48;
     private final double hoodInitialPosition = 0.5; //0.5294 -45 grade
     private ElapsedTime runtime = new ElapsedTime();
     boolean isShooting = false;
@@ -37,7 +37,7 @@ public class Shooter implements Subsystem{
     private ShooterVoltageHelper voltageHelper = null;  // Voltage compensation helper
 
     // PIDF Configuration - valori din tuning LA 12V
-    private final double BASE_SHOOTER_F = 13.3;  // F tunat la 12V (V_REF)
+    private final double BASE_SHOOTER_F = 14.3;  // F tunat la 12V (V_REF)
     private double shooterF = BASE_SHOOTER_F;    // Current F (compensated)
     private final double shooterP = 0.01;
     private final double shooterI = 0.0;
@@ -393,11 +393,27 @@ public class Shooter implements Subsystem{
         arrangedIndex = 0;
     }
 
+    private double GetTimeDist()
+    {
+        // Get filtered battery voltage (this is the "true" battery when consistent)
+        double batteryVoltage = voltageHelper != null ? voltageHelper.GetFilteredVoltage() : 12.0;
+
+        if(constDist > 3.2)
+        {
+            // If battery is low (< 12V), motors need more time to reach target velocity
+            if(batteryVoltage < 12.3)
+                return 0.85;  // Extra time when battery is low
+            else
+                return 0.7;   // Normal time at full battery
+        }
+        else return 0.5;  // Short distance, quick shot
+    }
+
     private int GetShootingState()
     {
         if(!isShooting)
             return 0;
-
+        double timerDependingOnDist  = GetTimeDist();
         double time = runtime.seconds();
         double currentVelocity = MotorAruncare1.getVelocity();
         double velocityTolerance = 5; // RPM tolerance
@@ -406,7 +422,7 @@ public class Shooter implements Subsystem{
         switch(caseSwitch)
         {
             case 0: // Waiting for motors to spin up
-                if(time >= 0.3  && ( motorsReady || time >= 0.5)) // Motors ready OR timeout
+                if(time >= 0.3  && ( motorsReady || time >= timerDependingOnDist)) // Motors ready OR timeout
                 {
                     caseSwitch = 1;
                     ResetTimer();
@@ -414,7 +430,7 @@ public class Shooter implements Subsystem{
                 return 0;
 
             case 1: // Push lever (wait 0.3s)
-                if(time >= 0.15)
+                if(time >= 0.17)
                 {
                     caseSwitch = 2;
                     ResetTimer();
@@ -422,7 +438,7 @@ public class Shooter implements Subsystem{
                 return 1;
 
             case 2: // Retract lever (wait 0.2s)
-                if(time >= 0.15)
+                if(time >= 0.17)
                 {
                     caseSwitch = 3;
                     ResetTimer();

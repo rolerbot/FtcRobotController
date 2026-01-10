@@ -21,18 +21,16 @@ public class RosuLung extends OpMode {
     private Husky husky;
     private Shooter shooter;
     private Mixer mixer;
-
-    // Poses - MIRRORED from AlbastruLung (X_red = 144 - X_blue, heading mirrored)
-    private final Pose startPose = new Pose(88, 9, Math.toRadians(90));           // 144-56=88
-    private final Pose tagPose = new Pose(88, 39, Math.toRadians(90));            // Same Y, same heading
-    private final Pose shootPose = new Pose(88, 17, Math.toRadians(68));          // 180-112=68 - Y=17
-    private final Pose rotatedPose = new Pose(92, 45, Math.toRadians(0));       // 144-52=92, 180-180=0
-    private final Pose rightPose = new Pose(120, 45, Math.toRadians(0));        // 144-20=124
-    private final Pose intermediatePose = new Pose(109, 30, Math.toRadians(-15)); // 144-35=109, -(-164.5)=164.5
-    private final Pose humanPlayerPose = new Pose(119, 17, Math.toRadians(-15));  // 144-25=119
-    private final Pose endPose = new Pose(88, 35, Math.toRadians(68));            // Same as shootPose heading
+    private final Pose startPose = new Pose(86, 9, Math.toRadians(90));           // 144-56=88
+    private final Pose tagPose = new Pose(86, 39, Math.toRadians(90));            // Same Y, same heading
+    private final Pose shootPose = new Pose(86, 17.2, Math.toRadians(68));          // 180-112=68 - Y=17
+    private final Pose rotatedPose = new Pose(90, 47, Math.toRadians(0));       // 144-52=92, 180-180=0
+    private final Pose rightPose = new Pose(140, 47, Math.toRadians(0));        // 144-20=124
+    private final Pose intermediatePose = new Pose(126, 25, Math.toRadians(0)); // Y closer to humanPlayerPose to avoid backwards motion
+    private final Pose humanPlayerPose = new Pose(158, 30, Math.toRadians(-45));  // 144-25=119
+    private final Pose endPose = new Pose(90, 35, Math.toRadians(68));            // Same as shootPose heading
     private final double waitTime = 4.5;
-    private final double pickupWaitTime = 2.25;
+    private final double pickupWaitTime = 1.7;
 
     // Paths - MATCH AlbastruLung structure exactly
     private Path toTag;
@@ -96,13 +94,13 @@ public class RosuLung extends OpMode {
                 .addPath(goRightPath)
                 .build();
 
-        // Path 4: Return to shoot position - updated control points for Y=20
+        // Path 4: Return to shoot position - control points for Y=17 shootPose
         returnToShoot = follower.pathBuilder()
                 .addPath(new BezierCurve(
-                        rightPose,
-                        new Pose(114, 28),   // Adjusted Y for new shootPose
-                        new Pose(99, 24),    // Adjusted Y for new shootPose
-                        shootPose
+                        rightPose,           // (140, 45, 0°)
+                        new Pose(115, 35),   // Control point 1
+                        new Pose(95, 25),    // Control point 2
+                        shootPose            // (86, 17, 68°)
                 ))
                 .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(68))
                 .build();
@@ -110,13 +108,13 @@ public class RosuLung extends OpMode {
         // Path 5: Go to intermediate position (heading now -15°)
         toIntermediate = follower.pathBuilder()
                 .addPath(new BezierLine(shootPose, intermediatePose))
-                .setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(-15))
+                .setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
                 .build();
 
         // Path 6: Go to human player position - VERY SLOW (heading -15°)
         PathConstraints verySlowConstraints = new PathConstraints(0.15, 20, 0.3, 0.3);
         Path toHumanPlayerPath = new Path(new BezierLine(intermediatePose, humanPlayerPose), verySlowConstraints);
-        toHumanPlayerPath.setConstantHeadingInterpolation(Math.toRadians(-15));
+        toHumanPlayerPath.setConstantHeadingInterpolation(Math.toRadians(-45));
         toHumanPlayer = follower.pathBuilder()
                 .addPath(toHumanPlayerPath)
                 .build();
@@ -124,12 +122,12 @@ public class RosuLung extends OpMode {
         // Path 7: Return from human player to shoot (heading -15° to 68°)
         returnFromHuman = follower.pathBuilder()
                 .addPath(new BezierCurve(
-                        humanPlayerPose,
-                        new Pose(109, 22),
-                        new Pose(96, 26),    // Adjusted Y for new shootPose
-                        shootPose
+                        humanPlayerPose,     // (165, 12, -15°)
+                        new Pose(125, 24),   // Control point 1 (adjusted for new Y)
+                        new Pose(100, 20),   // Control point 2 (adjusted for new Y)
+                        shootPose            // (86, 17, 68°)
                 ))
-                .setLinearHeadingInterpolation(Math.toRadians(-15), Math.toRadians(68))
+                .setLinearHeadingInterpolation(Math.toRadians(-45), Math.toRadians(68))
                 .build();
 
         // Path 8: Go to end position (Y=20 to Y=35)

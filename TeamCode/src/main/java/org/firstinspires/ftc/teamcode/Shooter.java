@@ -14,7 +14,7 @@ public class Shooter implements Subsystem{
     private ButtonReader OvverideShooting;
     private ButtonReader VelocityChange;
     private final GamepadEx ct1, ct2;
-    private final double initialPosition = 0.3;
+    private final double initialPosition = 0.291;
     private final double finalPosition = 0.48;
     private final double hoodInitialPosition = 0.5; //0.5294 -45 grade
     private ElapsedTime runtime = new ElapsedTime();
@@ -430,7 +430,7 @@ public class Shooter implements Subsystem{
                 return 0;
 
             case 1: // Push lever (wait 0.3s)
-                if(time >= 0.17)
+                if(time >= 0.2)
                 {
                     caseSwitch = 2;
                     ResetTimer();
@@ -438,7 +438,7 @@ public class Shooter implements Subsystem{
                 return 1;
 
             case 2: // Retract lever (wait 0.2s)
-                if(time >= 0.17)
+                if(time >= 0.2)
                 {
                     caseSwitch = 3;
                     ResetTimer();
@@ -477,7 +477,14 @@ public class Shooter implements Subsystem{
     }
     private void PrepareLaunch()
     {
-        constDist = robotAllignment.GetDistanceToTarget();
+        // Get distance from RobotAllignment if available, otherwise use default distance
+        if (robotAllignment != null) {
+            constDist = robotAllignment.GetDistanceToTarget();
+        } else {
+            // Default distance for autonomous (assumes mid-range shooting)
+            constDist = 3.5; // meters - adjust as needed for your autonomous position
+        }
+
         if(!mixer.IsEmpty())
             SetMotorPower();
         else SetShooterVelocity(0);

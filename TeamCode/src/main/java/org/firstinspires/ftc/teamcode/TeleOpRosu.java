@@ -47,7 +47,7 @@ public class TeleOpRosu extends LinearOpMode
         mixer = new Mixer(myLogger, intake);
         mixer.Initialize(hardwareMap);
 
-        shooterAiming = new RobotAllignment(myLogger, ct1, ct2, drivetrain, false, false);
+        shooterAiming = new RobotAllignment(myLogger, ct1, ct2, drivetrain,false, false);
         shooterAiming.Initialize(hardwareMap);
 
         shooter = new Shooter(myLogger, mixer, intake, huskyLens, shooterAiming ,ct1, ct2);

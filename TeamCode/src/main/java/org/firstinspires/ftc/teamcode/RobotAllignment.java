@@ -33,8 +33,8 @@ public class RobotAllignment implements Subsystem
     // Robot's current position on field (in INCHES - Pedro Pathing units)
     private double robotX;  // Default starting X position in inches
     private double robotY;    // Default starting Y position in inches
-    private double robotInitX;
-    private double robotInitY;
+    private double robotInitX;  // Can be updated for autonomous
+    private double robotInitY;  // Can be updated for autonomous
 
     // Heading lock feature - maintains heading continuously (only when stationary)
     private boolean headingLockEnabled = false;  // DISABLED by default - press DPAD_LEFT to enable
@@ -49,7 +49,6 @@ public class RobotAllignment implements Subsystem
     private boolean positionLockEnabled = false;  // DISABLED by default - press DPAD_UP to enable
     private double lockedX = 0;
     private double lockedY = 0;
-
     private boolean resetIMUOnInit = true;
 
     public RobotAllignment(TelemetryCustom telemetry, GamepadEx ct1, GamepadEx ct2, Drivetrain drivetrain, boolean resetIMU, boolean id) {
@@ -350,6 +349,43 @@ public class RobotAllignment implements Subsystem
         double currentHeading = pinpoint.getPosition().getHeading(AngleUnit.DEGREES);
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 9.0, 9.0, AngleUnit.DEGREES, currentHeading));
         telemetry.Log("Position Reset", String.format("X:9.0\" Y:9.0\" Heading:%.1f°", currentHeading));
+    }
+
+    /**
+     * Set a custom starting position for autonomous (overrides default teleop positions)
+     * Call this in autonomous init() BEFORE Initialize() to set the starting pose
+     * @param x Starting X position in inches
+     * @param y Starting Y position in inches
+     * @param headingDegrees Starting heading in degrees
+     */
+    public void SetStartingPosition(double x, double y, double headingDegrees)
+    {
+        this.robotInitX = x;
+        this.robotInitY = y;
+        this.robotX = x;
+        this.robotY = y;
+
+        // Update Pinpoint if already initialized
+        if (pinpoint != null) {
+            pinpoint.resetPosAndIMU();
+            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, headingDegrees));
+            telemetry.Log("Auto Start Pos", String.format("X:%.1f\" Y:%.1f\" H:%.1f°", x, y, headingDegrees));
+        }
+    }
+
+    /**
+     * Synchronize RobotAllignment position from Pedro Pathing follower
+     * Use this in autonomous to ensure distance calculations match Pedro's position tracking
+     * @param x X position in inches from Pedro
+     * @param y Y position in inches from Pedro
+     * @param headingDegrees Heading in degrees from Pedro
+     */
+    public void SyncPositionFromPedro(double x, double y, double headingDegrees)
+    {
+        this.robotX = x;
+        this.robotY = y;
+        // Also update Pinpoint to keep everything in sync
+        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, headingDegrees));
     }
 
 

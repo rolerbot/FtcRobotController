@@ -1,274 +1,238 @@
-
 package org.firstinspires.ftc.teamcode.pedroPathing;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.*;
-import com.pedropathing.math.Vector;
 import com.pedropathing.paths.*;
+import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.teamcode.*;
 
 @Autonomous(name = "AlbastruScurtIncomplet", group = "Pedro Pathing")
 public class AlbastruScurtIncomplet extends OpMode {
     private Follower follower;
-    private PathChain pathChain;
-    private Mixer mixer;
+    private Timer pathTimer, opmodeTimer;
+    private int pathState;
+
+    // Robot subsystems
+    private TelemetryCustom telemetryCustom;
     private Intake intake;
     private Husky husky;
     private Shooter shooter;
-    private RobotAllignment robotAllignment;
-    private TelemetryCustom tl;
-    private boolean pathsBuilt = false;
-    private ElapsedTime waitTimer = new ElapsedTime();
-    private int currentWaitPosition = 0;
-    private boolean shootingStarted = false;
-    private boolean motorsStarted = false;
-    private static final double WAIT_TIME = 4.3;
+    private Mixer mixer;
 
-    private Pose waitPos1, waitPos2, waitPos3;
+    // Poses - from original buildPaths()
+    private final Pose startPose = new Pose(25, 129, Math.toRadians(143.5));
+    private final Pose tagPose = new Pose(44.473, 94, Math.toRadians(60));
+    private final Pose shootPose = new Pose(44.473, 94, Math.toRadians(143.5));
+    private final Pose rotatedPose = new Pose(41.602, 84.473, Math.toRadians(180));
+    private final Pose leftPose = new Pose(17.290, 84.430, Math.toRadians(180));
+    private final Pose endPose = new Pose(24.097, 70.968, Math.toRadians(180));
+
+    // Paths
+    private Path toTag;
+    private PathChain toShoot1, rotateLeft, goLeft, returnToEnd;
 
     @Override
     public void init() {
-        tl = new TelemetryCustom(telemetry);
+        pathTimer = new Timer();
+        opmodeTimer = new Timer();
 
-        intake = new Intake(tl);
+        // CRITICAL: Initialize subsystems FIRST, before creating follower
+        telemetryCustom = new TelemetryCustom(telemetry);
+
+        intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
-        mixer = new Mixer(tl, intake);
-        mixer.Initialize(hardwareMap);
-
-        husky = new Husky(tl);
+        husky = new Husky(telemetryCustom);
         husky.Initialize(hardwareMap);
 
-        robotAllignment = new RobotAllignment(tl, true, true);
-        robotAllignment.Initialize(hardwareMap);
+        mixer = new Mixer(telemetryCustom, intake);
+        mixer.Initialize(hardwareMap);
+        mixer.SetArtifacts(); // Load 3 balls
 
-        shooter = new Shooter(tl, mixer, intake, husky, robotAllignment);
+        // Pass null for robotAllignment - no IMU conflicts!
+        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null);
         shooter.Initialize(hardwareMap);
 
+        // NOW create follower and set starting pose AFTER subsystems
         follower = Constants.createFollower(hardwareMap);
-        follower.setMaxPower(0.4);
+        follower.setStartingPose(startPose);
 
-        intake.SetForward();
-        mixer.ResetServoPosition();
+        buildPaths();
 
-        follower.setStartingPose(new Pose(25, 129, Math.toRadians(143.5)));
-
-        telemetry.addData("Status", "Initialized");
-        telemetry.addData("Start Position", "X=25, Y=130.75, H=143.5°");
+        telemetry.addData("Status", "Initialized - AlbastruScurtIncomplet");
+        telemetry.addData("Start Position", "X=25, Y=129, H=143.5°");
+        telemetry.addData("Mixer", "3 balls loaded");
         telemetry.update();
     }
 
-    @Override
-    public void init_loop() {
-        if (!pathsBuilt) {
-            buildPaths();
-            pathsBuilt = true;
-        }
+    public void buildPaths() {
+        final double ROTATION_COMPENSATION = 6.0;
+        PathConstraints rotationConstraints = new PathConstraints(0.7, 50, 0.7, 0.7);
+        PathConstraints straightConstraints = new PathConstraints(0.3, 30, 0.5, 0.5);
 
-        husky.Run();
+        // Path 1: Start to tag (143.5° → 60°)
+        toTag = new Path(new BezierCurve(
+                new Pose(25, 129),
+                new Pose(38, 110),
+                new Pose(44.473, 100.172 - ROTATION_COMPENSATION)
+        ), rotationConstraints);
+        toTag.setLinearHeadingInterpolation(Math.toRadians(143.5), Math.toRadians(60));
 
-        telemetry.addData("Status", "Ready");
-        telemetry.addData("Paths Built", pathsBuilt);
-        telemetry.addData("Artifacts Detected", mixer.GetArtifactCount());
-        telemetry.update();
+        // Path 2: Rotate back and wait at shoot position (60° → 143.5°)
+        toShoot1 = follower.pathBuilder()
+                .addPath(new BezierLine(
+                        tagPose,
+                        shootPose
+                ))
+                .setLinearHeadingInterpolation(Math.toRadians(60), Math.toRadians(143.5))
+                .build();
+
+        // Path 3: Rotate left (143.5° → 180°)
+        rotateLeft = follower.pathBuilder()
+                .addPath(new BezierLine(shootPose, rotatedPose))
+                .setLinearHeadingInterpolation(Math.toRadians(143.5), Math.toRadians(180))
+                .setConstraints(straightConstraints)
+                .build();
+
+        // Path 4: Move left (180° constant)
+        Path goLeftPath = new Path(new BezierLine(
+                new Pose(41.602, 84.473, Math.toRadians(180)),
+                new Pose(17.290, 84.430, Math.toRadians(180))
+        ), straightConstraints);
+        goLeftPath.setConstantHeadingInterpolation(Math.toRadians(180));
+        goLeft = follower.pathBuilder()
+                .addPath(goLeftPath)
+                .build();
+
+        // Path 5: Return to end position (180° → 180°)
+        returnToEnd = follower.pathBuilder()
+                .addPath(new BezierLine(
+                        leftPose,
+                        endPose
+                ))
+                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .setConstraints(straightConstraints)
+                .build();
     }
 
     @Override
     public void start() {
-        if (pathChain != null) {
-            follower.followPath(pathChain, true);
-        }
-        intake.SetPowerMax();
+        opmodeTimer.resetTimer();
+        intake.SetMotorPower(0.8);
+        setPathState(0);
     }
 
     @Override
     public void loop() {
         follower.update();
 
-        if (currentWaitPosition == 0) {
+        // Update subsystems
+        shooter.Run();
+        if (!shooter.GetShootingAllow())
             mixer.Run();
-
-            if (!motorsStarted && mixer.GetArtifactCount() > 0) {
-                shooter.SetShooterVelocity(shooter.GetMotorPower());
-                motorsStarted = true;
-            }
-        }
         husky.Run();
 
-        Pose currentPose = follower.getPose();
+        autonomousPathUpdate();
 
-        Pose targetWait = getTargetWaitPosition();
-        double distToWait = 0;
-        if (targetWait != null) {
-            distToWait = Math.hypot(currentPose.getX() - targetWait.getX(), currentPose.getY() - targetWait.getY());
-        }
-
-        Vector velocity = follower.getVelocity();
-        double speed = velocity.getMagnitude();
-
-        telemetry.addData("=== POSITION ===", "");
-        telemetry.addData("📍 X", "%.2f", currentPose.getX());
-        telemetry.addData("📍 Y", "%.2f", currentPose.getY());
-        telemetry.addData("📍 Heading", "%.1f°", Math.toDegrees(currentPose.getHeading()));
-        telemetry.addData("🚀 Speed", "%.2f in/s", speed);
-        telemetry.addData("🎯 Dist to Wait", "%.2f in", distToWait);
-        telemetry.addData("Path Following", follower.isBusy() ? "BUSY" : "IDLE");
-
-        telemetry.addData("=== MIXER ===", "");
-        telemetry.addData("Artifacts", mixer.GetArtifactCount());
-        telemetry.addData("Wait Pos", currentWaitPosition);
-        telemetry.addData("Shooting", shootingStarted);
-        telemetry.addData("Motors Started", motorsStarted);
-
-        if (targetWait != null && distToWait < 10.0) {
-            if (!shootingStarted) {
-                currentWaitPosition = getNextWaitPosition();
-                waitTimer.reset();
-                shootingStarted = true;
-                shooter.StartAutoShoot();
-            }
-
-            boolean shootingDone = shooter.AutoShoot();
-
-            if (waitTimer.seconds() >= WAIT_TIME || shootingDone) {
-                currentWaitPosition = 0;
-                shootingStarted = false;
-            }
-        }
-
+        // Telemetry
+        telemetry.addData("path state", pathState);
+        telemetry.addData("x", follower.getPose().getX());
+        telemetry.addData("y", follower.getPose().getY());
+        telemetry.addData("heading", Math.toDegrees(follower.getPose().getHeading()));
+        telemetry.addData("shooter rpm", shooter.GetVelocityCurrent());
         telemetry.update();
+    }
+
+    public void autonomousPathUpdate() {
+        switch (pathState) {
+            case 0:
+                follower.followPath(toTag);
+                setPathState(1);
+                break;
+
+            case 1:
+                if (!follower.isBusy()) {
+                    follower.setMaxPower(0.5);
+                    follower.followPath(toShoot1, true);
+                    setPathState(2);
+                }
+                break;
+
+            case 2:
+                if (!follower.isBusy()) {
+                    follower.setMaxPower(0.8);
+                    telemetry.addData("✅", "At shoot position - shooter spinning");
+                    setPathState(3);
+                }
+                break;
+
+            case 3:
+                // Wait for shooter to spin up
+                double currentRPM = shooter.GetVelocityCurrent();
+                double targetRPM = shooter.GetVelocityTarget();
+
+                telemetry.addData("Shooter", "%.0f / %.0f RPM", currentRPM, targetRPM);
+
+                if (Math.abs(currentRPM - targetRPM) < 100 || pathTimer.getElapsedTimeSeconds() > 2.0) {
+                    telemetry.addData("✅", "Shooting!");
+                    shooter.StartAutoShoot();
+                    setPathState(4);
+                }
+                break;
+
+            case 4:
+                // Wait for shooting to complete
+                if (shooter.AutoShoot()) {
+                    telemetry.addData("✅", "Done shooting!");
+                    follower.followPath(rotateLeft, true);
+                    setPathState(5);
+                }
+                break;
+
+            case 5:
+                if (!follower.isBusy()) {
+                    intake.SetPowerMax();
+                    follower.setMaxPower(0.25);
+                    follower.followPath(goLeft, true);
+                    setPathState(6);
+                }
+                break;
+
+            case 6:
+                follower.setMaxPower(0.25);
+                // Intake running, collecting balls
+
+                if (!follower.isBusy()) {
+                    follower.setMaxPower(0.8);
+                    intake.SetMotorPower(0.0); // Stop intake
+                    follower.followPath(returnToEnd, true);
+                    setPathState(7);
+                }
+                break;
+
+            case 7:
+                // Park
+                if (!follower.isBusy()) {
+                    telemetry.addData("✅✅✅", "COMPLETE!");
+                    intake.SetMotorPower(0.0);
+                    setPathState(-1);
+                }
+                break;
+        }
+    }
+
+    public void setPathState(int pState) {
+        pathState = pState;
+        pathTimer.resetTimer();
     }
 
     @Override
     public void stop() {
         follower.breakFollowing();
-        shooter.StopShooterMotors();
-    }
-
-    private Pose getTargetWaitPosition() {
-        if (currentWaitPosition == 0 && waitPos1 != null) return waitPos1;
-        if (currentWaitPosition == 1 && waitPos2 != null) return waitPos2;
-        if (currentWaitPosition == 2 && waitPos3 != null) return waitPos3;
-        return null;
-    }
-
-    private int getNextWaitPosition() {
-        if (currentWaitPosition == 0) return 1;
-        if (currentWaitPosition == 1) return 2;
-        if (currentWaitPosition == 2) return 3;
-        return 0;
-    }
-
-    /**
-     * Build paths with rotation compensation and proper constraints
-     */
-    private void buildPaths() {
-        final double ROTATION_COMPENSATION = 6.0;
-
-        PathConstraints rotationConstraints = new PathConstraints(0.7, 50, 0.7, 0.7);
-        PathConstraints straightConstraints = new PathConstraints(0.3, 30, 0.5, 0.5);
-        PathConstraints waitConstraints = new PathConstraints(0.15, 15, 0.3, 0.3);
-
-        // Wait positions (must match actual path coordinates!)
-        waitPos1 = new Pose(44.473, 94, Math.toRadians(143.5));
-        waitPos2 = new Pose(44.473, 94, Math.toRadians(143.5));
-        waitPos3 = null; // Only 2 waits in this path
-
-        pathChain = follower.pathBuilder()
-            // Path 1: 143.5° → 60° (83.5° rotation - major rotation!)
-            .addPath(new BezierCurve(
-                new Pose(25, 129),
-                new Pose(32, 120),
-                new Pose(38, 110),
-                new Pose(44.473, 100.172 - ROTATION_COMPENSATION)
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(143.5), Math.toRadians(60))
-            .setConstraints(rotationConstraints)
-
-            // Path 2: Rotate back 60° → 143.5° (stay in place)
-            .addPath(new BezierLine(
-                new Pose(44.473, 94, Math.toRadians(60)),
-                new Pose(44.473, 94, Math.toRadians(143.5))
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(60), Math.toRadians(143.5))
-            .setConstraints(waitConstraints)
-
-            // Wait 1: First shooting position
-            .addPath(new BezierLine(
-                new Pose(44.473, 94, Math.toRadians(143.5)),
-                new Pose(44.473, 94, Math.toRadians(143.5))
-            ))
-            .setConstantHeadingInterpolation(Math.toRadians(143.5))
-            .setConstraints(waitConstraints)
-
-            // Path 3: 143.5° → 180° (36.5° rotation)
-            .addPath(new BezierLine(
-                new Pose(44.473, 94),
-                new Pose(41.602, 84.473)
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(143.5), Math.toRadians(180))
-            .setConstraints(straightConstraints)
-
-            // Path 4: Move left (no rotation)
-            .addPath(new BezierLine(
-                new Pose(41.602, 84.473, Math.toRadians(180)),
-                new Pose(17.290, 84.430, Math.toRadians(180))
-            ))
-            .setConstantHeadingInterpolation(Math.toRadians(180))
-            .setConstraints(straightConstraints)
-
-            // Path 5: Return 180° → 143.5° (36.5° rotation)
-            .addPath(new BezierLine(
-                new Pose(17.290, 84.430),
-                new Pose(44.473, 94)
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(143.5))
-            .setConstraints(straightConstraints)
-
-            // Wait 2: Second shooting position
-            .addPath(new BezierLine(
-                new Pose(44.473, 94, Math.toRadians(143.5)),
-                new Pose(44.473, 94, Math.toRadians(143.5))
-            ))
-            .setConstantHeadingInterpolation(Math.toRadians(143.5))
-            .setConstraints(waitConstraints)
-
-            // Path 6: 143.5° → 180° (36.5° rotation)
-            .addPath(new BezierLine(
-                new Pose(44.473, 94),
-                new Pose(43.581, 60.753)
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(143.5), Math.toRadians(180))
-            .setConstraints(straightConstraints)
-
-            // Path 7: Move left (no rotation)
-            .addPath(new BezierLine(
-                new Pose(43.581, 60.753, Math.toRadians(180)),
-                new Pose(17.290, 60.054, Math.toRadians(180))
-            ))
-            .setConstantHeadingInterpolation(Math.toRadians(180))
-            .setConstraints(straightConstraints)
-
-            // Path 8: Return 180° → 143.5° (36.5° rotation)
-            .addPath(new BezierLine(
-                new Pose(17.290, 60.054),
-                new Pose(44.473, 94)
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(143.5))
-            .setConstraints(straightConstraints)
-
-            // Path 9: Final path 143.5° → 180° (36.5° rotation)
-            .addPath(new BezierLine(
-                new Pose(44.473, 94),
-                new Pose(24.097, 70.968)
-            ))
-            .setLinearHeadingInterpolation(Math.toRadians(143.5), Math.toRadians(180))
-            .setConstraints(straightConstraints)
-
-            .build();
+        intake.SetMotorPower(0.0);
     }
 }
 

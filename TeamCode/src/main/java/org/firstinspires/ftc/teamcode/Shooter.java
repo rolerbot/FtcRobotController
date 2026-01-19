@@ -13,9 +13,9 @@ public class Shooter implements Subsystem{
     private ButtonReader ThrowGreen, ThrowPurple;
     private ButtonReader OvverideShooting;
     private ButtonReader VelocityChange;
-    private final GamepadEx ct1, ct2;
-    private final double initialPosition = 0.291;
-    private final double finalPosition = 0.48;
+    private final GamepadEx ct1, ct2; // final - initialpos = 0.189
+    private final double initialPosition = 0.261; // 0.291
+    private final double finalPosition = 0.48 - 0.03;
     private final double hoodInitialPosition = 0.5; //0.5294 -45 grade
     private ElapsedTime runtime = new ElapsedTime();
     boolean isShooting = false;
@@ -25,7 +25,7 @@ public class Shooter implements Subsystem{
     private final Intake intake;
     private final TelemetryCustom telemetry;
     private final Husky husky;
-    private final RobotAllignment robotAllignment;
+    private final RobotAlignment robotAllignment;
     private boolean shootingAllowed = false;
     private Servo ServoRidicare = null;
     public Servo ServoHood = null;
@@ -53,7 +53,7 @@ public class Shooter implements Subsystem{
     private double[] artPoz = {initialPosMixer + 3 * offsetPosition, initialPosMixer + 5 * offsetPosition, initialPosMixer + offsetPosition};
 
     // Constructor for TeleOp with gamepads
-    public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,Husky husky,RobotAllignment robotAllignment,GamepadEx ct1, GamepadEx ct2)
+    public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,Husky husky,RobotAlignment robotAllignment,GamepadEx ct1, GamepadEx ct2)
     {
         this.ct1 = ct1;
         this.ct2 = ct2;
@@ -65,7 +65,7 @@ public class Shooter implements Subsystem{
     }
 
     // Constructor for Autonomous without gamepads
-    public Shooter(TelemetryCustom tl, Mixer mixer, Intake intk, Husky husky, RobotAllignment robotAllignment)
+    public Shooter(TelemetryCustom tl, Mixer mixer, Intake intk, Husky husky, RobotAlignment robotAllignment)
     {
         this.ct1 = null;
         this.ct2 = null;
@@ -402,11 +402,11 @@ public class Shooter implements Subsystem{
         {
             // If battery is low (< 12V), motors need more time to reach target velocity
             if(batteryVoltage < 12.3)
-                return 0.85;  // Extra time when battery is low
+                return 0.65;  // Extra time when battery is low
             else
-                return 0.7;   // Normal time at full battery
+                return 0.55;   // Normal time at full battery
         }
-        else return 0.5;  // Short distance, quick shot
+        else return 0.3;  // Short distance, quick shot
     }
 
     private int GetShootingState()
@@ -422,7 +422,7 @@ public class Shooter implements Subsystem{
         switch(caseSwitch)
         {
             case 0: // Waiting for motors to spin up
-                if(time >= 0.3  && ( motorsReady || time >= timerDependingOnDist)) // Motors ready OR timeout
+                if(time >= 0.225  && ( motorsReady || time >= timerDependingOnDist)) // Motors ready OR timeout
                 {
                     caseSwitch = 1;
                     ResetTimer();
@@ -430,7 +430,7 @@ public class Shooter implements Subsystem{
                 return 0;
 
             case 1: // Push lever (wait 0.3s)
-                if(time >= 0.2)
+                if(time >= 0.12)
                 {
                     caseSwitch = 2;
                     ResetTimer();
@@ -438,7 +438,7 @@ public class Shooter implements Subsystem{
                 return 1;
 
             case 2: // Retract lever (wait 0.2s)
-                if(time >= 0.2)
+                if(time >= 0.135)
                 {
                     caseSwitch = 3;
                     ResetTimer();
@@ -500,9 +500,9 @@ public class Shooter implements Subsystem{
 
     private void HoodPosition()
     {
-        if (constDist > 3 && ServoHood.getPosition() != 0.5294)
+        if (constDist > 2.8 && ServoHood.getPosition() != 0.5294)
             ServoHood.setPosition(0.5294);
-        else if (constDist <= 3 && ServoHood.getPosition() != 0.5)
+        else if (constDist <= 2.8 && ServoHood.getPosition() != 0.5)
             ServoHood.setPosition(0.5);
     }
 
@@ -558,6 +558,33 @@ public class Shooter implements Subsystem{
                 shootType = ShootingState.Unarranged;
             SetShooterVelocity(motorPower);
         }
+    }
+
+    // ==================== BATTERY COMPENSATION (INIT) ==================================================
+
+    /**
+     * Force immediate battery reading and F compensation during initialization
+     * No filtering - instant result for autonomous init
+     */
+    public void ForceUpdateShooterF()
+    {
+        if (voltageHelper == null) return;
+
+        shooterF = voltageHelper.ForceUpdate(BASE_SHOOTER_F);
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
+        MotorAruncare1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+        MotorAruncare2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+        telemetry.Log("Init F Comp", String.format("V=%.2fV → F=%.2f", voltageHelper.GetRawVoltage(), shooterF));
+    }
+
+    /**
+     * Get current battery voltage for telemetry
+     */
+    public double GetBatteryVoltage()
+    {
+        if (voltageHelper == null) return 12.0;
+        return voltageHelper.GetFilteredVoltage();
     }
 
 }

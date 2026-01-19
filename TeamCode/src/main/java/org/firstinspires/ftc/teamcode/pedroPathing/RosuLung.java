@@ -9,6 +9,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.*;
 
+import javax.lang.model.type.MirroredTypeException;
+
 @Autonomous(name = "RosuLung", group = "Pedro Pathing")
 public class RosuLung extends OpMode {
     private Follower follower;

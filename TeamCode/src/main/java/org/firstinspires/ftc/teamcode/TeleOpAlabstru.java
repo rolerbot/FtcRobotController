@@ -14,7 +14,7 @@ public class TeleOpAlabstru extends LinearOpMode
     Intake intake;
     Mixer mixer;
     Shooter shooter;
-    RobotAllignment shooterAiming;
+    RobotAlignment shooterAiming;
     Husky huskyLens;
     ButtonReader left;
     ButtonReader right;
@@ -47,7 +47,7 @@ public class TeleOpAlabstru extends LinearOpMode
         mixer = new Mixer(myLogger, intake);
         mixer.Initialize(hardwareMap);
 
-        shooterAiming = new RobotAllignment(myLogger, ct1, ct2, drivetrain,false, true);
+        shooterAiming = new RobotAlignment(myLogger, ct1, ct2, drivetrain,false, true, huskyLens);
         shooterAiming.Initialize(hardwareMap);
 
         shooter = new Shooter(myLogger, mixer, intake, huskyLens, shooterAiming ,ct1, ct2);
@@ -80,6 +80,9 @@ public class TeleOpAlabstru extends LinearOpMode
             myLogger.Log("Robot Position", String.format("X:%.1f Y:%.1f cm", shooterAiming.GetRobotX(), shooterAiming.GetRobotY()));
             myLogger.Update();
 
+            telemetry.addData("Pos X:", shooterAiming.GetRobotX());
+            telemetry.addData("Pos Y:", shooterAiming.GetRobotY());
+            telemetry.addData("Heading", shooterAiming.GetCurrentHeading());
             telemetry.addData("CurrntVel", shooter.GetVelocityCurrent());
             telemetry.addData("TargetVel", shooter.GetVelocityTarget());
             telemetry.addData("PozServo", shooter.ServoHood.getPosition());

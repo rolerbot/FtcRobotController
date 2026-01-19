@@ -10,8 +10,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.*;
 
-@Autonomous(name = "RosuScurtIncomplet", group = "Pedro Pathing")
-public class RosuScurtIncomplet extends OpMode {
+@Autonomous(name = "RosuScurtInFata", group = "Pedro Pathing")
+public class RosuScurtInFata extends OpMode {
     private Follower follower;
     private Timer pathTimer, opmodeTimer;
     private int pathState;
@@ -25,8 +25,8 @@ public class RosuScurtIncomplet extends OpMode {
     private GoBildaPinpointDriver pinpoint;
 
     // Poses - RED ALLIANCE (mirrored from blue)
-    private final Pose startPose = new Pose(124.845, 119.378, Math.toRadians(215));
-    private final Pose tagPose = new Pose(99.527, 94, Math.toRadians(120));
+    private final Pose startPose = new Pose(124, 119.378, Math.toRadians(270));
+    private final Pose tagPose = new Pose(140, 119.378, Math.toRadians(270));
     private final Pose shootPose = new Pose(99.527, 94, Math.toRadians(36.5));
     private final Pose rotatedPose = new Pose(102.398, 84.473, Math.toRadians(0));
     private final Pose rightPose = new Pose(126.710, 84.430, Math.toRadians(0));
@@ -99,7 +99,7 @@ public class RosuScurtIncomplet extends OpMode {
         ), rotationConstraints);
         toTag.setLinearHeadingInterpolation(Math.toRadians(36.5), Math.toRadians(120));
 
-        // Path 2: Rotate back and wait at shoot position (120° → 36.5°)
+     /*   // Path 2: Rotate back and wait at shoot position (120° → 36.5°)
         toShoot1 = follower.pathBuilder()
                 .addPath(new BezierLine(tagPose, shootPose))
                 .setLinearHeadingInterpolation(Math.toRadians(120), Math.toRadians(36.5))
@@ -124,7 +124,7 @@ public class RosuScurtIncomplet extends OpMode {
                 .addPath(new BezierLine(rightPose, endPose))
                 .setConstantHeadingInterpolation(Math.toRadians(0))
                 .setConstraints(straightConstraints)
-                .build();
+                .build();*/
     }
 
     @Override

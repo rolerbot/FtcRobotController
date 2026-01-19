@@ -44,8 +44,6 @@ public class AlbastruLung extends OpMode {
         pathTimer = new Timer();
         opmodeTimer = new Timer();
 
-        // CRITICAL: Initialize subsystems FIRST, before creating follower
-        // This matches the pattern from professional examples
         telemetryCustom = new TelemetryCustom(telemetry);
 
         intake = new Intake(telemetryCustom);
@@ -71,6 +69,8 @@ public class AlbastruLung extends OpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.addData("Start Position", "X=56, Y=9, H=90°");
         telemetry.addData("Mixer", "3 balls loaded");
+        telemetry.addData("Battery Voltage", String.format("%.2fV", shooter.GetBatteryVoltage()));
+        telemetry.addData("Shooter F", "Compensated for battery");
         telemetry.update();
     }
 

@@ -1,7 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.pedropathing.geometry.Pose;
+import com.qualcomm.robotcore.hardware.Servo; // ← YOUR package, not pedropathing
+import com.pedropathing.geometry.Pose;
+
 
 enum Color
 {

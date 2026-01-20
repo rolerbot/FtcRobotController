@@ -484,17 +484,17 @@ public class Shooter implements Subsystem{
             // Default distance for autonomous (assumes mid-range shooting)
             constDist = 3.5; // meters - adjust as needed for your autonomous position
         }
-
-        if(!mixer.IsEmpty())
-            SetMotorPower();
-        else SetShooterVelocity(0);
+        SetMotorPower();
     }
 
     private void SetMotorPower()
     {
-        double dist = constDist*100;
+        double dist = constDist * 100;
         if(constDist > 2 && constDist < 5)
-            motorPower = -(2.07771/10000000)*dist*dist*dist*dist+0.000254073*dist*dist*dist-0.118373*dist*dist + 26.72314*dist - 1158.4306;
+            motorPower = -(2.07771/10000000)*dist*dist*dist*dist+0.000254073*dist*dist*dist-0.118373*dist*dist + 26.72314*dist - 1170.4306; //1158.4306
+        else if(constDist >= 5)
+            motorPower = 1700;
+        else motorPower = 1100;
         SetShooterVelocity(motorPower);
     }
 

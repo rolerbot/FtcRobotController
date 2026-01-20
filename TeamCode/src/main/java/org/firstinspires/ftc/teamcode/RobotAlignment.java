@@ -25,6 +25,7 @@ public class RobotAlignment implements Subsystem
     private ButtonReader resetPositionButton;
     private ButtonReader toggleHeadingLockButton;
     private ButtonReader relocalizationButton;  // NEW: Button to trigger relocalization
+    private ButtonReader toggleAbsoluteHeadingLockButton;  // NEW: Button for absolute heading lock
 
     // PID coefficients
     private final double kP;
@@ -45,6 +46,9 @@ public class RobotAlignment implements Subsystem
     private double lockedHeading = 0;
     private boolean isRobotMoving = false;
     private boolean resetIMUOnInit = true;
+
+    // Absolute heading lock (constantly aims at target, works while moving)
+    private boolean absoluteHeadingLockEnabled = false;
 
     public RobotAlignment(TelemetryCustom telemetry, GamepadEx ct1, GamepadEx ct2, Drivetrain drivetrain, boolean resetIMU, boolean isBlue, Husky husky) {
         this.telemetry = telemetry;
@@ -108,7 +112,8 @@ public class RobotAlignment implements Subsystem
         if (ct1 != null && ct2 != null) {
             resetPositionButton = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
             toggleHeadingLockButton = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
-            relocalizationButton = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);  // NEW: ct2 left bumper
+            relocalizationButton = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);  // ct2 left bumper
+            toggleAbsoluteHeadingLockButton = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_BUMPER);  // ct2 right bumper
         }
     }
 
@@ -142,6 +147,9 @@ public class RobotAlignment implements Subsystem
         ReadButtons();
         UpdatePositionFromPinpoint();
 
+        // Dynamically adjust target based on robot position (corner compensation)
+        UpdateTargetPosition();
+
         // Detect robot movement
         if (ct1 != null) {
             SetRobotMoving(
@@ -152,8 +160,15 @@ public class RobotAlignment implements Subsystem
             );
         }
 
-        // Heading lock logic
-        if (headingLockEnabled && !isRobotMoving && drivetrain != null) {
+        // ABSOLUTE HEADING LOCK (prevents rotation, allows translation)
+        if (absoluteHeadingLockEnabled && drivetrain != null) {
+            double[] lockPowers = RunAbsoluteHeadingLock();
+            if (lockPowers != null) {
+                drivetrain.ApplyHeadingLockPowers(lockPowers);
+            }
+        }
+        // TARGET HEADING LOCK (only when not moving and not using absolute lock)
+        else if (headingLockEnabled && !isRobotMoving && drivetrain != null) {
             double[] lockPowers = RunHeadingLock();
             if (lockPowers != null) {
                 drivetrain.ApplyHeadingLockPowers(lockPowers);
@@ -161,6 +176,62 @@ public class RobotAlignment implements Subsystem
         }
         else if (drivetrain != null) {
             drivetrain.ApplyHeadingLockPowers(null);
+        }
+    }
+
+    /**
+     * Dynamically adjust target position based on robot's Y position
+     * Compensates for field corners when robot is near edges
+     */
+    private void UpdateTargetPosition()
+    {
+        // True = Blue team (target at X=0, Y=143.6)
+        // False = Red team (target at X=143.6, Y=143.6)
+        boolean isBlue = (teamId == 4);
+
+        if (isBlue)
+        {
+            // BLUE TEAM TARGET ADJUSTMENT
+            if (robotY > 110.0)
+            {
+                // Near top edge - shift target down by 3 inches
+                targetX = 0;
+                targetY = 143.6 - 3.0;
+            }
+            else if (robotY < 23.0)
+            {
+                // Near bottom edge - shift target right by 3 inches
+                targetX = 0 + 3.0;
+                targetY = 143.6;
+            }
+            else
+            {
+                // Normal position (between 23 and 110) - use default target
+                targetX = 0;
+                targetY = 143.6;
+            }
+        }
+        else
+        {
+            // RED TEAM TARGET ADJUSTMENT
+            if (robotY > 110.0)
+            {
+                // Near top edge - shift target down by 3 inches
+                targetX = 143.6;
+                targetY = 143.6 - 3.0;
+            }
+            else if (robotY < 23.0)
+            {
+                // Near bottom edge - shift target left by 3 inches
+                targetX = 143.6 - 3.0;
+                targetY = 143.6;
+            }
+            else
+            {
+                // Normal position (between 23 and 110) - use default target
+                targetX = 143.6;
+                targetY = 143.6;
+            }
         }
     }
 
@@ -233,7 +304,8 @@ public class RobotAlignment implements Subsystem
 
         resetPositionButton.readValue();
         toggleHeadingLockButton.readValue();
-        relocalizationButton.readValue();  // NEW: Read relocalization button
+        relocalizationButton.readValue();
+        toggleAbsoluteHeadingLockButton.readValue();  // NEW: Read absolute heading lock button
 
         if (resetPositionButton.wasJustPressed()) {
             pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, robotInitX, robotInitY, AngleUnit.DEGREES, 90));
@@ -251,7 +323,16 @@ public class RobotAlignment implements Subsystem
             }
         }
 
-        // NEW: Relocalization button pressed
+        // NEW: Absolute heading lock button pressed
+        if (toggleAbsoluteHeadingLockButton.wasJustPressed()) {
+            if (absoluteHeadingLockEnabled) {
+                UnlockAbsoluteHeading();
+            } else {
+                LockAbsoluteHeading();
+            }
+        }
+
+        // Relocalization button pressed
         if (relocalizationButton.wasJustPressed()) {
             if (enableRelocalization) {
                 telemetry.Log("🔄 Relocalization", "TRIGGERED by button press");
@@ -326,6 +407,65 @@ public class RobotAlignment implements Subsystem
 
     public boolean IsHeadingLocked() {return headingLockEnabled;}
 
+    // ==================== ABSOLUTE HEADING LOCK ====================
+    // Constantly points robot at target, prevents manual rotation
+
+    /**
+     * Lock heading towards target - robot constantly faces target even while moving
+     * Prevents manual rotation
+     */
+    public void LockAbsoluteHeading()
+    {
+        absoluteHeadingLockEnabled = true;
+        telemetry.Log("🔒 Auto-Aim Lock", "ENABLED - Always facing target");
+    }
+
+    /**
+     * Unlock absolute heading - robot can rotate freely
+     */
+    public void UnlockAbsoluteHeading()
+    {
+        absoluteHeadingLockEnabled = false;
+        telemetry.Log("🔓 Auto-Aim Lock", "DISABLED");
+    }
+
+    public boolean IsAbsoluteHeadingLocked() {return absoluteHeadingLockEnabled;}
+
+    /**
+     * Calculate correction powers to constantly point at target
+     * Works even while robot is moving - prevents manual rotation
+     */
+    private double[] RunAbsoluteHeadingLock()
+    {
+        if (!absoluteHeadingLockEnabled) return null;
+
+        // Calculate heading to target (same as target heading lock)
+        double targetHeading = GetHeadingToTarget();
+        double currentAngle = GetCurrentHeading();
+        double error = NormalizeAngle(targetHeading - currentAngle);
+
+        // Allow small heading errors without correction
+        if (Math.abs(error) < 1.0) {
+            return null;
+        }
+
+        // PID-style correction
+        double errorSign = Math.signum(error);
+        double errorMagnitude = Math.abs(error);
+        double scaledError = errorSign * Math.pow(errorMagnitude / 180.0, 1.5) * 180.0;
+        double rotationPower = kP * scaledError * 0.15;
+        rotationPower = Math.max(-0.35, Math.min(0.35, rotationPower));
+
+        return new double[]{
+                rotationPower,
+                -rotationPower,
+                rotationPower,
+                -rotationPower
+        };
+    }
+
+    // ==================== TARGET HEADING LOCK (ORIGINAL) ====================
+
     private double[] RunHeadingLock()
     {
         if (!headingLockEnabled) return null;
@@ -376,10 +516,7 @@ public class RobotAlignment implements Subsystem
         return angle;
     }
 
-    public double GetCurrentHeading() {
-        return pinpoint.getPosition().getHeading(AngleUnit.DEGREES);
-    }
-
+    public double GetCurrentHeading() {return pinpoint.getPosition().getHeading(AngleUnit.DEGREES);}
     public double GetRobotX() {return robotX;}
     public double GetRobotY() {return robotY;}
 }

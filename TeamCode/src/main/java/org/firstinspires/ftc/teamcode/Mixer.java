@@ -204,6 +204,8 @@ public class Mixer implements Subsystem{
         }
     }
 
+    public Color GetColorForPoz(int poz) {return artifacte[poz];}
+
     public void SetArtifacts()
     {
         artifacte[0] = Color.Green;

@@ -80,12 +80,16 @@ public class TeleOpAlabstru extends LinearOpMode
             myLogger.Log("Robot Position", String.format("X:%.1f Y:%.1f cm", shooterAiming.GetRobotX(), shooterAiming.GetRobotY()));
             myLogger.Update();
 
+            telemetry.addData("ShoottingAllowed", shooter.isShooting);
             telemetry.addData("Pos X:", shooterAiming.GetRobotX());
             telemetry.addData("Pos Y:", shooterAiming.GetRobotY());
             telemetry.addData("Heading", shooterAiming.GetCurrentHeading());
             telemetry.addData("CurrntVel", shooter.GetVelocityCurrent());
             telemetry.addData("TargetVel", shooter.GetVelocityTarget());
-            telemetry.addData("PozServo", shooter.ServoHood.getPosition());
+            telemetry.addData("Balls", mixer.GetArtifactCount());
+            telemetry.addData("Ball 1:", mixer.GetColorForPoz(0));
+            telemetry.addData("Ball 2:", mixer.GetColorForPoz(1));
+            telemetry.addData("Ball 3:", mixer.GetColorForPoz(2));
             telemetry.update();
         }
         telemetry.update();

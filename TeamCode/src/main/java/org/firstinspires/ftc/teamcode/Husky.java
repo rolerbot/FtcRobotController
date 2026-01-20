@@ -14,6 +14,7 @@ import static java.lang.Math.sin;
 // ID 3 - Purple, Purple, Green
 // ID 4 - Blue
 // ID 5 - Red
+
 public class Husky implements Subsystem
 {
     public HuskyLens huskyLens;
@@ -47,12 +48,6 @@ public class Husky implements Subsystem
 
     // Tag specs
     private static final double TAG_HEIGHT = 29.13;  // 74cm above ground to center
-
-    // REMOVED THESE LINES - they reference variables that don't exist at class level
-    // double normalizedOffset = Math.abs(pixelOffsetX) / (HUSKYLENS_WIDTH / 2.0);
-    // double distortionFactor = 1.0 - (0.15 * normalizedOffset);
-    // double correctedTagWidth = tagWidth * distortionFactor;
-    // double straightLineDistance = K / correctedTagWidth;
 
     // Store latest tag data
     private int cachedTagX = 0;
@@ -129,6 +124,7 @@ public class Husky implements Subsystem
         for (HuskyLens.Block block : blocks)
         {
             // CRITICAL: Only accept team tags (4 or 5), NEVER artifact tags (1, 2, 3)
+            // Even if artifact hasn't been read yet, don't use it for relocalization
             if (block.id == IdTeam)  // This already filters to only 4 or 5
             {
                 cachedTagX = block.x;
@@ -150,10 +146,12 @@ public class Husky implements Subsystem
 
 
     // Public method for RobotAlignment to get latest pose
+    // ONLY call this when the button is pressed!
     public RobotPoseData CalculateRobotPose(double currentHeadingFromIMU)
     {
         // ADDED: Extra safety check - only calculate if we have valid TEAM tag data
         if (cachedTagX == 0 || cachedTagY == 0 || cachedTagWidth == 0) {
+            telemetry.Log("⚠️ No Team Tag", "Cannot relocalize");
             return null;  // No valid team tag detected
         }
 
@@ -185,15 +183,8 @@ public class Husky implements Subsystem
             telemetry.Log("📷 Pixel Offset", String.format("%.1f px = %.2f°", pixelOffsetX, angleOffsetDegrees));
 
             // ===== FOV DISTORTION CORRECTION =====
-            // Calculate how far from center the tag is (0 = center, 1 = edge)
             double normalizedOffset = Math.abs(pixelOffsetX) / (HUSKYLENS_WIDTH / 2.0);
-
-            // Apply distortion correction (tags appear larger at edges)
-            // Reduce width by up to 15% at the edges
-            // In CalculateRobotPoseInternal method, change this line:
-            double distortionFactor = 1.0 - (0.25 * normalizedOffset);  // Changed from 0.15 to 0.25
-
-            // Corrected width
+            double distortionFactor = 1.0 - (0.25 * normalizedOffset);
             double correctedTagWidth = tagWidth * distortionFactor;
 
             telemetry.Log("📷 Norm Offset", String.format("%.2f", normalizedOffset));

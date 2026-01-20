@@ -28,8 +28,9 @@ public class RosuLung extends OpMode {
     private final Pose shootPose = new Pose(86, 17.2, Math.toRadians(68));          // 180-112=68 - Y=17
     private final Pose rotatedPose = new Pose(90, 47, Math.toRadians(0));       // 144-52=92, 180-180=0
     private final Pose rightPose = new Pose(140, 47, Math.toRadians(0));        // 144-20=124
-    private final Pose intermediatePose = new Pose(126, 25, Math.toRadians(0)); // Y closer to humanPlayerPose to avoid backwards motion
-    private final Pose humanPlayerPose = new Pose(158, 30, Math.toRadians(-45));  // 144-25=119
+    private final Pose intermediatePose = new Pose(110, 24, Math.toRadians(0)
+    ); // Y closer to humanPlayerPose to avoid backwards motion
+    private final Pose humanPlayerPose = new Pose(120, 24, Math.toRadians(0));  // 144-25=119
     private final Pose endPose = new Pose(90, 35, Math.toRadians(68));            // Same as shootPose heading
     private final double waitTime = 4.5;
     private final double pickupWaitTime = 1.7;
@@ -39,6 +40,7 @@ public class RosuLung extends OpMode {
     private PathChain toShoot1, rotateRight, goRight, returnToShoot, toIntermediate, toHumanPlayer, returnFromHuman, toEnd;
 
     @Override
+
     public void init() {
         pathTimer = new Timer();
         opmodeTimer = new Timer();
@@ -66,6 +68,22 @@ public class RosuLung extends OpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.addData("Start Position", "X=88, Y=9, H=90°");
         telemetry.addData("Mixer", "3 balls loaded");
+        telemetry.addData("Current Pos", follower.getPose().getX() + " " + follower.getPose().getY());
+        telemetry.update();
+    }
+
+    @Override
+    public void init_loop()
+    {
+        super.init_loop();
+        Pose currentPose = follower.getPose();
+        telemetry.addData("=== CURRENT POSITION ===", "");
+        telemetry.addData("X Position", "%.2f", currentPose.getX());
+        telemetry.addData("Y Position", "%.2f", currentPose.getY());
+        telemetry.addData("Heading (degrees)", "%.2f", Math.toDegrees(currentPose.getHeading()));
+        telemetry.addData("Heading (radians)", "%.4f", currentPose.getHeading());
+        telemetry.addData("", "");
+        telemetry.addData("💡 Tip", "Move robot to find positions");
         telemetry.update();
     }
 

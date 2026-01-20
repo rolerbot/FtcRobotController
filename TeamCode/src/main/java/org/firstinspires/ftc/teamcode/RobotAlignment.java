@@ -24,6 +24,7 @@ public class RobotAlignment implements Subsystem
     // Button readers
     private ButtonReader resetPositionButton;
     private ButtonReader toggleHeadingLockButton;
+    private ButtonReader relocalizationButton;  // NEW: Button to trigger relocalization
 
     // PID coefficients
     private final double kP;
@@ -107,6 +108,7 @@ public class RobotAlignment implements Subsystem
         if (ct1 != null && ct2 != null) {
             resetPositionButton = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
             toggleHeadingLockButton = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
+            relocalizationButton = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);  // NEW: ct2 left bumper
         }
     }
 
@@ -140,11 +142,6 @@ public class RobotAlignment implements Subsystem
         ReadButtons();
         UpdatePositionFromPinpoint();
 
-        // CHECK FOR TAG RELOCALIZATION (only in TeleOp when husky is available)
-        if (enableRelocalization && husky != null) {
-            CheckAndApplyRelocalization();
-        }
-
         // Detect robot movement
         if (ct1 != null) {
             SetRobotMoving(
@@ -168,12 +165,12 @@ public class RobotAlignment implements Subsystem
     }
 
     /**
-     * Check if Husky detected the team's AprilTag and apply relocalization
-     * SIMPLIFIED - Husky does all the heavy lifting now!
+     * BUTTON-TRIGGERED relocalization
+     * Only runs when the button is pressed
      */
-    // In RobotAlignment.java - pass current heading to Husky
     private void CheckAndApplyRelocalization() {
         if (husky == null) {
+            telemetry.Log("⚠️ Relocalization", "Husky not available");
             return;
         }
 
@@ -183,30 +180,37 @@ public class RobotAlignment implements Subsystem
         // Ask Husky to calculate pose using current heading as hint
         RobotPoseData pose = husky.CalculateRobotPose(currentHeading);
 
-        // ADDED: Sanity check on calculated position
-        if (pose != null) {
-            // Check if position change is reasonable (not a huge jump)
-            double deltaX = Math.abs(pose.x - robotX);
-            double deltaY = Math.abs(pose.y - robotY);
-            double deltaH = Math.abs(pose.heading - GetCurrentHeading());
-
-            // If position jumps more than 24 inches or heading jumps more than 30°, reject it
-            if (deltaX > 24.0 || deltaY > 24.0 || deltaH > 30.0) {
-                telemetry.Log("⚠️ REJECTED Reloc", String.format("ΔX=%.1f ΔY=%.1f ΔH=%.1f", deltaX, deltaY, deltaH));
-                return;  // Don't apply this relocalization - it's too big a jump
-            }
-
-            // Position change is reasonable - apply it
-            Pose2D relocPose = new Pose2D(DistanceUnit.INCH, pose.x, pose.y, AngleUnit.DEGREES, pose.heading);
-            pinpoint.setPosition(relocPose);
-            robotX = pose.x;
-            robotY = pose.y;
-
-            telemetry.Log("✅ RELOCALIZED!", "");
-            telemetry.Log("  New X", String.format("%.1f\"", robotX));
-            telemetry.Log("  New Y", String.format("%.1f\"", robotY));
-            telemetry.Log("  New Heading", String.format("%.1f°", pose.heading));
+        if (pose == null) {
+            telemetry.Log("❌ Relocalization", "No team tag visible");
+            ct2.gamepad.rumble(500);  // Quick rumble to indicate failure
+            return;
         }
+
+        // ADDED: Sanity check on calculated position
+        double deltaX = Math.abs(pose.x - robotX);
+        double deltaY = Math.abs(pose.y - robotY);
+        double deltaH = Math.abs(pose.heading - GetCurrentHeading());
+
+        // If position jumps more than 24 inches or heading jumps more than 30°, reject it
+        if (deltaX > 24.0 || deltaY > 24.0 || deltaH > 30.0) {
+            telemetry.Log("⚠️ REJECTED Reloc", String.format("ΔX=%.1f ΔY=%.1f ΔH=%.1f", deltaX, deltaY, deltaH));
+            ct2.gamepad.rumble(1000);  // Longer rumble to indicate rejection
+            return;  // Don't apply this relocalization - it's too big a jump
+        }
+
+        // Position change is reasonable - apply it
+        Pose2D relocPose = new Pose2D(DistanceUnit.INCH, pose.x, pose.y, AngleUnit.DEGREES, pose.heading);
+        pinpoint.setPosition(relocPose);
+        robotX = pose.x;
+        robotY = pose.y;
+
+        // Success feedback
+        ct2.gamepad.rumble(0.6, 0.6, 300);  // Short double-rumble for success
+        telemetry.Log("✅ RELOCALIZED!", "");
+        telemetry.Log("  New X", String.format("%.1f\"", robotX));
+        telemetry.Log("  New Y", String.format("%.1f\"", robotY));
+        telemetry.Log("  New Heading", String.format("%.1f°", pose.heading));
+        telemetry.Log("  Delta", String.format("ΔX=%.1f ΔY=%.1f ΔH=%.1f", deltaX, deltaY, deltaH));
     }
 
     /**
@@ -229,6 +233,7 @@ public class RobotAlignment implements Subsystem
 
         resetPositionButton.readValue();
         toggleHeadingLockButton.readValue();
+        relocalizationButton.readValue();  // NEW: Read relocalization button
 
         if (resetPositionButton.wasJustPressed()) {
             pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, robotInitX, robotInitY, AngleUnit.DEGREES, 90));
@@ -243,6 +248,17 @@ public class RobotAlignment implements Subsystem
                 UnlockHeading();
             } else {
                 LockCurrentHeading();
+            }
+        }
+
+        // NEW: Relocalization button pressed
+        if (relocalizationButton.wasJustPressed()) {
+            if (enableRelocalization) {
+                telemetry.Log("🔄 Relocalization", "TRIGGERED by button press");
+                CheckAndApplyRelocalization();
+            } else {
+                telemetry.Log("⚠️ Relocalization", "Feature is DISABLED");
+                ct2.gamepad.rumble(1000);
             }
         }
     }
@@ -353,43 +369,6 @@ public class RobotAlignment implements Subsystem
             telemetry.Log("Heading Lock", String.format("Resumed - Pointing to target at %.1f°", lockedHeading));
         }
     }
-
-    //Original poz/heading looking at the center of the tag before recalculating
-    //X:74.78
-    //Y:87.55
-    //H:147.85
-
-    //AfterRecalculating:
-
-    //-Center
-    //X:75.93
-    //Y:85.38
-    //H:146.9
-
-    //Tagx 159
-    //TagWidth 28
-    //Horiz Distance: 71.2
-
-    //-Left Part
-
-    //X:76.67
-    //Y:107
-    //H:134.2
-
-    //TagX 28
-    //TagWidth: 40
-    //HorizDistance: 61.4
-
-    //-RightPart
-
-    //X:70.9
-    //Y:89.27
-    //H:165.7
-
-    //TagX 291
-    //TagWidth: 38
-    //HorizDistance: 64.7
-
 
     private double NormalizeAngle(double angle) {
         while (angle > 180) angle -= 360;

@@ -346,12 +346,14 @@ public class Shooter implements Subsystem{
         ResetTimer();
     }
 
+    public boolean IsAutoShooting() { return autoShooting;}
 
     private void HandleNextShot()
     {
         if (mixer.IsEmpty())
         {
             ResetShooter();
+            autoShooting = false;
             shootingAllowed = false;
             arrangedIndex = 0;
             shootType = ShootingState.None;

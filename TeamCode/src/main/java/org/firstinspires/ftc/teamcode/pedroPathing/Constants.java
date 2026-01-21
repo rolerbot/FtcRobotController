@@ -45,7 +45,7 @@ public class Constants {
             .xVelocity(63.0)
             .yVelocity(64.0);
 
-    public static PathConstraints pathConstraints = new PathConstraints(99, 100, 1, 1);
+    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
             .forwardPodY(-6.65)

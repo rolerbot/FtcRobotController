@@ -53,7 +53,7 @@ public class RosuLung extends OpMode {
         mixer.SetArtifacts(); // Load 3 balls
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null);
+        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, true);
         shooter.Initialize(hardwareMap);
 
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
@@ -166,7 +166,7 @@ public class RosuLung extends OpMode {
                                     new Pose(130, 35.526),
                                     new Pose(83.000, 9.000)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(68))
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(70))
                     .build();
 
             // Path 6: Move to second pickup area (rotate to 0°)
@@ -176,7 +176,7 @@ public class RosuLung extends OpMode {
                                     new Pose(90, 14.181),
                                     new Pose(100, 10)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
+                    ).setLinearHeadingInterpolation(Math.toRadians(70), Math.toRadians(0))
                     .build();
 
             Path7 = follower.pathBuilder().addPath(
@@ -193,7 +193,7 @@ public class RosuLung extends OpMode {
                                     new Pose(112.884, 10),
                                     new Pose(83.000, 9.000)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(68))
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(70))
                     .build();
 
             // Path 9: Move forward a bit after final shooting
@@ -332,6 +332,7 @@ public class RosuLung extends OpMode {
                     panelsTelemetry.debug("Status", "Back - final shooting");
                     panelsTelemetry.debug("Balls", mixer.GetArtifactCount());
                     shooter.StartAutoShoot();
+                    follower.setMaxPower(0.6);
                     setPathState(14);
                 }
                 break;

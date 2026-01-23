@@ -49,6 +49,7 @@ public class Shooter implements Subsystem{
     private double motorPower = lowVelocity;
     private double offsetPosition = 0.3834 / 2;
     private final double initialPosMixer = 0.0206;
+    private boolean isLong = true;
     private ShootingState shootType = ShootingState.None;
     private double[] artPoz = {initialPosMixer + 3 * offsetPosition, initialPosMixer + 5 * offsetPosition, initialPosMixer + offsetPosition};
 
@@ -65,7 +66,7 @@ public class Shooter implements Subsystem{
     }
 
     // Constructor for Autonomous without gamepads
-    public Shooter(TelemetryCustom tl, Mixer mixer, Intake intk, Husky husky, RobotAlignment robotAllignment)
+    public Shooter(TelemetryCustom tl, Mixer mixer, Intake intk, Husky husky, RobotAlignment robotAllignment, boolean isLong)
     {
         this.ct1 = null;
         this.ct2 = null;
@@ -74,6 +75,7 @@ public class Shooter implements Subsystem{
         this.telemetry = tl;
         this.husky = husky;
         this.robotAllignment = robotAllignment;
+        this.isLong = isLong;
     }
      public void LinkComponents(HardwareMap hardwareMap)
      {
@@ -483,8 +485,9 @@ public class Shooter implements Subsystem{
         if (robotAllignment != null) {
             constDist = robotAllignment.GetDistanceToTarget();
         } else {
-            // Default distance for autonomous (assumes mid-range shooting)
-            constDist = 3.4; // meters - adjust as needed for your autonomous position
+            if(isLong)
+            constDist = 3.7 ; // meters - adjust as needed for your autonomous position
+            else constDist = 2.15;
         }
         SetMotorPower();
     }

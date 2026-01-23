@@ -55,7 +55,7 @@ public class AlbastruScurtIncomplet extends OpMode {
         mixer.SetArtifacts(); // Load 3 balls
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null);
+        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, false);
         shooter.Initialize(hardwareMap);
 
         // NOW create follower and set starting pose AFTER subsystems

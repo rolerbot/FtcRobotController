@@ -66,7 +66,7 @@ public class RosuScurtInFata extends OpMode {
         mixer.Initialize(hardwareMap);
         mixer.SetArtifacts();
 
-        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null);
+        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, false);
         shooter.Initialize(hardwareMap);
 
         // Create follower - this internally connects to Pinpoint

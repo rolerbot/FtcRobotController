@@ -7,15 +7,14 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Intake implements Subsystem
 {
     private GamepadEx ct1;
     public DcMotorEx MotorIN = null;
     ButtonReader ButtonSus, ButtonJos;
-    private boolean isReversed = false, isForward = false;
-    private double motorPower = 0.8;
+    private boolean isStarted = false;
+    private double motorPower = 1.0;
     private final TelemetryCustom telemetry;
 
     public Intake(TelemetryCustom tl, GamepadEx ct1)
@@ -59,35 +58,26 @@ public class Intake implements Subsystem
     public void SetPowerMax()
     {
         MotorIN.setPower(motorPower);
-        isForward = true;
-        isReversed = false;
-    }
-
-    public void SetForward()
-    {
-        isForward = true;
-        isReversed = false;
+        isStarted = true;
     }
 
     private void MotorIntake()
     {
-        if (ButtonSus.wasJustPressed() && !isForward)
+        if (ButtonSus.wasJustPressed() && !isStarted)
         {
-            isForward = true;
-            isReversed = false;
+           isStarted = true;
             MotorIN.setPower(motorPower);
-        } else if (ButtonSus.wasJustPressed() && isForward)
+        } else if (ButtonSus.wasJustPressed() && isStarted)
             SetMotorPower(0);
     }
 
     private void MotorIntakeReverse()
     {
-        if (ButtonJos.wasJustPressed() && !isReversed)
+        if (ButtonJos.wasJustPressed() && !isStarted)
         {
-            isForward = false;
-            isReversed = true;
+            isStarted = true;
             MotorIN.setPower(-motorPower);
-        } else if (ButtonJos.wasJustPressed() && isReversed)
+        } else if (ButtonJos.wasJustPressed() && isStarted)
             SetMotorPower(0);
     }
 
@@ -99,26 +89,17 @@ public class Intake implements Subsystem
 
         // Update state flags to match actual motor state
         if (pow > 0) {
-            isForward = true;
-            isReversed = false;
+            isStarted = true;
         } else if (pow < 0) {
-            isForward = false;
-            isReversed = true;
+            isStarted = false;
         } else {
-            isForward = false;
-            isReversed = false;
+            isStarted = false;
         }
     }
 
-    public boolean IsForward()
-    {
-        return isForward;
-    }
+    public boolean IsMoving() {return isStarted;}
 
-    public boolean IsStopped()
-    {
-        return (!isForward && !isReversed);
-    }
+    public boolean IsStopped() {return !isStarted;}
 
     public void Run()
     {

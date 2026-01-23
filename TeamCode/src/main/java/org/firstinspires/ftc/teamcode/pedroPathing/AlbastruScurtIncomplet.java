@@ -22,13 +22,15 @@ public class AlbastruScurtIncomplet extends OpMode {
     private Shooter shooter;
     private Mixer mixer;
 
-    // Poses - from original buildPaths()
-    private final Pose startPose = new Pose(25, 129, Math.toRadians(143.5));
-    private final Pose tagPose = new Pose(44.473, 94, Math.toRadians(60));
-    private final Pose shootPose = new Pose(44.473, 94, Math.toRadians(143.5));
-    private final Pose rotatedPose = new Pose(41.602, 84.473, Math.toRadians(180));
-    private final Pose leftPose = new Pose(17.290, 84.430, Math.toRadians(180));
-    private final Pose endPose = new Pose(24.097, 70.968, Math.toRadians(180));
+    // Poses - Shifted to start from (0, 0, 90°)
+    // Original start: (25, 129, 143.5°)
+    // Transformation: new_x = old_x - 25, new_y = old_y - 129, new_heading = old_heading - 53.5°
+    private final Pose startPose = new Pose(0, 0, Math.toRadians(90));
+    private final Pose tagPose = new Pose(19.473, -35, Math.toRadians(6.5));
+    private final Pose shootPose = new Pose(19.473, -35, Math.toRadians(90));
+    private final Pose rotatedPose = new Pose(16.602, -44.527, Math.toRadians(126.5));
+    private final Pose leftPose = new Pose(-7.710, -44.570, Math.toRadians(126.5));
+    private final Pose endPose = new Pose(-0.903, -58.032, Math.toRadians(126.5));
 
     // Paths
     private Path toTag;
@@ -63,7 +65,7 @@ public class AlbastruScurtIncomplet extends OpMode {
         buildPaths();
 
         telemetry.addData("Status", "Initialized - AlbastruScurtIncomplet");
-        telemetry.addData("Start Position", "X=25, Y=129, H=143.5°");
+        telemetry.addData("Start Position", "X=0, Y=0, H=90°");
         telemetry.addData("Mixer", "3 balls loaded");
         telemetry.update();
     }
@@ -73,47 +75,47 @@ public class AlbastruScurtIncomplet extends OpMode {
         PathConstraints rotationConstraints = new PathConstraints(0.7, 50, 0.7, 0.7);
         PathConstraints straightConstraints = new PathConstraints(0.3, 30, 0.5, 0.5);
 
-        // Path 1: Start to tag (143.5° → 60°)
+        // Path 1: Start to tag (90° → 6.5°)
         toTag = new Path(new BezierCurve(
-                new Pose(25, 129),
-                new Pose(38, 110),
-                new Pose(44.473, 100.172 - ROTATION_COMPENSATION)
+                new Pose(0, 0),
+                new Pose(13, -19),
+                new Pose(19.473, -28.828 - ROTATION_COMPENSATION)
         ), rotationConstraints);
-        toTag.setLinearHeadingInterpolation(Math.toRadians(143.5), Math.toRadians(60));
+        toTag.setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(6.5));
 
-        // Path 2: Rotate back and wait at shoot position (60° → 143.5°)
+        // Path 2: Rotate back and wait at shoot position (6.5° → 90°)
         toShoot1 = follower.pathBuilder()
                 .addPath(new BezierLine(
                         tagPose,
                         shootPose
                 ))
-                .setLinearHeadingInterpolation(Math.toRadians(60), Math.toRadians(143.5))
+                .setLinearHeadingInterpolation(Math.toRadians(6.5), Math.toRadians(90))
                 .build();
 
-        // Path 3: Rotate left (143.5° → 180°)
+        // Path 3: Rotate left (90° → 126.5°)
         rotateLeft = follower.pathBuilder()
                 .addPath(new BezierLine(shootPose, rotatedPose))
-                .setLinearHeadingInterpolation(Math.toRadians(143.5), Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(126.5))
                 .setConstraints(straightConstraints)
                 .build();
 
-        // Path 4: Move left (180° constant)
+        // Path 4: Move left (126.5° constant)
         Path goLeftPath = new Path(new BezierLine(
-                new Pose(41.602, 84.473, Math.toRadians(180)),
-                new Pose(17.290, 84.430, Math.toRadians(180))
+                new Pose(16.602, -44.527, Math.toRadians(126.5)),
+                new Pose(-7.710, -44.570, Math.toRadians(126.5))
         ), straightConstraints);
-        goLeftPath.setConstantHeadingInterpolation(Math.toRadians(180));
+        goLeftPath.setConstantHeadingInterpolation(Math.toRadians(126.5));
         goLeft = follower.pathBuilder()
                 .addPath(goLeftPath)
                 .build();
 
-        // Path 5: Return to end position (180° → 180°)
+        // Path 5: Return to end position (126.5° constant)
         returnToEnd = follower.pathBuilder()
                 .addPath(new BezierLine(
                         leftPose,
                         endPose
                 ))
-                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .setConstantHeadingInterpolation(Math.toRadians(126.5))
                 .setConstraints(straightConstraints)
                 .build();
     }
@@ -235,4 +237,3 @@ public class AlbastruScurtIncomplet extends OpMode {
         intake.SetMotorPower(0.0);
     }
 }
-

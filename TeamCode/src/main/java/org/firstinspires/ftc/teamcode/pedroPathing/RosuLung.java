@@ -1,52 +1,47 @@
 package org.firstinspires.ftc.teamcode.pedroPathing;
-
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.*;
-import com.pedropathing.paths.*;
-import com.pedropathing.util.Timer;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.telemetry.TelemetryManager;
+import com.bylazar.telemetry.PanelsTelemetry;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.paths.PathChain;
+import com.pedropathing.geometry.Pose;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.pedropathing.ftc.InvertedFTCCoordinates;
+import com.pedropathing.ftc.PoseConverter;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.*;
 
-import javax.lang.model.type.MirroredTypeException;
 
-@Autonomous(name = "RosuLung", group = "Pedro Pathing")
+@Autonomous(name = "RosuLung", group = "Autonomous")
+@Configurable // Panels
 public class RosuLung extends OpMode {
-    private Follower follower;
-    private Timer pathTimer, opmodeTimer;
-    private int pathState;
+    private TelemetryManager panelsTelemetry; // Panels Telemetry instance
+    public Follower follower; // Pedro Pathing follower instance
+    private int pathState = 0; // Current autonomous path state (state machine)
+    private Paths paths; // Paths defined in the Paths class
+    private ElapsedTime pathTimer = new ElapsedTime();
+    private final double pickupWaitTime = 1.0; // 1 second wait at pickup positions
 
     // Robot subsystems
     private TelemetryCustom telemetryCustom;
+    private GoBildaPinpointDriver pinpoint;
     private Intake intake;
     private Husky husky;
     private Shooter shooter;
     private Mixer mixer;
-    private final Pose startPose = new Pose(86, 9, Math.toRadians(90));           // 144-56=88
-    private final Pose tagPose = new Pose(86, 39, Math.toRadians(90));            // Same Y, same heading
-    private final Pose shootPose = new Pose(86, 17.2, Math.toRadians(68));          // 180-112=68 - Y=17
-    private final Pose rotatedPose = new Pose(90, 47, Math.toRadians(0));       // 144-52=92, 180-180=0
-    private final Pose rightPose = new Pose(140, 47, Math.toRadians(0));        // 144-20=124
-    private final Pose intermediatePose = new Pose(110, 24, Math.toRadians(0)
-    ); // Y closer to humanPlayerPose to avoid backwards motion
-    private final Pose humanPlayerPose = new Pose(120, 24, Math.toRadians(0));  // 144-25=119
-    private final Pose endPose = new Pose(90, 35, Math.toRadians(68));            // Same as shootPose heading
-    private final double waitTime = 4.5;
-    private final double pickupWaitTime = 1.7;
-
-    // Paths - MATCH AlbastruLung structure exactly
-    private Path toTag;
-    private PathChain toShoot1, rotateRight, goRight, returnToShoot, toIntermediate, toHumanPlayer, returnFromHuman, toEnd;
 
     @Override
-
     public void init() {
-        pathTimer = new Timer();
-        opmodeTimer = new Timer();
-
+        panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
         telemetryCustom = new TelemetryCustom(telemetry);
 
+        // Initialize subsystems
         intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
@@ -55,145 +50,176 @@ public class RosuLung extends OpMode {
 
         mixer = new Mixer(telemetryCustom, intake);
         mixer.Initialize(hardwareMap);
-        mixer.SetArtifacts();
+        mixer.SetArtifacts(); // Load 3 balls
 
+        // Pass null for robotAllignment - no IMU conflicts!
         shooter = new Shooter(telemetryCustom, mixer, intake, husky, null);
         shooter.Initialize(hardwareMap);
 
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+
+        // Create follower and set starting pose
+        ResetAndCalibratePos(new Pose(81.000, 9.000, Math.toRadians(0)));
+
+        paths = new Paths(follower); // Build paths
+
+        panelsTelemetry.debug("Status", "Initialized");
+        panelsTelemetry.debug("Mixer", "3 balls loaded");
+        panelsTelemetry.debug("Battery Voltage", String.format("%.2fV", shooter.GetBatteryVoltage()));
+        panelsTelemetry.update(telemetry);
+    }
+
+    private void ResetAndCalibratePos(Pose startPose) {
+        Pose2D ftcStartPose = PoseConverter.poseToPose2D(
+                startPose,
+                InvertedFTCCoordinates.INSTANCE
+        );
+
+        pinpoint.resetPosAndIMU();
+        pinpoint.setPosition(ftcStartPose);
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
-
-        buildPaths();
-
-        telemetry.addData("Status", "Initialized");
-        telemetry.addData("Start Position", "X=88, Y=9, H=90°");
-        telemetry.addData("Mixer", "3 balls loaded");
-        telemetry.addData("Current Pos", follower.getPose().getX() + " " + follower.getPose().getY());
-        telemetry.update();
-    }
-
-    @Override
-    public void init_loop()
-    {
-        super.init_loop();
-        Pose currentPose = follower.getPose();
-        telemetry.addData("=== CURRENT POSITION ===", "");
-        telemetry.addData("X Position", "%.2f", currentPose.getX());
-        telemetry.addData("Y Position", "%.2f", currentPose.getY());
-        telemetry.addData("Heading (degrees)", "%.2f", Math.toDegrees(currentPose.getHeading()));
-        telemetry.addData("Heading (radians)", "%.4f", currentPose.getHeading());
-        telemetry.addData("", "");
-        telemetry.addData("💡 Tip", "Move robot to find positions");
-        telemetry.update();
-    }
-
-    public void buildPaths() {
-        PathConstraints normalConstraints = new PathConstraints(0.7, 50, 0.7, 0.7);
-        PathConstraints slowConstraints = new PathConstraints(0.3, 30, 0.4, 0.4);
-
-        // Path 0: Forward to TAG
-        toTag = new Path(new BezierLine(startPose, tagPose));
-        toTag.setConstantHeadingInterpolation(Math.toRadians(90));
-
-        // Path 1: Back to shooting position (Y=39 to Y=20)
-        toShoot1 = follower.pathBuilder()
-                .addPath(new BezierLine(tagPose, shootPose))
-                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(68))
-                .build();
-
-        // Path 2: Rotation move (Y=20 to Y=37)
-        rotateRight = follower.pathBuilder()
-                .addPath(new BezierLine(shootPose, rotatedPose))
-                .setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
-                .build();
-
-        // Path 3: Straight right movement - SLOW (Y=37)
-        Path goRightPath = new Path(new BezierLine(rotatedPose, rightPose), slowConstraints);
-        goRightPath.setConstantHeadingInterpolation(Math.toRadians(0));
-        goRight = follower.pathBuilder()
-                .addPath(goRightPath)
-                .build();
-
-        // Path 4: Return to shoot position - control points for Y=17 shootPose
-        returnToShoot = follower.pathBuilder()
-                .addPath(new BezierCurve(
-                        rightPose,           // (140, 45, 0°)
-                        new Pose(115, 35),   // Control point 1
-                        new Pose(95, 25),    // Control point 2
-                        shootPose            // (86, 17, 68°)
-                ))
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(68))
-                .build();
-
-        // Path 5: Go to intermediate position (heading now -15°)
-        toIntermediate = follower.pathBuilder()
-                .addPath(new BezierLine(shootPose, intermediatePose))
-                .setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
-                .build();
-
-        // Path 6: Go to human player position - VERY SLOW (heading -15°)
-        PathConstraints verySlowConstraints = new PathConstraints(0.15, 20, 0.3, 0.3);
-        Path toHumanPlayerPath = new Path(new BezierLine(intermediatePose, humanPlayerPose), verySlowConstraints);
-        toHumanPlayerPath.setConstantHeadingInterpolation(Math.toRadians(-45));
-        toHumanPlayer = follower.pathBuilder()
-                .addPath(toHumanPlayerPath)
-                .build();
-
-        // Path 7: Return from human player to shoot (heading -15° to 68°)
-        returnFromHuman = follower.pathBuilder()
-                .addPath(new BezierCurve(
-                        humanPlayerPose,     // (165, 12, -15°)
-                        new Pose(125, 24),   // Control point 1 (adjusted for new Y)
-                        new Pose(100, 20),   // Control point 2 (adjusted for new Y)
-                        shootPose            // (86, 17, 68°)
-                ))
-                .setLinearHeadingInterpolation(Math.toRadians(-45), Math.toRadians(68))
-                .build();
-
-        // Path 8: Go to end position (Y=20 to Y=35)
-        toEnd = follower.pathBuilder()
-                .addPath(new BezierLine(shootPose, endPose))
-                .setConstantHeadingInterpolation(Math.toRadians(68))
-                .build();
     }
 
     @Override
     public void start() {
-        opmodeTimer.resetTimer();
         intake.SetMotorPower(0.8);
         setPathState(0);
     }
 
     @Override
     public void loop() {
-        follower.update();
+        follower.update(); // Update Pedro Pathing
 
+        // Update subsystems
         shooter.Run();
         if (!shooter.GetShootingAllow())
             mixer.Run();
         husky.Run();
 
-        autonomousPathUpdate();
+        autonomousPathUpdate(); // Update autonomous state machine
 
-        telemetry.addData("path state", pathState);
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", Math.toDegrees(follower.getPose().getHeading()));
-        telemetry.addData("shooter rpm", shooter.GetVelocityCurrent());
-        telemetry.update();
+        // Log values to Panels and Driver Station
+        panelsTelemetry.debug("Path State", pathState);
+        panelsTelemetry.debug("X", follower.getPose().getX());
+        panelsTelemetry.debug("Y", follower.getPose().getY());
+        panelsTelemetry.debug("Heading", Math.toDegrees(follower.getPose().getHeading()));
+        panelsTelemetry.debug("Shooter RPM", shooter.GetVelocityCurrent());
+        panelsTelemetry.debug("Balls in Mixer", mixer.GetArtifactCount());
+        panelsTelemetry.update(telemetry);
     }
 
+
+    public static class Paths {
+        public PathChain Path1;
+        public PathChain Path2;
+        public PathChain Path3;
+        public PathChain Path4;
+        public PathChain Path5;
+        public PathChain Path6;
+        public PathChain Path7;
+        public PathChain Path8;
+        public PathChain Path9;
+
+        public Paths(Follower follower) {
+            // Path 1: Move up and rotate to 90°
+            Path1 = follower.pathBuilder().addPath(
+                            new BezierCurve(
+                                    new Pose(81.000, 9.000),
+                                    new Pose(89.484, 21.970),
+                                    new Pose(82.582, 41.355)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(90))
+                    .build();
+
+            // Path 2: Move back at 68° to shooting position
+            Path2 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(82.582, 41.355),
+                                    new Pose(83.000, 9.000)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(68))
+                    .build();
+
+            // Path 3: Rotate to 0° and move to pickup
+            Path3 = follower.pathBuilder().addPath(
+                            new BezierCurve(
+                                    new Pose(83.000, 9.000),
+                                    new Pose(83.191, 20),
+                                    new Pose(87, 34.924)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
+                    .build();
+
+            // Path 4: Continue to pickup position
+            Path4 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(87, 34.924),
+                                    new Pose(130, 35.526)
+                            )
+                    ).setTangentHeadingInterpolation()
+                    .build();
+
+            // Path 5: Return to shooting position and rotate to 68°
+            Path5 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(130, 35.526),
+                                    new Pose(83.000, 9.000)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(68))
+                    .build();
+
+            // Path 6: Move to second pickup area (rotate to 0°)
+            Path6 = follower.pathBuilder().addPath(
+                            new BezierCurve(
+                                    new Pose(83.000, 9.000),
+                                    new Pose(90, 14.181),
+                                    new Pose(100, 10)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
+                    .build();
+
+            Path7 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(100, 10),
+                                    new Pose(130, 10)
+                            )
+                    ).setTangentHeadingInterpolation()
+                    .build();
+
+            Path8 = follower.pathBuilder().addPath(
+                            new BezierCurve(
+                                    new Pose(130, 10),
+                                    new Pose(112.884, 10),
+                                    new Pose(83.000, 9.000)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(68))
+                    .build();
+
+            // Path 9: Move forward a bit after final shooting
+            Path9 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(83.000, 9.000),
+                                    new Pose(87.434, 20.000)
+                            )
+                    ).setTangentHeadingInterpolation()
+                    .build();
+        }
+    }
+
+
     public void autonomousPathUpdate() {
-        switch (pathState) {
+        switch(pathState) {
             case 0:
-                follower.followPath(toTag);
+                follower.followPath(paths.Path1);
+                follower.setMaxPower(0.75);
                 setPathState(1);
                 break;
 
             case 1:
                 if (!follower.isBusy()) {
-                    follower.setMaxPower(0.5);
-                    follower.followPath(toShoot1, true);
+                    follower.followPath(paths.Path2);
+                    follower.setMaxPower(0.8);
                     setPathState(2);
                 }
                 break;
@@ -201,116 +227,128 @@ public class RosuLung extends OpMode {
             case 2:
                 if (!follower.isBusy()) {
                     follower.setMaxPower(0.8);
+                    panelsTelemetry.debug("Status", "At shoot position");
                     setPathState(3);
                 }
                 break;
 
             case 3:
+                // Wait for shooter to spin up, then start shooting (EXACTLY LIKE BLUE)
                 double currentRPM = shooter.GetVelocityCurrent();
                 double targetRPM = shooter.GetVelocityTarget();
-                if (Math.abs(currentRPM - targetRPM) < 100 || pathTimer.getElapsedTimeSeconds() > 2.0) {
+
+                panelsTelemetry.debug("Shooter", String.format("%.0f / %.0f RPM", currentRPM, targetRPM));
+
+                if (Math.abs(currentRPM - targetRPM) < 100 || pathTimer.seconds() > 2.0) {
+                    panelsTelemetry.debug("Status", "🎯 SHOOTING!");
                     shooter.StartAutoShoot();
                     setPathState(4);
                 }
                 break;
 
             case 4:
-                if (shooter.AutoShoot()) {
-                    follower.followPath(rotateRight, true);
+                // Wait until ALL balls shot (EXACTLY LIKE BLUE)
+                if (mixer.IsEmpty() && shooter.IsNotShooting()) {
+                    panelsTelemetry.debug("Status", "✅ All balls shot!");
+                    follower.followPath(paths.Path3, true);
+                    follower.setMaxPower(1);
                     setPathState(5);
                 }
                 break;
 
             case 5:
                 if (!follower.isBusy()) {
-                    Pose currentPos = follower.getPose();
-                    telemetry.addData("🔍 Case 5", "Starting goRight");
-                    telemetry.addData("Current", "X=%.1f, Y=%.1f", currentPos.getX(), currentPos.getY());
-                    telemetry.addData("Expected", "X=%.0f, Y=%.0f", rotatedPose.getX(), rotatedPose.getY());
-
                     intake.SetPowerMax();
-                    follower.setMaxPower(0.25);
-                    follower.followPath(goRight, true);
+                    follower.setMaxPower(0.3);
+                    follower.followPath(paths.Path4, true);
                     setPathState(6);
                 }
                 break;
 
             case 6:
-                follower.setMaxPower(0.25);
-                // Intake running, mixer collecting balls
-
-                // DIAGNOSTIC: Show why we're stuck
-                Pose currentPos = follower.getPose();
-                double distToRight = Math.sqrt(
-                    Math.pow(currentPos.getX() - rightPose.getX(), 2) +
-                    Math.pow(currentPos.getY() - rightPose.getY(), 2)
-                );
-                telemetry.addData("🔍 Case 6", "Going right");
-                telemetry.addData("Dist to target", "%.1f in", distToRight);
-                telemetry.addData("Target", "X=%.0f, Y=%.0f", rightPose.getX(), rightPose.getY());
+                follower.setMaxPower(0.3);
 
                 if (!follower.isBusy()) {
                     follower.setMaxPower(0.8);
-                    follower.followPath(returnToShoot, true);
-                    setPathState(7);
+                    setPathState(7); // Move to 1-second wait state
                 }
                 break;
 
             case 7:
-                if (!follower.isBusy()) {
-                    shooter.StartAutoShoot();
+                // Wait 1 second at first pickup position (like blue's pickupWaitTime)
+                if (pathTimer.seconds() > pickupWaitTime) {
+                    follower.followPath(paths.Path5, true);
                     setPathState(8);
                 }
                 break;
 
             case 8:
-                if (shooter.AutoShoot()) {
-                    follower.followPath(toIntermediate, true);
+                if (!follower.isBusy()) {
+                    panelsTelemetry.debug("Status", "Back at shoot #2");
+                    panelsTelemetry.debug("Balls", mixer.GetArtifactCount());
+                    shooter.StartAutoShoot();
                     setPathState(9);
                 }
                 break;
 
             case 9:
-                if (!follower.isBusy()) {
-                    intake.SetPowerMax();
-                    follower.setMaxPower(0.2);
-                    follower.followPath(toHumanPlayer, true);
+                // Wait until ALL balls shot
+                if (mixer.IsEmpty() && shooter.IsNotShooting()) {
+                    panelsTelemetry.debug("Status", "✅ All balls shot!");
+                    follower.followPath(paths.Path6, true);
+                    follower.setMaxPower(1);
                     setPathState(10);
                 }
                 break;
 
             case 10:
-                follower.setMaxPower(0.2);
                 if (!follower.isBusy()) {
-                    follower.setMaxPower(0.8);
+                    intake.SetPowerMax();
+                    follower.setMaxPower(0.3);
+                    follower.followPath(paths.Path7, true);
                     setPathState(11);
                 }
                 break;
 
             case 11:
-                if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
-                    follower.followPath(returnFromHuman, true);
-                    setPathState(12);
+                follower.setMaxPower(0.3);
+
+                if (!follower.isBusy()) {
+                    follower.setMaxPower(0.8);
+                    setPathState(12); // Move to 1-second wait state
                 }
                 break;
 
             case 12:
-                if (!follower.isBusy()) {
-                    shooter.StartAutoShoot();
+                // Wait 1 second at second pickup position
+                if (pathTimer.seconds() > pickupWaitTime) {
+                    follower.followPath(paths.Path8, true);
                     setPathState(13);
                 }
                 break;
 
             case 13:
-                if (shooter.AutoShoot()) {
-                    intake.SetMotorPower(0.0);
-                    follower.followPath(toEnd, true);
+                if (!follower.isBusy()) {
+                    panelsTelemetry.debug("Status", "Back - final shooting");
+                    panelsTelemetry.debug("Balls", mixer.GetArtifactCount());
+                    shooter.StartAutoShoot();
                     setPathState(14);
                 }
                 break;
 
             case 14:
+                // Wait until ALL balls shot
+                if (mixer.IsEmpty() && shooter.IsNotShooting()) {
+                    panelsTelemetry.debug("Status", "✅ All balls shot!");
+                    intake.SetMotorPower(0.0);
+                    follower.followPath(paths.Path9, true);
+                    setPathState(15);
+                }
+                break;
+
+            case 15:
                 if (!follower.isBusy()) {
+                    panelsTelemetry.debug("Status", "✅✅✅ COMPLETE!");
                     intake.SetMotorPower(0.0);
                     setPathState(-1);
                 }
@@ -320,7 +358,7 @@ public class RosuLung extends OpMode {
 
     public void setPathState(int pState) {
         pathState = pState;
-        pathTimer.resetTimer();
+        pathTimer.reset();
     }
 
     @Override

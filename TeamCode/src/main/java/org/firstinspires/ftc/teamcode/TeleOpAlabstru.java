@@ -90,6 +90,9 @@ public class TeleOpAlabstru extends LinearOpMode
             telemetry.addData("Ball 1:", mixer.GetColorForPoz(0));
             telemetry.addData("Ball 2:", mixer.GetColorForPoz(1));
             telemetry.addData("Ball 3:", mixer.GetColorForPoz(2));
+            telemetry.addData("Sensor color R:", mixer.GetColorRed());
+            telemetry.addData("Sensor color G:", mixer.GetColorGreen());
+            telemetry.addData("Sensor color B:", mixer.GetColorBlue());
             telemetry.update();
         }
         telemetry.update();

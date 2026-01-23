@@ -113,7 +113,7 @@ public class RobotAlignment implements Subsystem
             resetPositionButton = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
             toggleHeadingLockButton = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
             relocalizationButton = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);  // ct2 left bumper
-            toggleAbsoluteHeadingLockButton = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_BUMPER);  // ct2 right bumper
+            toggleAbsoluteHeadingLockButton = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);  // ct2 right bumper
         }
     }
 

@@ -114,7 +114,7 @@ public class Mixer implements Subsystem{
                 }
             }
         }
-        else if (isRunning && !waitForBall && GetTimerElapsed() > 0.3 && GetTimerElapsed() < 0.75)
+        else if (isRunning && !waitForBall && GetTimerElapsed() > 0.1 && GetTimerElapsed() < 0.35)
         {
             waitForBall = true;
             if (artifactCount == 3)
@@ -125,7 +125,7 @@ public class Mixer implements Subsystem{
                 NextPosition();
             }
         }
-        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.75)
+        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.35)
         {
             isRunning = false;
             waitForBall = false;
@@ -182,10 +182,25 @@ public class Mixer implements Subsystem{
         int green = cSensor.green();
         int blue = cSensor.blue();
 
-        if (green < 200 && red > blue && red > green && blue > green)
+        if (green < 300 && red > blue && red > green && blue > green)
             return Color.Purple; // Mov
 
-        if (green > red && green > blue && green > 300)
+        if (green > red && green > blue && green >= 300)
+            return Color.Green; // Verde
+
+        return Color.None;
+    }
+
+    private Color Culoare1(ColorSensor cSensor)
+    {
+        int red = cSensor.red();
+        int green = cSensor.green();
+        int blue = cSensor.blue();
+
+        if (blue - red < 70 && green > 200)
+            return Color.Purple; // Mov
+
+        if (blue - red > 70 && green > 400)
             return Color.Green; // Verde
 
         return Color.None;

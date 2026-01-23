@@ -37,9 +37,9 @@ public class Shooter implements Subsystem{
     private ShooterVoltageHelper voltageHelper = null;  // Voltage compensation helper
 
     // PIDF Configuration - valori din tuning LA 12V
-    private final double BASE_SHOOTER_F = 14.3;  // F tunat la 12V (V_REF)
+    private final double BASE_SHOOTER_F = 13.9;  // F tunat la 12V (V_REF)
     private double shooterF = BASE_SHOOTER_F;    // Current F (compensated)
-    private final double shooterP = 0.01;
+    private final double shooterP = 0.02;
     private final double shooterI = 0.0;
     private final double shooterD = 0.0;
 
@@ -388,7 +388,7 @@ public class Shooter implements Subsystem{
     private void ResetShooter()
     {
         StopShooterMotors();
-        if (intake.IsForward())
+        if (intake.IsMoving())
             intake.SetPowerMax();
         mixer.ResetServoPosition();
         shootingAllowed = false;
@@ -424,7 +424,7 @@ public class Shooter implements Subsystem{
         switch(caseSwitch)
         {
             case 0: // Waiting for motors to spin up
-                if(time >= 0.225  && ( motorsReady || time >= timerDependingOnDist)) // Motors ready OR timeout
+                if(time >= 0.25  && ( motorsReady || time >= timerDependingOnDist)) // Motors ready OR timeout
                 {
                     caseSwitch = 1;
                     ResetTimer();
@@ -432,7 +432,7 @@ public class Shooter implements Subsystem{
                 return 0;
 
             case 1: // Push lever (wait 0.3s)
-                if(time >= 0.12)
+                if(time >= 0.1)
                 {
                     caseSwitch = 2;
                     ResetTimer();
@@ -484,7 +484,7 @@ public class Shooter implements Subsystem{
             constDist = robotAllignment.GetDistanceToTarget();
         } else {
             // Default distance for autonomous (assumes mid-range shooting)
-            constDist = 3.5; // meters - adjust as needed for your autonomous position
+            constDist = 3.4; // meters - adjust as needed for your autonomous position
         }
         SetMotorPower();
     }
@@ -493,7 +493,7 @@ public class Shooter implements Subsystem{
     {
         double dist = constDist * 100;
         if(constDist > 2 && constDist < 5)
-            motorPower = -(2.07771/10000000)*dist*dist*dist*dist+0.000254073*dist*dist*dist-0.118373*dist*dist + 26.72314*dist - 1170.4306; //1158.4306
+            motorPower = -(2.07771/10000000)*dist*dist*dist*dist+0.000254073*dist*dist*dist-0.118373*dist*dist + 26.72314*dist - 1158.4306; //1158.4306
         else if(constDist >= 5)
             motorPower = 1700;
         else motorPower = 1100;

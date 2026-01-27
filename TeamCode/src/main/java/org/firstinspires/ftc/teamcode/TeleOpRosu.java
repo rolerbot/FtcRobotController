@@ -65,7 +65,6 @@ public class TeleOpRosu extends LinearOpMode
 
         while (opModeIsActive())
         {
-            Utils.GasirePozitii(left, right, shooter.ServoHood);
             huskyLens.Run();
             intake.Run();
             drivetrain.Run();

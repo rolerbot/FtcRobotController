@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.pedroPathing;
+package org.firstinspires.ftc.teamcode.pedroPathing.BlueAuto;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -16,10 +16,11 @@ import com.pedropathing.ftc.InvertedFTCCoordinates;
 import com.pedropathing.ftc.PoseConverter;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.*;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "Pedro Pathing Autonomous", group = "Autonomous")
+@Autonomous(name = "AlbastruScurtIncomplet", group = "Autonomous")
 @Configurable // Panels
-public class StrafeTest extends OpMode {
+public class AlbastruScurtIncomplet extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private int pathState = 0; // Current autonomous path state (state machine)
@@ -91,7 +92,7 @@ public class StrafeTest extends OpMode {
 
         // Update subsystems
         shooter.Run();
-        if (shooter.IsNotShooting())
+        if (shooter.IsShootingStateNone())
             mixer.Run();
         husky.Run();
 
@@ -122,8 +123,8 @@ public class StrafeTest extends OpMode {
             Path1 = follower.pathBuilder().addPath(
                             new BezierCurve(
                                     new Pose(17.944, 119.108),
-                                    new Pose(58.658, 120.992),
-                                    new Pose(56, 70)
+                                    new Pose(60, 120),
+                                    new Pose(58, 70)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(54), Math.toRadians(140))
                     .build();
@@ -131,9 +132,9 @@ public class StrafeTest extends OpMode {
             // Path 2: Move to pickup area - ✅ FIXED: Added control point for BezierCurve
             Path2 = follower.pathBuilder().addPath(
                             new BezierCurve(
-                                    new Pose(56, 70),
+                                    new Pose(58, 70),
                                     new Pose(35, 70),   // Control point
-                                    new Pose(28, 70)    // End point
+                                    new Pose(32, 70)    // End point
                             )
                     ).setTangentHeadingInterpolation()
                     .build();
@@ -144,7 +145,7 @@ public class StrafeTest extends OpMode {
                                     new Pose(28, 70),
                                     new Pose(55.000, 80)
                             )
-                    ).setTangentHeadingInterpolation()
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(140))
                     .setReversed()
                     .build();
 

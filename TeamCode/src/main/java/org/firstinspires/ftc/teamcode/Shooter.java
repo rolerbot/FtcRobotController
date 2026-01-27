@@ -14,7 +14,7 @@ public class Shooter implements Subsystem{
     private ButtonReader OvverideShooting;
     private ButtonReader VelocityChange;
     private final GamepadEx ct1, ct2; // final - initialpos = 0.189
-    private final double initialPosition = 0.261; // 0.291
+    private final double initialPosition = 0.257; // 0.291
     private final double finalPosition = 0.48 - 0.03;
     private final double hoodInitialPosition = 0.5; //0.5294 -45 grade
     private ElapsedTime runtime = new ElapsedTime();
@@ -47,9 +47,11 @@ public class Shooter implements Subsystem{
     private final double highVelocity = 1700;  // Viteza pentru aruncare normală
     private final double lowVelocity = 1500;   // Viteza pentru aruncare ușoară
     private double motorPower = lowVelocity;
-    private double offsetPosition = 0.3834 / 2;
-    private final double initialPosMixer = 0.0206;
-    private boolean isLong = true;
+    private double offsetPosition = 0.1289;
+    private final double initialPosMixer = 0.0317;
+    private boolean isLong = false;
+    private boolean autoShooting = false;
+    private boolean isAutoShooting = false;
     private ShootingState shootType = ShootingState.None;
     private double[] artPoz = {initialPosMixer + 3 * offsetPosition, initialPosMixer + 5 * offsetPosition, initialPosMixer + offsetPosition};
 
@@ -76,6 +78,7 @@ public class Shooter implements Subsystem{
         this.husky = husky;
         this.robotAllignment = robotAllignment;
         this.isLong = isLong;
+        this.isAutoShooting = true;
     }
      public void LinkComponents(HardwareMap hardwareMap)
      {
@@ -129,6 +132,8 @@ public class Shooter implements Subsystem{
         telemetry.Log("Shooter Init", String.format("Base F: %.2f @ 12V (voltage-compensated)", BASE_SHOOTER_F));
     }
     public ShootingState GetShootingType(){return shootType;};
+
+    public boolean IsShootingStateNone(){return shootType == ShootingState.None;};
     public void TriggerAutonomousShooting()
     {
         if (!mixer.IsEmpty())
@@ -322,7 +327,7 @@ public class Shooter implements Subsystem{
 
         if (isShooting)
         {
-            switch (GetShootingState())
+            switch (StateAutoTeleop())
             {
                 case 1:
                     SetPositionLever(finalPosition);
@@ -337,6 +342,13 @@ public class Shooter implements Subsystem{
                     break;
             }
         }
+    }
+
+    private int StateAutoTeleop()
+    {
+        if (isAutoShooting)
+            return GetShootingStateAuto();
+        return GetShootingState();
     }
 
     public boolean IsNotShooting() {return !isShooting;}
@@ -406,14 +418,14 @@ public class Shooter implements Subsystem{
         {
             // If battery is low (< 12V), motors need more time to reach target velocity
             if(batteryVoltage < 12.3)
-                return 0.65;  // Extra time when battery is low
+                return 0.4;  // Extra time when battery is low
             else
-                return 0.55;   // Normal time at full battery
+                return 0.25;   // Normal time at full battery
         }
-        else return 0.3;  // Short distance, quick shot
+        else return 0.2;  // Short distance, quick shot
     }
 
-    private int GetShootingState()
+    private int GetShootingStateOld()
     {
         if(!isShooting)
             return 0;
@@ -434,7 +446,7 @@ public class Shooter implements Subsystem{
                 return 0;
 
             case 1: // Push lever (wait 0.3s)
-                if(time >= 0.1)
+                if(time >= 0.12)
                 {
                     caseSwitch = 2;
                     ResetTimer();
@@ -459,19 +471,91 @@ public class Shooter implements Subsystem{
         }
     }
 
-    private int GetShootingState1()
+    private int GetShootingState()
     {
-        if(isShooting)
+        if(!isShooting)
+            return 0;
+        double timerDependingOnDist  = GetTimeDist();
+        double time = runtime.seconds();
+        double currentVelocity = MotorAruncare1.getVelocity();
+        double velocityTolerance = 5; // RPM tolerance
+        boolean motorsReady = Math.abs(currentVelocity - motorPower) <= velocityTolerance;
+
+        switch(caseSwitch)
         {
-            double time = runtime.seconds();
-            if (time >= 0.5 && time < 0.7)
+            case 0: // Waiting for motors to spin up
+                if(time >= timerDependingOnDist) // Motors ready OR timeout
+                {
+                    caseSwitch = 1;
+                    ResetTimer();
+                }
+                return 0;
+
+            case 1: // Push lever (wait 0.3s)
+                if(time >= 0.12)
+                {
+                    caseSwitch = 2;
+                    ResetTimer();
+                }
                 return 1;
-            else if (time >= 0.7 && time < 0.85)
+
+            case 2: // Retract lever (wait 0.2s)
+                if(time >= 0.135)
+                {
+                    caseSwitch = 3;
+                    ResetTimer();
+                }
                 return 2;
-            else if (time >= 0.85)
+
+            case 3: // Complete shot
+                caseSwitch = 0; // Reset for next shot
                 return 3;
+
+            default:
+                caseSwitch = 0;
+                return 0;
         }
-        return 0;
+    }
+
+    private int GetShootingStateAuto()
+    {
+        if(!isShooting)
+            return 0;
+        double time = runtime.seconds();
+        switch(caseSwitch)
+        {
+            case 0: // Waiting for motors to spin up
+                if(time >= 0.35) // Motors ready OR timeout
+                {
+                    caseSwitch = 1;
+                    ResetTimer();
+                }
+                return 0;
+
+            case 1: // Push lever (wait 0.3s)
+                if(time >= 0.13)
+                {
+                    caseSwitch = 2;
+                    ResetTimer();
+                }
+                return 1;
+
+            case 2: // Retract lever (wait 0.2s)
+                if(time >= 0.14)
+                {
+                    caseSwitch = 3;
+                    ResetTimer();
+                }
+                return 2;
+
+            case 3: // Complete shot
+                caseSwitch = 0; // Reset for next shot
+                return 3;
+
+            default:
+                caseSwitch = 0;
+                return 0;
+        }
     }
     public boolean CanShootArranged() // verifica daca poate trage in ordinea data de husky
     {
@@ -505,9 +589,9 @@ public class Shooter implements Subsystem{
 
     private void HoodPosition()
     {
-        if (constDist > 2.8 && ServoHood.getPosition() != 0.5294)
+        if (constDist > 2.6 && ServoHood.getPosition() != 0.5294)
             ServoHood.setPosition(0.5294);
-        else if (constDist <= 2.8 && ServoHood.getPosition() != 0.5)
+        else if (constDist <= 2.6 && ServoHood.getPosition() != 0.5)
             ServoHood.setPosition(0.5);
     }
 
@@ -516,8 +600,6 @@ public class Shooter implements Subsystem{
     public double GetVelocityTarget() {return motorPower;}
 
     // ==================== AUTONOMOUS SHOOTING ===========================================================
-
-    private boolean autoShooting = false;
 
     public boolean AutoShoot()
     {

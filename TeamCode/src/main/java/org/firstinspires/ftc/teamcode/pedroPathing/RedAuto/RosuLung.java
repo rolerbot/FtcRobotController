@@ -1,21 +1,21 @@
-package org.firstinspires.ftc.teamcode.pedroPathing;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.util.ElapsedTime;
+package org.firstinspires.ftc.teamcode.pedroPathing.RedAuto;
 import com.bylazar.configurables.annotations.Configurable;
-import com.bylazar.telemetry.TelemetryManager;
 import com.bylazar.telemetry.PanelsTelemetry;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import com.pedropathing.geometry.BezierCurve;
-import com.pedropathing.geometry.BezierLine;
+import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.paths.PathChain;
-import com.pedropathing.geometry.Pose;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.pedropathing.ftc.InvertedFTCCoordinates;
 import com.pedropathing.ftc.PoseConverter;
+import com.pedropathing.geometry.*;
+import com.pedropathing.paths.*;
+import com.pedropathing.util.Timer;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+
 import org.firstinspires.ftc.teamcode.*;
+import  org.firstinspires.ftc.teamcode.pedroPathing.PinpointBlocksDriver.GoBildaPinpointDriver;
 
 
 @Autonomous(name = "RosuLung", group = "Autonomous")
@@ -242,13 +242,14 @@ public class RosuLung extends OpMode {
                 if (Math.abs(currentRPM - targetRPM) < 100 || pathTimer.seconds() > 2.0) {
                     panelsTelemetry.debug("Status", "🎯 SHOOTING!");
                     shooter.StartAutoShoot();
+                    pathTimer.reset();
                     setPathState(4);
                 }
                 break;
 
             case 4:
                 // Wait until ALL balls shot (EXACTLY LIKE BLUE)
-                if (mixer.IsEmpty() && shooter.IsNotShooting()) {
+                if ((mixer.IsEmpty() && shooter.IsNotShooting()) || pathTimer.seconds() > 2.0) {
                     panelsTelemetry.debug("Status", "✅ All balls shot!");
                     follower.followPath(paths.Path3, true);
                     follower.setMaxPower(1);
@@ -333,13 +334,14 @@ public class RosuLung extends OpMode {
                     panelsTelemetry.debug("Balls", mixer.GetArtifactCount());
                     shooter.StartAutoShoot();
                     follower.setMaxPower(0.6);
+                    pathTimer.reset();
                     setPathState(14);
                 }
                 break;
 
             case 14:
                 // Wait until ALL balls shot
-                if (mixer.IsEmpty() && shooter.IsNotShooting()) {
+                if ((mixer.IsEmpty() && shooter.IsNotShooting()) || pathTimer.seconds() > 2) {
                     panelsTelemetry.debug("Status", "✅ All balls shot!");
                     intake.SetMotorPower(0.0);
                     follower.followPath(paths.Path9, true);

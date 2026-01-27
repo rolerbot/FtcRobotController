@@ -13,14 +13,15 @@ public class Mixer implements Subsystem{
     private final ElapsedTime runtime = new ElapsedTime();
     private boolean isRunning = false;
     private boolean waitForBall = false;
-    private final double initialPosition = 0.0206;
+    private final double initialPosition = 0.0317; //0.01
     private double currentPosition = initialPosition;
-    private double offsetPosition = 0.3834 / 2;
+    private double offsetPosition = 0.1289;
     private int countPurple = 0;
     private int countGreen = 0;
     ColorSensor cSensor;
     public Color[] artifacte= {Color.None, Color.None, Color.None};
     int artifactCount = 0;
+
     public Mixer(TelemetryCustom lg, Intake intake)
     {
         this.intake = intake;
@@ -114,18 +115,16 @@ public class Mixer implements Subsystem{
                 }
             }
         }
-        else if (isRunning && !waitForBall && GetTimerElapsed() > 0.2 && GetTimerElapsed() < 0.5)
+        else if (isRunning && !waitForBall && GetTimerElapsed() > 0.25 && GetTimerElapsed() < 0.6)
         {
             waitForBall = true;
-            if (artifactCount == 3)
-                 intake.SetMotorPower(0.3);
-            else
+            if (artifactCount < 3)
             {
                 IncrementPosition();
                 NextPosition();
             }
         }
-        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.5)
+        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.6)
         {
             isRunning = false;
             waitForBall = false;

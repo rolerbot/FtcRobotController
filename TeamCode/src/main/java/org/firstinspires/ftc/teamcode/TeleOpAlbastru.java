@@ -4,10 +4,9 @@ import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import org.openftc.easyopencv.OpenCvCamera;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="RobotAlbastru", group="Linear Opmode")
-public class TeleOpAlabstru extends LinearOpMode
+public class TeleOpAlbastru extends LinearOpMode
 {
     TelemetryCustom myLogger;
     Drivetrain drivetrain;
@@ -29,7 +28,6 @@ public class TeleOpAlabstru extends LinearOpMode
     {
         myLogger = new TelemetryCustom(telemetry);
         MapControlerButtons();
-
     }
 
     private void InitAfter()
@@ -66,7 +64,6 @@ public class TeleOpAlabstru extends LinearOpMode
 
         while (opModeIsActive())
         {
-            Utils.GasirePozitii(left, right, shooter.ServoHood);
             huskyLens.Run();
             intake.Run();
             drivetrain.Run();

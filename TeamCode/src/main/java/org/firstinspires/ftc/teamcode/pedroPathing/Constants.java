@@ -30,7 +30,8 @@ public class Constants {
             .lateralZeroPowerAcceleration(-52)
             .translationalPIDFCoefficients(new PIDFCoefficients(0.195,0,0.017,0.013))
             .headingPIDFCoefficients(new PIDFCoefficients(0.65,0,0.015,0.02))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.04,0,0.00003,0.6,0.015));
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.04,0,0.00003,0.6,0.015))
+            .centripetalScaling(0.0005);
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)
@@ -49,13 +50,13 @@ public class Constants {
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
             .forwardPodY(-6.65)
-            .strafePodX(-3.62)
+            .strafePodX(-3.62) // -3.31
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
-            .yawScalar(1.0);  // Tune if IMU bias
+            .yawScalar(0.68);
 
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)

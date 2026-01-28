@@ -16,17 +16,18 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(10.2)
-            .forwardZeroPowerAcceleration(-27.28265282915111)
+            .forwardZeroPowerAcceleration(-48.819102267542206)
             .lateralZeroPowerAcceleration( -59.93593037757394)
             .translationalPIDFCoefficients(new PIDFCoefficients(0.195,0,0.017,0.013))
-            .headingPIDFCoefficients(new PIDFCoefficients(1.2,0,0.03,0.02))//0.65
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.04,0,0.00003,0.6,0.015))
-            .centripetalScaling(0.002);
+            .headingPIDFCoefficients(new PIDFCoefficients(1.3,0,0.03,0.02))//0.65
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.3,0,0.00004,0.6,0.01))
+            .centripetalScaling(0.0005);
 
             //Manually added
-           // .secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.01, 0))
-           // .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(0.8, 0, 0.02, 0))
-           // .secondaryDrivePIDFCoefficients(new FilteredPIDFCoefficients(0.1, 0, 0.01, 0.6, 0.01));
+/*
+            .secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.01, 0))
+            .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(0.8, 0, 0.02, 0))
+            .secondaryDrivePIDFCoefficients(new FilteredPIDFCoefficients(0.1, 0, 0.01, 0.6, 0.01))*/
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)
@@ -39,13 +40,13 @@ public class Constants {
             .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .xVelocity(78.95277512918308)
-            .yVelocity(63.92800638994832);
+            .yVelocity(62.35647414800688);
 
-    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
+    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1.5, 1.7);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(-6.62)
-            .strafePodX(-3.31)
+            .forwardPodY(3.307)
+            .strafePodX(-6.648)//3.31
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)

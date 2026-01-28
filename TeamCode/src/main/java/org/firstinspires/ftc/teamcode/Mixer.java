@@ -175,17 +175,48 @@ public class Mixer implements Subsystem{
 
     public int GetCountGreen(){return countGreen;}
     public int GetCountPurple(){return countPurple;}
-    private Color Culoare(ColorSensor cSensor)
+
+    private Color Culoare(ColorSensor cSensor) {
+        int red = cSensor.red();
+        int green = cSensor.green();
+        int blue = cSensor.blue();
+
+        // Convert RGB to HSV
+        float[] hsv = new float[3];
+        android.graphics.Color.RGBToHSV(red, green, blue, hsv);
+
+        float hue = hsv[0];         // 0-360 degrees
+        float saturation = hsv[1];  // 0-1
+        float value = hsv[2];       // 0-1
+
+        // Ignore very dark/unsaturated readings
+        if (value < 0.15 || saturation < 0.25) {
+            return Color.None;
+        }
+
+        // Purple: hue around 270-300 degrees
+        if (hue >= 260 && hue <= 310) {
+            return Color.Purple;
+        }
+
+        // Green: hue around 90-150 degrees
+        if (hue >= 80 && hue <= 160) {
+            return Color.Green;
+        }
+
+        return Color.None;
+    }
+    private Color Culoare2(ColorSensor cSensor)
     {
         int red = cSensor.red();
         int green = cSensor.green();
         int blue = cSensor.blue();
 
-        if (green < 300 && red > blue && red > green && blue > green)
-            return Color.Purple; // Mov
-
-        if (green > red && green > blue && green >= 300)
+        if (green >= 1900)
             return Color.Green; // Verde
+
+        if (green > 1000 && green < 1900 && red < 1000 && blue > red)
+            return Color.Purple; // Mov
 
         return Color.None;
     }
@@ -196,10 +227,10 @@ public class Mixer implements Subsystem{
         int green = cSensor.green();
         int blue = cSensor.blue();
 
-        if (blue - red < 70 && green > 200)
+        if (green < 300 && red > blue && red > green && blue > green)
             return Color.Purple; // Mov
 
-        if (blue - red > 70 && green > 400)
+        if (green > red && green > blue && green >= 300)
             return Color.Green; // Verde
 
         return Color.None;

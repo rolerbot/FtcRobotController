@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.pedroPathing.TestAuto;
+package org.firstinspires.ftc.teamcode.pedroPathing.BlueAuto;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -14,9 +14,9 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 
-@Autonomous(name = "AutoAlbastruLungTest", group = "Autonomous")
+@Autonomous(name = "AlbastruLung8BallPark", group = "Autonomous")
 @Configurable // Panels
-public class AutoAlbastruLungTest extends OpMode {
+public class AlbastruLung8BallPark extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private Timer pathTimer, opmodeTimer;
@@ -172,7 +172,10 @@ public class AutoAlbastruLungTest extends OpMode {
     public void loop() {
         follower.update(); // Update Pedro Pathing
 
-        // Update subsystem
+        // Update subsystems
+        shooter.Run();
+        if (!shooter.GetShootingAllow())
+            mixer.Run();
         husky.Run();
 
         autonomousPathUpdate(); // Update autonomous state machine
@@ -191,14 +194,12 @@ public class AutoAlbastruLungTest extends OpMode {
             case 0:
                 // Go to tag
                 follower.followPath(Path1, true);
-                mixer.Run();
                 setPathState(1);
                 break;
 
             case 1:
                 // Wait to reach tag
                 if (!follower.isBusy()) {
-                    mixer.Run();
                     follower.setMaxPower(0.5); // Slower when going back from tag
                     follower.followPath(Path2, true);
                     setPathState(2);
@@ -211,7 +212,6 @@ public class AutoAlbastruLungTest extends OpMode {
                     follower.setMaxPower(0.8); // Reset to normal power
                     panelsTelemetry.debug("Status", "At shoot position - shooter spinning");
                     pathTimer.resetTimer();
-                    mixer.Run();
                     setPathState(3);
                 }
                 break;
@@ -227,14 +227,12 @@ public class AutoAlbastruLungTest extends OpMode {
                 if (pathTimer.getElapsedTimeSeconds() > 0.5) {
                     panelsTelemetry.debug("Status", "Shooting preload!");
                     shooter.StartAutoShoot(); // Start autonomous shooting
-                    shooter.Run();
                     pathTimer.resetTimer();
                     setPathState(4);
                 }
                 break;
 
             case 4:
-                shooter.Run();
                 // Wait for shooting to complete (3 preload balls)
                 if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 3.0) {
                     panelsTelemetry.debug("Status", "Done shooting - going to field balls");
@@ -244,7 +242,6 @@ public class AutoAlbastruLungTest extends OpMode {
                 break;
 
             case 5:
-                mixer.Run();
                 // Wait for curve path to complete
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "Starting field ball pickup");
@@ -258,7 +255,7 @@ public class AutoAlbastruLungTest extends OpMode {
             case 6:
                 // Collecting 3 balls from field while moving
                 follower.setMaxPower(0.25);
-                mixer.Run();
+
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "Field balls collected - brief wait");
                     pathTimer.resetTimer();
@@ -267,7 +264,6 @@ public class AutoAlbastruLungTest extends OpMode {
                 break;
 
             case 7:
-                mixer.Run();
                 // Brief wait to ensure balls are collected
                 if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
                     panelsTelemetry.debug("Status", "Returning to shoot");
@@ -279,11 +275,9 @@ public class AutoAlbastruLungTest extends OpMode {
 
             case 8:
                 // Return to shoot position after field balls
-                mixer.Run();
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "Back at shoot - shooting field balls");
                     shooter.StartAutoShoot(); // Start second shooting (3 field balls)
-                    shooter.Run();
                     pathTimer.resetTimer();
                     setPathState(9);
                 }
@@ -291,7 +285,6 @@ public class AutoAlbastruLungTest extends OpMode {
 
             case 9:
                 // Wait for second shooting to complete
-                shooter.Run();
                 if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 3.0) {
                     panelsTelemetry.debug("Status", "Done shooting - going to human player");
                     follower.followPath(Path6, true);
@@ -301,7 +294,6 @@ public class AutoAlbastruLungTest extends OpMode {
 
             case 10:
                 // Going toward human player
-                mixer.Run();
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "Near human player - final approach");
                     intake.SetPowerMax(); // Start intake for human player
@@ -313,7 +305,6 @@ public class AutoAlbastruLungTest extends OpMode {
 
             case 11:
                 // Final approach to human player
-                mixer.Run();
                 follower.setMaxPower(0.2);
 
                 if (!follower.isBusy()) {
@@ -325,7 +316,6 @@ public class AutoAlbastruLungTest extends OpMode {
 
             case 12:
                 // Wait at human player for ball pickup
-                mixer.Run();
                 if (pathTimer.getElapsedTimeSeconds() > humanPlayerWaitTime) {
                     panelsTelemetry.debug("Status", "Human balls collected - returning");
                     follower.setMaxPower(0.8);
@@ -336,11 +326,9 @@ public class AutoAlbastruLungTest extends OpMode {
 
             case 13:
                 // Return to shoot position after human player
-                mixer.Run();
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "Back at shoot - final shooting");
                     shooter.StartAutoShoot(); // Start third shooting (human player balls)
-                    shooter.Run();
                     pathTimer.resetTimer();
                     setPathState(14);
                 }
@@ -348,7 +336,6 @@ public class AutoAlbastruLungTest extends OpMode {
 
             case 14:
                 // Wait for third shooting to complete
-                shooter.Run();
                 if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 3.0) {
                     panelsTelemetry.debug("Status", "Done final shooting - parking");
                     intake.SetMotorPower(0.0); // Stop intake
@@ -359,7 +346,6 @@ public class AutoAlbastruLungTest extends OpMode {
 
             case 15:
                 // Park and finish
-                mixer.Run();
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "COMPLETE - 9 BALLS SCORED!");
                     intake.SetMotorPower(0.0); // Ensure intake off

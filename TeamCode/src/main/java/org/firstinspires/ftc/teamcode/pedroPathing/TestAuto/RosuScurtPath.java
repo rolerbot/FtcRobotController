@@ -30,7 +30,7 @@ public class RosuScurtPath extends OpMode {
         dashboard = FtcDashboard.getInstance();
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(117.960, 132.494, Math.toRadians(126.5)));
+        follower.setStartingPose(new Pose(126.247, 120.829, Math.toRadians(126)));
 
         paths = new Paths(follower);
 
@@ -44,7 +44,7 @@ public class RosuScurtPath extends OpMode {
     public void start() {
         // Start the first path when autonomous begins
         pathState = 1;
-        follower.followPath(paths.Path1a);
+        follower.followPath(paths.Path1);
     }
 
     @Override
@@ -126,43 +126,33 @@ public class RosuScurtPath extends OpMode {
     }
 
     public static class Paths {
-        public PathChain Path1a;  // Curve with constant heading
-        public PathChain Path1b;  // Rotate in place
+        public PathChain Path1;
         public PathChain Path2;
         public PathChain Path3;
 
         public Paths(Follower follower) {
-            // Path1a: Follow the curve WITHOUT rotating
-            Path1a = follower.pathBuilder().addPath(
+            Path1 = follower.pathBuilder().addPath(
                             new BezierCurve(
-                                    new Pose(117.960, 132.494),
-                                    new Pose(90.291, 122.347),
-                                    new Pose(91.952, 98.534)
+                                    new Pose(126.247, 120.829),
+                                    new Pose(93.689, 119.132),
+                                    new Pose(86.630, 94.279)
                             )
-                    ).setConstantHeadingInterpolation(Math.toRadians(126.5))  // Keep heading constant
-                    .build();
-
-            // Path1b: Rotate in place from 126.5° to 68°
-            Path1b = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(91.952, 98.534),  // Same position
-                                    new Pose(91.952, 98.534)   // Same position (no movement)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(126.5), Math.toRadians(68))  // Only rotate
+                    ).setLinearHeadingInterpolation(Math.toRadians(126), Math.toRadians(68))
                     .build();
 
             Path2 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(91.952, 98.534),
-                                    new Pose(95.570, 83.402)
+                            new BezierCurve(
+                                    new Pose(86.630, 94.279),
+                                    new Pose(84.492, 82.315),
+                                    new Pose(99.685, 83.530)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
                     .build();
 
             Path3 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(95.570, 83.402),
-                                    new Pose(112, 83.661)
+                                    new Pose(99.685, 83.530),
+                                    new Pose(125.761, 83.550)
                             )
                     ).setTangentHeadingInterpolation()
                     .build();
@@ -171,39 +161,31 @@ public class RosuScurtPath extends OpMode {
 
     public int autonomousPathUpdate() {
         switch (pathState) {
-            case 1: // Following Path1a (curve)
+            case 1: // Following Path1
                 if (!follower.isBusy()) {
-                    // Path1a complete, start Path1b (rotate in place)
-                    follower.followPath(paths.Path1b);
+                    // Path1 complete, start Path2
+                    follower.followPath(paths.Path2);
                     pathState = 2;
                 }
                 break;
 
-            case 2: // Following Path1b (rotate in place)
+            case 2: // Following Path2
                 if (!follower.isBusy()) {
-                    // Path1b complete, start Path2
+                    // Path2 complete, start Path3
                     follower.setMaxPower(0.7);
-                    follower.followPath(paths.Path2);
+                    follower.followPath(paths.Path3);
                     pathState = 3;
                 }
                 break;
 
-            case 3: // Following Path2
+            case 3: // Following Path3
                 if (!follower.isBusy()) {
-                    // Path2 complete, start Path3
-                    follower.followPath(paths.Path3);
+                    // All paths complete
                     pathState = 4;
                 }
                 break;
 
-            case 4: // Following Path3
-                if (!follower.isBusy()) {
-                    // All paths complete
-                    pathState = 5;
-                }
-                break;
-
-            case 5: // Done
+            case 4: // Done
                 // All paths finished, autonomous complete
                 break;
         }

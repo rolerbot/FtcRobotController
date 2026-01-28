@@ -15,9 +15,9 @@ import com.pedropathing.geometry.Pose;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 
-@Autonomous(name = "RosuScurtPathPedro", group = "Autonomous")
+@Autonomous(name = "AlbastruScurtPathPedro", group = "Autonomous")
 @Configurable
-public class RosuScurtPath extends OpMode {
+public class AlbastruScurtPath extends OpMode {
     private TelemetryManager panelsTelemetry;
     public Follower follower;
     private int pathState;
@@ -30,7 +30,8 @@ public class RosuScurtPath extends OpMode {
         dashboard = FtcDashboard.getInstance();
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(117.960, 132.494, Math.toRadians(126.5)));
+        // Mirrored starting pose (mirrored X coordinate and heading)
+        follower.setStartingPose(new Pose(144 - 117.960, 132.494, Math.toRadians(180 - 126.5)));
 
         paths = new Paths(follower);
 
@@ -132,37 +133,37 @@ public class RosuScurtPath extends OpMode {
         public PathChain Path3;
 
         public Paths(Follower follower) {
-            // Path1a: Follow the curve WITHOUT rotating
+            // Path1a: Follow the curve WITHOUT rotating (mirrored)
             Path1a = follower.pathBuilder().addPath(
                             new BezierCurve(
-                                    new Pose(117.960, 132.494),
-                                    new Pose(90.291, 122.347),
-                                    new Pose(91.952, 98.534)
+                                    new Pose(144 - 117.960, 132.494),
+                                    new Pose(144 - 90.291, 122.347),
+                                    new Pose(144 - 91.952, 98.534)
                             )
-                    ).setConstantHeadingInterpolation(Math.toRadians(126.5))  // Keep heading constant
+                    ).setConstantHeadingInterpolation(Math.toRadians(180 - 126.5))  // Keep heading constant (mirrored)
                     .build();
 
-            // Path1b: Rotate in place from 126.5° to 68°
+            // Path1b: Rotate in place from mirrored 126.5° to mirrored 68°
             Path1b = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(91.952, 98.534),  // Same position
-                                    new Pose(91.952, 98.534)   // Same position (no movement)
+                                    new Pose(144 - 91.952, 98.534),  // Same position
+                                    new Pose(144 - 91.952, 98.534)   // Same position (no movement)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(126.5), Math.toRadians(68))  // Only rotate
+                    ).setLinearHeadingInterpolation(Math.toRadians(180 - 126.5), Math.toRadians(180 - 68))  // Only rotate (mirrored)
                     .build();
 
             Path2 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(91.952, 98.534),
-                                    new Pose(95.570, 83.402)
+                                    new Pose(144 - 91.952, 98.534),
+                                    new Pose(144 - 95.570, 83.402)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
+                    ).setLinearHeadingInterpolation(Math.toRadians(180 - 68), Math.toRadians(180 - 0))
                     .build();
 
             Path3 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(95.570, 83.402),
-                                    new Pose(112, 83.661)
+                                    new Pose(144 - 95.570, 83.402),
+                                    new Pose(144 - 112, 83.661)
                             )
                     ).setTangentHeadingInterpolation()
                     .build();

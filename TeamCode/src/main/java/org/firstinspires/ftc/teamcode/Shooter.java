@@ -420,9 +420,9 @@ public class Shooter implements Subsystem{
             if(batteryVoltage < 12.3)
                 return 0.4;  // Extra time when battery is low
             else
-                return 0.25;   // Normal time at full battery
+                return 0.3;   // Normal time at full battery
         }
-        else return 0.2;  // Short distance, quick shot
+        else return 0.25;  // Short distance, quick shot
     }
 
     private int GetShootingStateOld()
@@ -492,7 +492,7 @@ public class Shooter implements Subsystem{
                 return 0;
 
             case 1: // Push lever (wait 0.3s)
-                if(time >= 0.12)
+                if(time >= 0.14)
                 {
                     caseSwitch = 2;
                     ResetTimer();
@@ -500,7 +500,7 @@ public class Shooter implements Subsystem{
                 return 1;
 
             case 2: // Retract lever (wait 0.2s)
-                if(time >= 0.135)
+                if(time >= 0.14)
                 {
                     caseSwitch = 3;
                     ResetTimer();

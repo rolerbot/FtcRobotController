@@ -97,6 +97,12 @@ public class Intake implements Subsystem
         }
     }
 
+    public void StopMotor()
+    {
+        MotorIN.setPower(0);
+        isStarted = false;
+    }
+
     public boolean IsMoving() {return isStarted;}
 
     public boolean IsStopped() {return !isStarted;}

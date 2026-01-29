@@ -176,47 +176,49 @@ public class Mixer implements Subsystem{
     public int GetCountGreen(){return countGreen;}
     public int GetCountPurple(){return countPurple;}
 
+    private Color Culoare2(ColorSensor cSensor) {
+        int red = cSensor.red();
+        int green = cSensor.green();
+        int blue = cSensor.blue();
+        int total = red + green + blue;
+
+        // Lower threshold - detect sample presence faster
+        if (total < 400) {
+            return Color.None;
+        }
+
+        // Green detection: green channel dominates
+        // Lowered from 1600 to 800 for faster detection
+        if (green > red * 1.4 && green > blue * 1.3 && green > 800) {
+            return Color.Green;
+        }
+
+        // Purple detection: red + blue high, green relatively low
+        // Lowered from 900 to 500 for faster detection
+        if (red > green && blue > green * 0.6 && red > 500 && green < 1000) {
+            return Color.Purple;
+        }
+
+        return Color.None;
+    }
     private Color Culoare(ColorSensor cSensor) {
         int red = cSensor.red();
         int green = cSensor.green();
         int blue = cSensor.blue();
 
-        // Convert RGB to HSV
-        float[] hsv = new float[3];
-        android.graphics.Color.RGBToHSV(red, green, blue, hsv);
-
-        float hue = hsv[0];         // 0-360 degrees
-        float saturation = hsv[1];  // 0-1
-        float value = hsv[2];       // 0-1
-
-        // Ignore very dark/unsaturated readings
-        if (value < 0.15 || saturation < 0.25) {
+        // Quick total check
+        if (red + green + blue < 200) {
             return Color.None;
         }
 
-        // Purple: hue around 270-300 degrees
-        if (hue >= 260 && hue <= 310) {
-            return Color.Purple;
-        }
-
-        // Green: hue around 90-150 degrees
-        if (hue >= 80 && hue <= 160) {
+        // Simple checks - fastest possible
+        if (green > 500 && green > red && green > blue) {
             return Color.Green;
         }
 
-        return Color.None;
-    }
-    private Color Culoare2(ColorSensor cSensor)
-    {
-        int red = cSensor.red();
-        int green = cSensor.green();
-        int blue = cSensor.blue();
-
-        if (green >= 1900)
-            return Color.Green; // Verde
-
-        if (green > 1000 && green < 1900 && red < 1000 && blue > red)
-            return Color.Purple; // Mov
+        if (red > 300 && red > green) {
+            return Color.Purple;
+        }
 
         return Color.None;
     }

@@ -205,19 +205,27 @@ public class Mixer implements Subsystem{
         int red = cSensor.red();
         int green = cSensor.green();
         int blue = cSensor.blue();
+        int total = red + green + blue;
 
-        // Quick total check
-        if (red + green + blue < 200) {
-            return Color.None;
-        }
-
-        // Simple checks - fastest possible
-        if (green > 500 && green > red && green > blue) {
+        // Green detection - based on your ACTUAL readings
+        // Green max: R:1000, G:2800, B:2000
+        // Green min: R:400, G:763, B:562
+        if (green > 700 && green > red * 1.5 && green > blue * 1.3) {
+            // Green must be dominant and significantly higher than red and blue
             return Color.Green;
         }
 
-        if (red > 300 && red > green) {
+        // Purple detection - based on your ACTUAL readings
+        // Purple max: R:1350, G:1450, B:1870
+        // Purple min: R:500, G:600, B:700
+        if (blue > 650 && blue > red * 1.1 && blue > green * 1.1) {
+            // Blue must be dominant for purple
             return Color.Purple;
+        }
+
+        // Background/nothing detection - all values roughly equal and low-ish
+        if (Math.abs(red - green) < 100 && Math.abs(red - blue) < 100 && Math.abs(green - blue) < 100) {
+            return Color.None;
         }
 
         return Color.None;

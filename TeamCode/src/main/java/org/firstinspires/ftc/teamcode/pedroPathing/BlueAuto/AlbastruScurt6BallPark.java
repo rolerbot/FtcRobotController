@@ -58,7 +58,7 @@ public class AlbastruScurt6BallPark extends OpMode {
         mixer.SetArtifacts(); // Load 3 balls
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, true);
+        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, false);
         shooter.Initialize(hardwareMap);
 
         // NOW create follower and set starting pose AFTER subsystems

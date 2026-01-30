@@ -55,7 +55,7 @@ public class AlbastruLungPark extends OpMode {
 
         // NOW create follower and set starting pose AFTER subsystems
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        follower.setStartingPose(new Pose(57.000, 9.000, Math.toRadians(90)));
 
         buildPaths(); // Build paths
 

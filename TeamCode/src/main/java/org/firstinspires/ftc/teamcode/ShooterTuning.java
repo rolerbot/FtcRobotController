@@ -58,9 +58,9 @@ public class ShooterTuning extends OpMode {
         prevVelocity.readValue();
 
         if (nextVelocity.wasJustPressed())
-            testVelocities -= 50;
+            testVelocities -= 10;
         if (prevVelocity.wasJustPressed())
-            testVelocities += 50;
+            testVelocities += 10;
 
         double currentTarget = testVelocities;
 

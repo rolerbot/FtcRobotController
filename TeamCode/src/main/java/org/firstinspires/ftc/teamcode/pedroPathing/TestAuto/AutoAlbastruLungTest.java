@@ -165,6 +165,7 @@ public class AutoAlbastruLungTest extends OpMode {
     public void start() {
         opmodeTimer.resetTimer();
         intake.SetPowerMax();
+        shooter.Run();
         setPathState(0);
     }
 

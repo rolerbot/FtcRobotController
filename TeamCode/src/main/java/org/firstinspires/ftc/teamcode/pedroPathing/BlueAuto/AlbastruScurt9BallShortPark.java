@@ -14,9 +14,9 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import org.firstinspires.ftc.teamcode.*;
 
-@Autonomous(name = "AlbastruScurt9BallPark", group = "Autonomous")
+@Autonomous(name = "AlbastruScurt9BallShortPark", group = "Autonomous")
 @Configurable // Panels
-public class AlbastruScurt9BallPark extends OpMode {
+public class AlbastruScurt9BallShortPark extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private Timer pathTimer, opmodeTimer;
@@ -61,7 +61,7 @@ public class AlbastruScurt9BallPark extends OpMode {
         mixer.SetArtifacts(); // Load 3 balls
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, true);
+        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, false);
         shooter.Initialize(hardwareMap);
 
         // NOW create follower and set starting pose AFTER subsystems
@@ -81,25 +81,25 @@ public class AlbastruScurt9BallPark extends OpMode {
                         new BezierCurve(
                                 new Pose(19.092, 120.829),
                                 new Pose(59.980, 127.797),
-                                new Pose(54.000, 92.000)
+                                new Pose(53.000, 92.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(54), Math.toRadians(128))
+                ).setLinearHeadingInterpolation(Math.toRadians(54), Math.toRadians(136))
                 .build();
 
         // Path 2: Prepare to pick up balls
         Path2 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(54.000, 92.000),
-                                new Pose(47.761, 85.367)
+                                new Pose(53.000, 92.000),
+                                new Pose(47.761, 83)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(126), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
                 .build();
 
         // Path 3: Pick up balls
         Path3 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(47.761, 85.367),
-                                new Pose(17.211, 84.928)
+                                new Pose(47.761, 83),
+                                new Pose(17.211, 83)
                         )
                 ).setTangentHeadingInterpolation()
                 .build();
@@ -107,26 +107,26 @@ public class AlbastruScurt9BallPark extends OpMode {
         // Path 4: Return to shooting position
         Path4 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(17.211, 84.928),
-                                new Pose(54.000, 92.000)
+                                new Pose(17.211, 83),
+                                new Pose(53.000, 92.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(128))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
                 .build();
 
         // Path 5: Prepare to pick up more balls
         Path5 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(54.000, 92.000),
-                                new Pose(48.641, 60.912)
+                                new Pose(53.000, 92.000),
+                                new Pose(48.641, 59)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(128), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
                 .build();
 
         // Path 6: Pick up more balls
         Path6 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(48.641, 60.912),
-                                new Pose(17.689, 60.327)
+                                new Pose(48.641, 59),
+                                new Pose(17.689, 59)
                         )
                 ).setTangentHeadingInterpolation()
                 .build();
@@ -134,19 +134,19 @@ public class AlbastruScurt9BallPark extends OpMode {
         // Path 7: Return to shooting position
         Path7 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(17.689, 60.327),
-                                new Pose(54.000, 92.000)
+                                new Pose(17.689, 59),
+                                new Pose(53.000, 92.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(128))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
                 .build();
 
         // Path 8: Park
         Path8 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(54.000, 92.000),
+                                new Pose(53.000, 92.000),
                                 new Pose(52.956, 36.892)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(128), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
                 .build();
     }
 
@@ -202,7 +202,7 @@ public class AlbastruScurt9BallPark extends OpMode {
                 panelsTelemetry.debug("Shooter", String.format("%.0f / %.0f RPM", currentRPM, targetRPM));
 
                 // When RPM is close to target OR timeout, start shooting
-                if (Math.abs(currentRPM - targetRPM) < 100 || pathTimer.getElapsedTimeSeconds() > 2.0) {
+                if (Math.abs(currentRPM - targetRPM) < 100 || pathTimer.getElapsedTimeSeconds() > 1.5) {
                     panelsTelemetry.debug("Status", "Shooting preload!");
                     shooter.StartAutoShoot(); // Start autonomous shooting
                     pathTimer.resetTimer();
@@ -212,7 +212,7 @@ public class AlbastruScurt9BallPark extends OpMode {
 
             case 3:
                 // Wait for shooting to complete (3 preload balls)
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 2.0) {
+                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 1.7) {
                     panelsTelemetry.debug("Status", "Done shooting - going to first field balls");
                     follower.followPath(Path2, true);
                     setPathState(4);
@@ -263,7 +263,7 @@ public class AlbastruScurt9BallPark extends OpMode {
 
             case 8:
                 // Wait for second shooting to complete
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 2.0) {
+                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 1.7) {
                     panelsTelemetry.debug("Status", "Done shooting - going to second field balls");
                     follower.followPath(Path5, true);
                     setPathState(9);
@@ -314,7 +314,7 @@ public class AlbastruScurt9BallPark extends OpMode {
 
             case 13:
                 // Wait for third shooting to complete
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 2.0) {
+                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 1.7) {
                     panelsTelemetry.debug("Status", "Done final shooting - parking");
                     intake.SetMotorPower(0.0); // Stop intake
                     follower.followPath(Path8, true);

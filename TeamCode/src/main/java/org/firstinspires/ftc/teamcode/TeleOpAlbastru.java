@@ -77,7 +77,7 @@ public class TeleOpAlbastru extends LinearOpMode
             myLogger.Log("Robot Position", String.format("X:%.1f Y:%.1f cm", shooterAiming.GetRobotX(), shooterAiming.GetRobotY()));
             myLogger.Update();
 
-            telemetry.addData("ShoottingAllowed", shooter.isShooting);
+            telemetry.addData("ShoottingAllowed", !shooter.IsNotShooting());
             telemetry.addData("Pos X:", shooterAiming.GetRobotX());
             telemetry.addData("Pos Y:", shooterAiming.GetRobotY());
             telemetry.addData("Heading", shooterAiming.GetCurrentHeading());

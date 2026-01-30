@@ -5,55 +5,64 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 import static org.firstinspires.ftc.teamcode.Utils.ColorToString;
 
-public class Shooter implements Subsystem{
+public class Shooter implements Subsystem
+{
     private ButtonReader Aruncare;
     private ButtonReader ThrowGreen, ThrowPurple;
     private ButtonReader OvverideShooting;
     private ButtonReader VelocityChange;
-    private final GamepadEx ct1, ct2; // final - initialpos = 0.189
-    private final double initialPosition = 0.257; // 0.291
+    private final GamepadEx ct1, ct2;
+
+    private final double initialPosition = 0.257;
     private final double finalPosition = 0.48 - 0.03;
-    private final double hoodInitialPosition = 0.5; //0.5294 -45 grade
+    private final double hoodInitialPosition = 0.5;
     private ElapsedTime runtime = new ElapsedTime();
-    boolean isShooting = false;
+    private boolean isShooting = false;
     private int arrangedIndex = 0;
-    private int currentShootingPosition = 0; // Poziția curentă care se aruncă
+    private int currentShootingPosition = 0;
     private final Mixer mixer;
     private final Intake intake;
     private final TelemetryCustom telemetry;
     private final Husky husky;
     private final RobotAlignment robotAllignment;
+
     private boolean shootingAllowed = false;
+
     private Servo ServoRidicare = null;
     public Servo ServoHood = null;
+
     private double constDist = 0.0;
     private int caseSwitch = 0;
-    /// Motor Aruncare
+
     private DcMotorEx MotorAruncare1 = null;
     private DcMotorEx MotorAruncare2 = null;
-    private ShooterVoltageHelper voltageHelper = null;  // Voltage compensation helper
 
-    // PIDF Configuration - valori din tuning LA 12V
-    private final double BASE_SHOOTER_F = 13.9;  // F tunat la 12V (V_REF)
-    private double shooterF = BASE_SHOOTER_F;    // Current F (compensated)
-    private final double shooterP = 0.02;
+    private ShooterVoltageHelper voltageHelper = null;
+
+    private final double BASE_SHOOTER_F = 13.9;
+    private double shooterF = BASE_SHOOTER_F;
+    private final double shooterP = 0.1;
     private final double shooterI = 0.0;
     private final double shooterD = 0.0;
 
-    // Velocity targets (RPM) - ajustează după nevoie
-    private final double highVelocity = 1700;  // Viteza pentru aruncare normală
-    private final double lowVelocity = 1500;   // Viteza pentru aruncare ușoară
-    private double motorPower = lowVelocity;
-    private double offsetPosition = 0.1289;
-    private final double initialPosMixer = 0.0317;
+    private double motorPower = 1500; // RPM TARGET (KEEP AS RPM)
+
     private boolean isLong = false;
     private boolean autoShooting = false;
     private boolean isAutoShooting = false;
+
     private ShootingState shootType = ShootingState.None;
-    private double[] artPoz = {initialPosMixer + 3 * offsetPosition, initialPosMixer + 5 * offsetPosition, initialPosMixer + offsetPosition};
+
+    private final double offsetPosition = 0.1289;
+    private final double initialPosMixer = 0.0317;
+
+    private final double[] artPoz = {
+            initialPosMixer + 3 * offsetPosition,
+            initialPosMixer + 5 * offsetPosition,
+            initialPosMixer + offsetPosition
+    };
 
     // Constructor for TeleOp with gamepads
     public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,Husky husky,RobotAlignment robotAllignment,GamepadEx ct1, GamepadEx ct2)
@@ -250,10 +259,7 @@ public class Shooter implements Subsystem{
     }
     public double GetMotorPower() {return motorPower;}
 
-    public void StopShooterMotors()
-    {
-        SetShooterVelocity(0);
-    }
+    public void StopShooterMotors() {SetShooterVelocity(0);}
 
     private void Shooting()
     {
@@ -409,7 +415,7 @@ public class Shooter implements Subsystem{
         arrangedIndex = 0;
     }
 
-    private double GetTimeDist()
+    private double GetTimeDist1()
     {
         // Get filtered battery voltage (this is the "true" battery when consistent)
         double batteryVoltage = voltageHelper != null ? voltageHelper.GetFilteredVoltage() : 12.0;
@@ -418,11 +424,23 @@ public class Shooter implements Subsystem{
         {
             // If battery is low (< 12V), motors need more time to reach target velocity
             if(batteryVoltage < 12.3)
-                return 0.4;  // Extra time when battery is low
+                return 0.3;  // Extra time when battery is low
             else
-                return 0.3;   // Normal time at full battery
+                return 0.2;   // Normal time at full battery
         }
-        else return 0.25;  // Short distance, quick shot
+        else return 0.15;  // Short distance, quick shot
+    }
+
+    private double GetTimeDist()
+    {
+        // Get filtered battery voltage (this is the "true" battery when consistent)
+        double batteryVoltage = voltageHelper != null ? voltageHelper.GetFilteredVoltage() : 12.0;
+
+        if(constDist > 3.2 && batteryVoltage < 12.3)
+            return 0.3;  // Extra time at long distance when battery is low
+        else if (constDist < 3.2 && batteryVoltage < 12.3)
+                return 0.2;   // Extra time at normal distance
+        return 0.15;  // Short distance and battery, quick shot
     }
 
     private int GetShootingStateOld()
@@ -454,7 +472,7 @@ public class Shooter implements Subsystem{
                 return 1;
 
             case 2: // Retract lever (wait 0.2s)
-                if(time >= 0.135)
+                if(time >= 0.12)
                 {
                     caseSwitch = 3;
                     ResetTimer();
@@ -479,7 +497,6 @@ public class Shooter implements Subsystem{
         double time = runtime.seconds();
         double currentVelocity = MotorAruncare1.getVelocity();
         double velocityTolerance = 5; // RPM tolerance
-        boolean motorsReady = Math.abs(currentVelocity - motorPower) <= velocityTolerance;
 
         switch(caseSwitch)
         {
@@ -492,7 +509,7 @@ public class Shooter implements Subsystem{
                 return 0;
 
             case 1: // Push lever (wait 0.3s)
-                if(time >= 0.14)
+                if(time >= 0.1)
                 {
                     caseSwitch = 2;
                     ResetTimer();
@@ -500,7 +517,7 @@ public class Shooter implements Subsystem{
                 return 1;
 
             case 2: // Retract lever (wait 0.2s)
-                if(time >= 0.14)
+                if(time >= 0.1  )
                 {
                     caseSwitch = 3;
                     ResetTimer();
@@ -525,7 +542,7 @@ public class Shooter implements Subsystem{
         switch(caseSwitch)
         {
             case 0: // Waiting for motors to spin up
-                if(time >= 0.35) // Motors ready OR timeout
+                if(time >= 0.4) // Motors ready OR timeout
                 {
                     caseSwitch = 1;
                     ResetTimer();
@@ -533,7 +550,7 @@ public class Shooter implements Subsystem{
                 return 0;
 
             case 1: // Push lever (wait 0.3s)
-                if(time >= 0.13)
+                if(time >= 0.14)
                 {
                     caseSwitch = 2;
                     ResetTimer();
@@ -570,7 +587,7 @@ public class Shooter implements Subsystem{
             constDist = robotAllignment.GetDistanceToTarget();
         } else {
             if(isLong)
-            constDist = 3.7 ; // meters - adjust as needed for your autonomous position
+            constDist = 3.68 ; // meters - adjust as needed for your autonomous position
             else constDist = 2.15;
         }
         SetMotorPower();
@@ -580,18 +597,18 @@ public class Shooter implements Subsystem{
     {
         double dist = constDist * 100;
         if(constDist > 2 && constDist < 5)
-            motorPower = -(2.07771/10000000)*dist*dist*dist*dist+0.000254073*dist*dist*dist-0.118373*dist*dist + 26.72314*dist - 1158.4306; //1158.4306
+            motorPower = 0.000017267*dist*dist*dist - 0.0106542*dist*dist + 2.96418*dist + 970; //1158.4306
         else if(constDist >= 5)
-            motorPower = 1700;
+            motorPower = 1500;
         else motorPower = 1100;
         SetShooterVelocity(motorPower);
     }
 
     private void HoodPosition()
     {
-        if (constDist > 2.6 && ServoHood.getPosition() != 0.5294)
+        if (constDist > 2 && ServoHood.getPosition() != 0.5294)
             ServoHood.setPosition(0.5294);
-        else if (constDist <= 2.6 && ServoHood.getPosition() != 0.5)
+        else if (constDist <= 2 && ServoHood.getPosition() != 0.5)
             ServoHood.setPosition(0.5);
     }
 

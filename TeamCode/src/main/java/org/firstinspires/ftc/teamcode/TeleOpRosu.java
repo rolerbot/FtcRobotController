@@ -72,10 +72,12 @@ public class TeleOpRosu extends LinearOpMode
                 mixer.Run();
             shooter.Run();
             shooterAiming.Run();
+            shooterAiming.LogVelocityDiagnostics();
 
-            telemetry.addData("ShoottingAllowed", shooter.isShooting);
+            telemetry.addData("ShoottingAllowed", !shooter.IsNotShooting());
             telemetry.addData("Pos X:", shooterAiming.GetRobotX());
             telemetry.addData("Pos Y:", shooterAiming.GetRobotY());
+            telemetry.addData("Distance to target:", shooterAiming.GetDistanceToTarget());
             telemetry.addData("Heading", shooterAiming.GetCurrentHeading());
             telemetry.addData("Balls", mixer.GetArtifactCount());
             telemetry.addData("Ball 1:", mixer.GetColorForPoz(0));

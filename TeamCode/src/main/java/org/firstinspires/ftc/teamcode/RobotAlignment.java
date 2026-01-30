@@ -185,7 +185,7 @@ public class RobotAlignment implements Subsystem
         // Drive motors DO NOT need encoders - Pinpoint handles all position tracking
         // Pinpoint provides: X, Y position (inches) and heading (degrees)
 
-        pinpoint.setOffsets(-3.62, -6.65, DistanceUnit.INCH);
+        pinpoint.setOffsets(3.307, -6.648, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(
                 GoBildaPinpointDriver.EncoderDirection.FORWARD,

@@ -84,7 +84,7 @@ public class AlbastruLungShotPark extends OpMode {
                                 new Pose(56.191, 40.590),
                                 new Pose(58.000, 15.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(112))
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(111))
                 .build();
 
         // Go prepare for parking
@@ -93,7 +93,7 @@ public class AlbastruLungShotPark extends OpMode {
                                 new Pose(58.000, 15.000),
                                 new Pose(58.901, 10.327)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(112), Math.toRadians(90))
+                ).setLinearHeadingInterpolation(Math.toRadians(111), Math.toRadians(90))
                 .build();
 
         // Park

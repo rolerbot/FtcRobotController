@@ -74,59 +74,59 @@ public class AlbastruLung6BallPark extends OpMode {
     }
 
     public void buildPaths() {
-        // Tag reading
+
         Path1 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(57.000, 9.000),
-                                new Pose(56.191, 40.590)
+                                new Pose(57.000, 35.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
                 .build();
 
-        // First shooting position
+        // Path 2: Return to shooting position
         Path2 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(56.191, 40.590),
-                                new Pose(58.000, 15.000)
+                                new Pose(57.000, 35.000),
+                                new Pose(54, 15.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(112))
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(111))
                 .build();
 
-        // Curve to prepare for ball pickup
+        // Path 3: Curve to field balls
         Path3 = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(58.000, 15.000),
-                                new Pose(59.964, 33.466),
-                                new Pose(46.837, 36.000)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(112), Math.toRadians(180))
-                .build();
-
-        // Straight line ball pickup (3 balls from field)
-        Path4 = follower.pathBuilder().addPath(
-                        new BezierLine(
-                                new Pose(46.837, 36.000),
-                                new Pose(18.231, 36.020)
+                                new Pose(54, 15.000),
+                                new Pose(55, 33.665),
+                                new Pose(50.701, 36.060)
                         )
                 ).setTangentHeadingInterpolation()
                 .build();
 
-        // Return to shooting position
+        // Path 4: Pickup 3 field balls (straight line)
+        Path4 = follower.pathBuilder().addPath(
+                        new BezierLine(
+                                new Pose(50.701, 36.060),
+                                new Pose(15.131, 36.191)
+                        )
+                ).setTangentHeadingInterpolation()
+                .build();
+
+        // Path 5: Return to shoot after field balls
         Path5 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(18.231, 36.020),
-                                new Pose(58.000, 15.000)
+                                new Pose(15.131, 36.191),
+                                new Pose(54, 15.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(112))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(111))
                 .build();
 
         // Parking
         Path6 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(58.000, 15.000),
+                                new Pose(54, 15.000),
                                 new Pose(37.175, 11.777)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(112), Math.toRadians(90))
+                ).setLinearHeadingInterpolation(Math.toRadians(111), Math.toRadians(90))
                 .build();
     }
 

@@ -14,7 +14,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import org.firstinspires.ftc.teamcode.*;
 
-@Autonomous(name = "AlbastruScurt9BallPark", group = "Autonomous")
+@Autonomous(name = "AlbastruScurt9BallLongPark", group = "Autonomous")
 @Configurable // Panels
 public class AlbastruScurt9BallLongPark extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance

@@ -26,7 +26,7 @@ public class AlbastruScurt6Gate3ShotPark extends OpMode {
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(19.092, 120.829, Math.toRadians(54)));
+        follower.setStartingPose(new Pose(19.092, 120.829, Math.toRadians(144)));
 
         paths = new Paths(follower); // Build paths
 
@@ -51,6 +51,7 @@ public class AlbastruScurt6Gate3ShotPark extends OpMode {
     public static class Paths {
         public PathChain Path1;
         public PathChain Path2;
+
         public PathChain Path3;
         public PathChain Path4;
         public PathChain Path5;
@@ -61,19 +62,31 @@ public class AlbastruScurt6Gate3ShotPark extends OpMode {
         public PathChain Path10;
 
         public Paths(Follower follower) {
+
+            //go to read tag
             Path1 = follower.pathBuilder().addPath(
                             new BezierCurve(
                                     new Pose(19.092, 120.829),
-                                    new Pose(59.980, 127.797),
-                                    new Pose(54.000, 92.000)
+                                    new Pose(61, 130),
+                                    new Pose(56, 107.139)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(54), Math.toRadians(128))
-
+                    ).setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(90))
                     .build();
 
+            // ✅ Path 2: Second line to shooting position (from PedroAutonomous)
             Path2 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(54.000, 92.000),
+                                    new Pose(56, 107.139),
+                                    new Pose(53.000, 92.000)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(136))
+                    .build();
+
+
+            // prepare to pick up balls
+            Path3 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(53, 92.000),
 
                                     new Pose(47.761, 85.367)
                             )
@@ -81,7 +94,8 @@ public class AlbastruScurt6Gate3ShotPark extends OpMode {
 
                     .build();
 
-            Path3 = follower.pathBuilder().addPath(
+            // pick up balls
+            Path4 = follower.pathBuilder().addPath(
                             new BezierLine(
                                     new Pose(47.761, 85.367),
 
@@ -91,27 +105,30 @@ public class AlbastruScurt6Gate3ShotPark extends OpMode {
 
                     .build();
 
-            Path4 = follower.pathBuilder().addPath(
+            //Go to shooting pos
+            Path5 = follower.pathBuilder().addPath(
                             new BezierLine(
                                     new Pose(17.211, 84.928),
 
                                     new Pose(54.000, 92.000)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(128))
+                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
 
                     .build();
 
-            Path5 = follower.pathBuilder().addPath(
+            //prepare to opne gate
+            Path6 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(54.000, 92.000),
+                                    new Pose(53, 92.000),
 
                                     new Pose(21.486, 73.725)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(128), Math.toRadians(90))
+                    ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(90))
 
                     .build();
 
-            Path6 = follower.pathBuilder().addPath(
+            //Go to open gate and wait 3 seconds
+            Path7 = follower.pathBuilder().addPath(
                             new BezierLine(
                                     new Pose(21.486, 73.725),
 
@@ -121,7 +138,8 @@ public class AlbastruScurt6Gate3ShotPark extends OpMode {
 
                     .build();
 
-            Path7 = follower.pathBuilder().addPath(
+            // prepare to pick up more balls
+            Path8 = follower.pathBuilder().addPath(
                             new BezierCurve(
                                     new Pose(16.701, 73.841),
                                     new Pose(53.157, 79.777),
@@ -131,6 +149,7 @@ public class AlbastruScurt6Gate3ShotPark extends OpMode {
 
                     .build();
 
+            //pick up more balls
             Path8 = follower.pathBuilder().addPath(
                             new BezierLine(
                                     new Pose(51.645, 60.367),
@@ -141,23 +160,25 @@ public class AlbastruScurt6Gate3ShotPark extends OpMode {
 
                     .build();
 
+            //go to shooting pos
             Path9 = follower.pathBuilder().addPath(
                             new BezierLine(
                                     new Pose(15.661, 58.928),
 
-                                    new Pose(54.000, 92.000)
+                                    new Pose(53, 92.000)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(128))
+                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
 
                     .build();
 
+            //park
             Path10 = follower.pathBuilder().addPath(
                             new BezierLine(
                                     new Pose(54.000, 92.000),
 
                                     new Pose(48.582, 69.944)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(128), Math.toRadians(90))
+                    ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(90))
 
                     .build();
         }

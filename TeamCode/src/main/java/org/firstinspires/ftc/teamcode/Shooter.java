@@ -43,11 +43,14 @@ public class Shooter implements Subsystem
 
     private final double BASE_SHOOTER_F = 13.9;
     private double shooterF = BASE_SHOOTER_F;
-    private final double shooterP = 0.1;
+    private final double shooterP = 0.15;  // Increased from 0.1 for more responsive control
     private final double shooterI = 0.0;
-    private final double shooterD = 0.0;
+    private final double shooterD = 8.0;   // ✅ ULTRA-HIGH D for near-instant deceleration (was 1.5)
 
     private double motorPower = 1500; // RPM TARGET (KEEP AS RPM)
+    private double lastMotorPower = 1500; // ✅ Track previous target for deceleration detection
+    private ElapsedTime brakingTimer = new ElapsedTime(); // ✅ Timer for active braking
+    private boolean isBraking = false; // ✅ Lock flag to prevent override during braking
 
     private boolean isLong = false;
     private boolean autoShooting = false;
@@ -89,23 +92,23 @@ public class Shooter implements Subsystem
         this.isLong = isLong;
         this.isAutoShooting = true;
     }
-     public void LinkComponents(HardwareMap hardwareMap)
-     {
-         // Only initialize button readers if gamepads exist (teleop mode)
-         if (ct1 != null && ct2 != null)
-         {
-             Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
-             ThrowGreen = new ButtonReader(ct1, GamepadKeys.Button.Y);
-             ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.X);
-             VelocityChange = new ButtonReader(ct2, GamepadKeys.Button.B);
-             OvverideShooting = new ButtonReader(ct2, GamepadKeys.Button.A);
-         }
+    public void LinkComponents(HardwareMap hardwareMap)
+    {
+        // Only initialize button readers if gamepads exist (teleop mode)
+        if (ct1 != null && ct2 != null)
+        {
+            Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
+            ThrowGreen = new ButtonReader(ct1, GamepadKeys.Button.Y);
+            ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.X);
+            VelocityChange = new ButtonReader(ct2, GamepadKeys.Button.B);
+            OvverideShooting = new ButtonReader(ct2, GamepadKeys.Button.A);
+        }
 
-         ServoHood = hardwareMap.get(Servo.class, "ServoHood");
-         ServoRidicare = hardwareMap.get(Servo.class, "ServoRidicare");
-         MotorAruncare1 = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
-         MotorAruncare2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
-     }
+        ServoHood = hardwareMap.get(Servo.class, "ServoHood");
+        ServoRidicare = hardwareMap.get(Servo.class, "ServoRidicare");
+        MotorAruncare1 = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
+        MotorAruncare2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
+    }
 
     public void Initialize(HardwareMap hwMap)
     {
@@ -212,7 +215,7 @@ public class Shooter implements Subsystem
     {
         // Only read buttons if they exist (teleop mode)
         if (OvverideShooting != null && VelocityChange != null &&
-            Aruncare != null && ThrowGreen != null && ThrowPurple != null)
+                Aruncare != null && ThrowGreen != null && ThrowPurple != null)
         {
             OvverideShooting.readValue();
             VelocityChange.readValue();
@@ -228,11 +231,63 @@ public class Shooter implements Subsystem
         runtime.reset();
     }
 
-    // Controlează motoarele cu velocity (RPM) în loc de power
+    /**
+     * ✅ ULTRA-AGGRESSIVE BRAKING for ~0.5s deceleration
+     * Applies strong reverse power immediately when velocity needs to drop
+     */
     public void SetShooterVelocity(double velocity)
     {
+        double currentVelocity = MotorAruncare1.getVelocity();
+        double velocityDrop = lastMotorPower - velocity;
+
+        // ✅ TRIGGER BRAKING: Any drop >30 RPM gets aggressive braking
+        if (velocityDrop > 30 && currentVelocity > velocity + 20)
+        {
+            if (!isBraking)
+            {
+                brakingTimer.reset();
+                isBraking = true;
+                telemetry.Log("⚡ BRAKE START", String.format("%.0f → %.0f RPM", currentVelocity, velocity));
+            }
+
+            // ✅ EXTENDED BRAKING: 500ms of active reverse power
+            if (brakingTimer.milliseconds() < 500)
+            {
+                double velocityError = currentVelocity - velocity;
+
+                // ✅ ULTRA-STRONG brake power: 2x the error, capped at -1200 RPM
+                double brakePower = -Math.min(velocityError * 2.0, 1200);
+
+                MotorAruncare1.setVelocity(brakePower);
+                MotorAruncare2.setVelocity(brakePower);
+
+                telemetry.Log("⚡ BRAKING", String.format("%.0f RPM @ %.0fms", brakePower, brakingTimer.milliseconds()));
+                return;
+            }
+            else
+            {
+                // Braking complete
+                isBraking = false;
+                telemetry.Log("✓ BRAKE END", String.format("Now: %.0f RPM", currentVelocity));
+            }
+        }
+        else if (isBraking && (velocityDrop <= 30 || currentVelocity <= velocity + 20))
+        {
+            // Target reached or changed - cancel braking
+            isBraking = false;
+            telemetry.Log("✓ BRAKE DONE", "Target reached");
+        }
+
+        // Don't override while braking
+        if (isBraking)
+        {
+            return;
+        }
+
+        // Normal operation
         MotorAruncare1.setVelocity(velocity);
         MotorAruncare2.setVelocity(velocity);
+        lastMotorPower = velocity;
     }
 
     /**
@@ -259,7 +314,11 @@ public class Shooter implements Subsystem
     }
     public double GetMotorPower() {return motorPower;}
 
-    public void StopShooterMotors() {SetShooterVelocity(0);}
+    public void StopShooterMotors() {
+        SetShooterVelocity(0);
+        lastMotorPower = 0;
+        isBraking = false; // ✅ Clear braking lock
+    }
 
     private void Shooting()
     {
@@ -439,7 +498,7 @@ public class Shooter implements Subsystem
         if(constDist > 3.2 && batteryVoltage < 12.3)
             return 0.3;  // Extra time at long distance when battery is low
         else if (constDist < 3.2 && batteryVoltage < 12.3)
-                return 0.2;   // Extra time at normal distance
+            return 0.2;   // Extra time at normal distance
         return 0.15;  // Short distance and battery, quick shot
     }
 
@@ -587,7 +646,7 @@ public class Shooter implements Subsystem
             constDist = robotAllignment.GetDistanceToTarget();
         } else {
             if(isLong)
-            constDist = 3.68 ; // meters - adjust as needed for your autonomous position
+                constDist = 3.68 ; // meters - adjust as needed for your autonomous position
             else constDist = 2.15;
         }
         SetMotorPower();
@@ -690,5 +749,4 @@ public class Shooter implements Subsystem
         if (voltageHelper == null) return 12.0;
         return voltageHelper.GetFilteredVoltage();
     }
-
 }

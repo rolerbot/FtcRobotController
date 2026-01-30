@@ -30,16 +30,17 @@ public class AlbastruScurt9BallShortPark extends OpMode {
     private Mixer mixer;
 
     // Paths
-    private PathChain Path1; // Move to shooting position
-    private PathChain Path2; // Prepare to pick up first set of balls
-    private PathChain Path3; // Pick up first 3 balls
-    private PathChain Path4; // Return to shooting position
-    private PathChain Path5; // Prepare to pick up second set of balls
-    private PathChain Path6; // Pick up second 3 balls
-    private PathChain Path7; // Return to shooting position
-    private PathChain Path8; // Park
+    private PathChain Path1; // ✅ First curve to intermediate position
+    private PathChain Path2; // ✅ Second line to shooting position
+    private PathChain Path3; // Prepare to pick up first set of balls
+    private PathChain Path4; // Pick up first 3 balls
+    private PathChain Path5; // Return to shooting position
+    private PathChain Path6; // Prepare to pick up second set of balls
+    private PathChain Path7; // Pick up second 3 balls
+    private PathChain Path8; // Return to shooting position
+    private PathChain Path9; // Park
 
-    private final double pickupWaitTime = 0.5; // seconds - wait time for field ball pickup
+    private final double pickupWaitTime = 0; // seconds - wait time for field ball pickup
 
     @Override
     public void init() {
@@ -66,7 +67,7 @@ public class AlbastruScurt9BallShortPark extends OpMode {
 
         // NOW create follower and set starting pose AFTER subsystems
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(19.092, 120.829, Math.toRadians(54)));
+        follower.setStartingPose(new Pose(19.092, 120.829, Math.toRadians(144)));
 
         buildPaths(); // Build paths
 
@@ -76,18 +77,27 @@ public class AlbastruScurt9BallShortPark extends OpMode {
     }
 
     public void buildPaths() {
-        // Path 1: Move to shooting position
+        // ✅ Path 1: First curve to intermediate position (from PedroAutonomous)
         Path1 = follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(19.092, 120.829),
-                                new Pose(59.980, 127.797),
-                                new Pose(53.000, 92.000)
+                                new Pose(61, 130),
+                                new Pose(56, 107.139)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(54), Math.toRadians(136))
+                ).setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(90))
                 .build();
 
-        // Path 2: Prepare to pick up balls
+        // ✅ Path 2: Second line to shooting position (from PedroAutonomous)
         Path2 = follower.pathBuilder().addPath(
+                        new BezierLine(
+                                new Pose(56, 107.139),
+                                new Pose(53.000, 92.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(136))
+                .build();
+
+        // Path 3: Prepare to pick up balls
+        Path3 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(53.000, 92.000),
                                 new Pose(47.761, 83)
@@ -95,8 +105,8 @@ public class AlbastruScurt9BallShortPark extends OpMode {
                 ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
                 .build();
 
-        // Path 3: Pick up balls
-        Path3 = follower.pathBuilder().addPath(
+        // Path 4: Pick up balls
+        Path4 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(47.761, 83),
                                 new Pose(17.211, 83)
@@ -104,8 +114,8 @@ public class AlbastruScurt9BallShortPark extends OpMode {
                 ).setTangentHeadingInterpolation()
                 .build();
 
-        // Path 4: Return to shooting position
-        Path4 = follower.pathBuilder().addPath(
+        // Path 5: Return to shooting position
+        Path5 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(17.211, 83),
                                 new Pose(53.000, 92.000)
@@ -113,8 +123,8 @@ public class AlbastruScurt9BallShortPark extends OpMode {
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
                 .build();
 
-        // Path 5: Prepare to pick up more balls
-        Path5 = follower.pathBuilder().addPath(
+        // Path 6: Prepare to pick up more balls
+        Path6 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(53.000, 92.000),
                                 new Pose(48.641, 59)
@@ -122,8 +132,8 @@ public class AlbastruScurt9BallShortPark extends OpMode {
                 ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
                 .build();
 
-        // Path 6: Pick up more balls
-        Path6 = follower.pathBuilder().addPath(
+        // Path 7: Pick up more balls
+        Path7 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(48.641, 59),
                                 new Pose(17.689, 59)
@@ -131,8 +141,8 @@ public class AlbastruScurt9BallShortPark extends OpMode {
                 ).setTangentHeadingInterpolation()
                 .build();
 
-        // Path 7: Return to shooting position
-        Path7 = follower.pathBuilder().addPath(
+        // Path 8: Return to shooting position
+        Path8 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(17.689, 59),
                                 new Pose(53.000, 92.000)
@@ -140,11 +150,11 @@ public class AlbastruScurt9BallShortPark extends OpMode {
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
                 .build();
 
-        // Path 8: Park
-        Path8 = follower.pathBuilder().addPath(
+        // Path 9: Park
+        Path9 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(53.000, 92.000),
-                                new Pose(52.956, 36.892)
+                                new Pose(52.956, 85)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
                 .build();
@@ -181,20 +191,30 @@ public class AlbastruScurt9BallShortPark extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                // Go to shooting position
+                // ✅ Start first curve to intermediate position
                 follower.followPath(Path1, true);
+                follower.setMaxPower(0.75);
                 setPathState(1);
                 break;
 
             case 1:
-                // Wait to reach shooting position
+                // ✅ Wait for first curve to complete
                 if (!follower.isBusy()) {
-                    panelsTelemetry.debug("Status", "At shoot position - shooter spinning");
+                    panelsTelemetry.debug("Status", "Intermediate position - going to shoot");
+                    follower.followPath(Path2, true);
                     setPathState(2);
                 }
                 break;
 
             case 2:
+                // ✅ Wait to reach shooting position
+                if (!follower.isBusy()) {
+                    panelsTelemetry.debug("Status", "At shoot position - shooter spinning");
+                    setPathState(3);
+                }
+                break;
+
+            case 3:
                 // Wait for shooter to spin up
                 double currentRPM = shooter.GetVelocityCurrent();
                 double targetRPM = shooter.GetVelocityTarget();
@@ -206,123 +226,123 @@ public class AlbastruScurt9BallShortPark extends OpMode {
                     panelsTelemetry.debug("Status", "Shooting preload!");
                     shooter.StartAutoShoot(); // Start autonomous shooting
                     pathTimer.resetTimer();
-                    setPathState(3);
-                }
-                break;
-
-            case 3:
-                // Wait for shooting to complete (3 preload balls)
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 1.7) {
-                    panelsTelemetry.debug("Status", "Done shooting - going to first field balls");
-                    follower.followPath(Path2, true);
                     setPathState(4);
                 }
                 break;
 
             case 4:
-                // Wait for prepare path to complete
-                if (!follower.isBusy()) {
-                    panelsTelemetry.debug("Status", "Starting first ball pickup");
-                    intake.SetPowerMax(); // Start intake for field ball pickup
-                    follower.setMaxPower(0.25); // Slow for ball pickup
+                // Wait for shooting to complete (3 preload balls)
+                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 1.7) {
+                    panelsTelemetry.debug("Status", "Done shooting - going to first field balls");
                     follower.followPath(Path3, true);
                     setPathState(5);
                 }
                 break;
 
             case 5:
+                // Wait for prepare path to complete
+                if (!follower.isBusy()) {
+                    panelsTelemetry.debug("Status", "Starting first ball pickup");
+                    intake.SetPowerMax(); // Start intake for field ball pickup
+                    follower.setMaxPower(0.25); // Slow for ball pickup
+                    follower.followPath(Path4, true);
+                    setPathState(6);
+                }
+                break;
+
+            case 6:
                 // Collecting first 3 balls from field while moving
                 follower.setMaxPower(0.25);
 
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "First 3 balls collected - brief wait");
                     pathTimer.resetTimer();
-                    setPathState(6);
-                }
-                break;
-
-            case 6:
-                // Brief wait to ensure balls are collected
-                if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
-                    panelsTelemetry.debug("Status", "Returning to shoot");
-                    follower.setMaxPower(0.8);
-                    follower.followPath(Path4, true);
                     setPathState(7);
                 }
                 break;
 
             case 7:
-                // Return to shoot position after first field balls
-                if (!follower.isBusy()) {
-                    panelsTelemetry.debug("Status", "Back at shoot - shooting first field balls");
-                    shooter.StartAutoShoot(); // Start second shooting (3 field balls)
-                    pathTimer.resetTimer();
+                // Brief wait to ensure balls are collected
+                if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
+                    panelsTelemetry.debug("Status", "Returning to shoot");
+                    follower.setMaxPower(0.8);
+                    follower.followPath(Path5, true);
                     setPathState(8);
                 }
                 break;
 
             case 8:
-                // Wait for second shooting to complete
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 1.7) {
-                    panelsTelemetry.debug("Status", "Done shooting - going to second field balls");
-                    follower.followPath(Path5, true);
+                // Return to shoot position after first field balls
+                if (!follower.isBusy()) {
+                    panelsTelemetry.debug("Status", "Back at shoot - shooting first field balls");
+                    shooter.StartAutoShoot(); // Start second shooting (3 field balls)
+                    pathTimer.resetTimer();
                     setPathState(9);
                 }
                 break;
 
             case 9:
-                // Wait for second prepare path to complete
-                if (!follower.isBusy()) {
-                    panelsTelemetry.debug("Status", "Starting second ball pickup");
-                    intake.SetPowerMax(); // Start intake for second field ball pickup
-                    follower.setMaxPower(0.25); // Slow for ball pickup
+                // Wait for second shooting to complete
+                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 1.7) {
+                    panelsTelemetry.debug("Status", "Done shooting - going to second field balls");
                     follower.followPath(Path6, true);
                     setPathState(10);
                 }
                 break;
 
             case 10:
+                // Wait for second prepare path to complete
+                if (!follower.isBusy()) {
+                    panelsTelemetry.debug("Status", "Starting second ball pickup");
+                    intake.SetPowerMax(); // Start intake for second field ball pickup
+                    follower.setMaxPower(0.25); // Slow for ball pickup
+                    follower.followPath(Path7, true);
+                    setPathState(11);
+                }
+                break;
+
+            case 11:
                 // Collecting second 3 balls from field while moving
                 follower.setMaxPower(0.25);
 
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "Second 3 balls collected - brief wait");
                     pathTimer.resetTimer();
-                    setPathState(11);
-                }
-                break;
-
-            case 11:
-                // Brief wait to ensure balls are collected
-                if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
-                    panelsTelemetry.debug("Status", "Returning to shoot");
-                    follower.setMaxPower(0.8);
-                    follower.followPath(Path7, true);
                     setPathState(12);
                 }
                 break;
 
             case 12:
-                // Return to shoot position after second field balls
-                if (!follower.isBusy()) {
-                    panelsTelemetry.debug("Status", "Back at shoot - final shooting");
-                    shooter.StartAutoShoot(); // Start third shooting (3 more field balls)
-                    pathTimer.resetTimer();
+                // Brief wait to ensure balls are collected
+                if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
+                    panelsTelemetry.debug("Status", "Returning to shoot");
+                    follower.setMaxPower(0.8);
+                    follower.followPath(Path8, true);
                     setPathState(13);
                 }
                 break;
 
             case 13:
-                // Wait for third shooting to complete
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 1.7) {
-                    panelsTelemetry.debug("Status", "Done final shooting - parking");
-                    intake.SetMotorPower(0.0); // Stop intake
-                    follower.followPath(Path8, true);
+                // Return to shoot position after second field balls
+                if (!follower.isBusy()) {
+                    panelsTelemetry.debug("Status", "Back at shoot - final shooting");
+                    shooter.StartAutoShoot(); // Start third shooting (3 more field balls)
+                    pathTimer.resetTimer();
                     setPathState(14);
                 }
                 break;
 
             case 14:
+                // Wait for third shooting to complete
+                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 1.7) {
+                    panelsTelemetry.debug("Status", "Done final shooting - parking");
+                    intake.SetMotorPower(0.0); // Stop intake
+                    follower.followPath(Path9, true);
+                    setPathState(15);
+                }
+                break;
+
+            case 15:
                 // Park and finish
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "COMPLETE - 9 BALLS SCORED!");

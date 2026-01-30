@@ -30,8 +30,9 @@ public class AlbastruScurtShotPark extends OpMode {
     private Mixer mixer;
 
     // Paths
-    private PathChain Path1; // Move to shooting position
-    private PathChain Path2; // Park
+    private PathChain Path1; // Move to reading pos
+    private PathChain Path2; // Move to shooting pos
+    private PathChain Path3; // Park
 
     @Override
     public void init() {
@@ -58,7 +59,7 @@ public class AlbastruScurtShotPark extends OpMode {
 
         // NOW create follower and set starting pose AFTER subsystems
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(19.092, 120.829, Math.toRadians(126)));
+        follower.setStartingPose(new Pose(19.092, 120.829, Math.toRadians(144)));
 
         buildPaths(); // Build paths
 
@@ -68,23 +69,32 @@ public class AlbastruScurtShotPark extends OpMode {
     }
 
     public void buildPaths() {
-        // Path 1: Move from starting position to shooting position
+        // ✅ Path 1: First curve to intermediate position (from PedroAutonomous)
         Path1 = follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(19.092, 120.829),
-                                new Pose(59.980, 127.797),
-                                new Pose(54.279, 91.841)
+                                new Pose(61, 130),
+                                new Pose(56, 107.139)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(54), Math.toRadians(126))
+                ).setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(90))
+                .build();
+
+        // ✅ Path 2: Second line to shooting position (from PedroAutonomous)
+        Path2 = follower.pathBuilder().addPath(
+                        new BezierLine(
+                                new Pose(56, 107.139),
+                                new Pose(53.000, 92.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(136))
                 .build();
 
         // Path 2: Move from shooting position to parking position
-        Path2 = follower.pathBuilder().addPath(
+        Path3 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(54.279, 91.841),
+                                new Pose(53, 92),
                                 new Pose(46.805, 73.892)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(126), Math.toRadians(90))
+                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(90))
                 .build();
     }
 
@@ -125,14 +135,22 @@ public class AlbastruScurtShotPark extends OpMode {
                 break;
 
             case 1:
-                // Wait to reach shooting position
-                if (!follower.isBusy()) {
-                    panelsTelemetry.debug("Status", "At shoot position - shooter spinning");
+                if(!follower.isBusy())
+                {
+                    follower.followPath(Path2, true);
                     setPathState(2);
                 }
                 break;
 
             case 2:
+                // Wait to reach shooting position
+                if (!follower.isBusy()) {
+                    panelsTelemetry.debug("Status", "At shoot position - shooter spinning");
+                    setPathState(3);
+                }
+                break;
+
+            case 3:
                 // Wait for shooter to spin up
                 double currentRPM = shooter.GetVelocityCurrent();
                 double targetRPM = shooter.GetVelocityTarget();
@@ -144,21 +162,21 @@ public class AlbastruScurtShotPark extends OpMode {
                     panelsTelemetry.debug("Status", "Shooting!");
                     shooter.StartAutoShoot(); // Start autonomous shooting
                     pathTimer.resetTimer();
-                    setPathState(3);
-                }
-                break;
-
-            case 3:
-                // Wait for shooting to complete
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 2.0) {
-                    panelsTelemetry.debug("Status", "Done shooting - parking");
-                    intake.SetMotorPower(0.0); // Stop intake
-                    follower.followPath(Path2, true);
                     setPathState(4);
                 }
                 break;
 
             case 4:
+                // Wait for shooting to complete
+                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 2.0) {
+                    panelsTelemetry.debug("Status", "Done shooting - parking");
+                    intake.SetMotorPower(0.0); // Stop intake
+                    follower.followPath(Path2, true);
+                    setPathState(5);
+                }
+                break;
+
+            case 5:
                 // Park and finish
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "COMPLETE!");

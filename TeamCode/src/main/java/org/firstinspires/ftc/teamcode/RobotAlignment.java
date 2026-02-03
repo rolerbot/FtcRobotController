@@ -61,8 +61,8 @@ public class RobotAlignment implements Subsystem
     // ✅ PRECISION TUNING PARAMETERS - For 0.5° accuracy
     private static class HeadingControl {
         // Two-stage control: coarse approach + fine adjustment
-        public static final double kP_COARSE = 0.015;  // Aggressive for large errors
-        public static final double kP_FINE = 0.025;    // Higher gain for precision
+        public static final double kP_COARSE = 0.017;  // Aggressive for large errors
+        public static final double kP_FINE = 0.027;    // Higher gain for precision
         public static final double kD = 0.008;         // Derivative to prevent overshoot
 
         // Power limits
@@ -73,18 +73,18 @@ public class RobotAlignment implements Subsystem
 
         // Precision thresholds
         public static final double FINE_CONTROL_THRESHOLD = 8.0;   // Switch to fine control
-        public static final double TARGET_PRECISION = 0.3;         // Your 0.5° target
-        public static final double SETTLING_THRESHOLD = 0.3;       // Must stay within this to stop
+        public static final double TARGET_PRECISION = 0.2;         // Your 0.5° target
+        public static final double SETTLING_THRESHOLD = 0.2;       // Must stay within this to stop
 
         // Distance-based scaling
         public static final double DISTANCE_DAMPING_START = 1.5;   // Start damping at 1.5m
         public static final double DISTANCE_DAMPING_FACTOR = 0.2;
 
         // ✅ VELOCITY FEEDFORWARD - Predicts where robot will be
-        public static final double PREDICTION_TIME = 0.13;          // Look ahead 150ms
-        public static final double VELOCITY_BOOST_FACTOR = 2.5;     // Aggressive boost at high speed
+        public static final double PREDICTION_TIME = 0.15;          // Look ahead 150ms
+        public static final double VELOCITY_BOOST_FACTOR = 2.7;     // Aggressive boost at high speed
         public static final double VELOCITY_THRESHOLD = 0.2;        // m/s - when to start boosting
-        public static final double MAX_VELOCITY_BOOST = 0.15;       // Extra power cap
+        public static final double MAX_VELOCITY_BOOST = 0.17;       // Extra power cap
     }
 
     // Derivative tracking variables
@@ -185,7 +185,7 @@ public class RobotAlignment implements Subsystem
         // Drive motors DO NOT need encoders - Pinpoint handles all position tracking
         // Pinpoint provides: X, Y position (inches) and heading (degrees)
 
-        pinpoint.setOffsets(3.307, -6.648, DistanceUnit.INCH);
+        pinpoint.setOffsets(2.11, -3.31, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(
                 GoBildaPinpointDriver.EncoderDirection.FORWARD,

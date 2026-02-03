@@ -75,6 +75,7 @@ public class AlbastruLung6BallPark extends OpMode {
 
     public void buildPaths() {
 
+        //read tag
         Path1 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(57.000, 9.000),
@@ -87,9 +88,9 @@ public class AlbastruLung6BallPark extends OpMode {
         Path2 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(57.000, 35.000),
-                                new Pose(54, 15.000)
+                                new Pose(53, 15.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(111))
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(110.5))
                 .build();
 
         // Path 3: Curve to field balls
@@ -117,7 +118,7 @@ public class AlbastruLung6BallPark extends OpMode {
                                 new Pose(15.131, 36.191),
                                 new Pose(54, 15.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(111))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(110.5))
                 .build();
 
         // Parking
@@ -126,7 +127,7 @@ public class AlbastruLung6BallPark extends OpMode {
                                 new Pose(54, 15.000),
                                 new Pose(37.175, 11.777)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(111), Math.toRadians(90))
+                ).setLinearHeadingInterpolation(Math.toRadians(110.5), Math.toRadians(90))
                 .build();
     }
 
@@ -163,6 +164,7 @@ public class AlbastruLung6BallPark extends OpMode {
             case 0:
                 // Go to tag
                 follower.followPath(Path1, true);
+                intake.SetMotorPower(0.8);
                 setPathState(1);
                 break;
 

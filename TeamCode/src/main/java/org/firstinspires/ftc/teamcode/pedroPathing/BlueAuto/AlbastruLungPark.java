@@ -67,8 +67,8 @@ public class AlbastruLungPark extends OpMode {
         // Park
         Path1 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(57.000, 9.000),
-                                new Pose(36.155, 9.566)
+                                new Pose(53, 15.000),
+                                new Pose(37.207, 12.809)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
                 .build();

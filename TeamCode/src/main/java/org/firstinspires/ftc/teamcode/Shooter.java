@@ -43,14 +43,14 @@ public class Shooter implements Subsystem
 
     private final double BASE_SHOOTER_F = 13.9;
     private double shooterF = BASE_SHOOTER_F;
-    private final double shooterP = 0.15;  // Increased from 0.1 for more responsive control
+    private final double shooterP = 0.15;
     private final double shooterI = 0.0;
-    private final double shooterD = 8.0;   // ✅ ULTRA-HIGH D for near-instant deceleration (was 1.5)
+    private final double shooterD = 8.0;
 
-    private double motorPower = 1500; // RPM TARGET (KEEP AS RPM)
-    private double lastMotorPower = 1500; // ✅ Track previous target for deceleration detection
-    private ElapsedTime brakingTimer = new ElapsedTime(); // ✅ Timer for active braking
-    private boolean isBraking = false; // ✅ Lock flag to prevent override during braking
+    private double motorPower = 1500;
+    private double lastMotorPower = 1500;
+    private ElapsedTime brakingTimer = new ElapsedTime();
+    private boolean isBraking = false;
 
     private boolean isLong = false;
     private boolean autoShooting = false;
@@ -67,7 +67,9 @@ public class Shooter implements Subsystem
             initialPosMixer + offsetPosition
     };
 
-    // Constructor for TeleOp with gamepads
+    private boolean autoSpinUpBoost = false;
+    private ElapsedTime autoBoostTimer = new ElapsedTime();
+
     public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,Husky husky,RobotAlignment robotAllignment,GamepadEx ct1, GamepadEx ct2)
     {
         this.ct1 = ct1;
@@ -79,7 +81,6 @@ public class Shooter implements Subsystem
         this.robotAllignment = robotAllignment;
     }
 
-    // Constructor for Autonomous without gamepads
     public Shooter(TelemetryCustom tl, Mixer mixer, Intake intk, Husky husky, RobotAlignment robotAllignment, boolean isLong)
     {
         this.ct1 = null;
@@ -94,7 +95,6 @@ public class Shooter implements Subsystem
     }
     public void LinkComponents(HardwareMap hardwareMap)
     {
-        // Only initialize button readers if gamepads exist (teleop mode)
         if (ct1 != null && ct2 != null)
         {
             Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
@@ -114,24 +114,18 @@ public class Shooter implements Subsystem
     {
         LinkComponents(hwMap);
 
-        // Initialize voltage compensation helper
         voltageHelper = new ShooterVoltageHelper(hwMap, BASE_SHOOTER_F);
 
-        // Get initial compensated F
-        shooterF = voltageHelper.GetCompensatedF(BASE_SHOOTER_F);
-        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
+        ForceUpdateShooterF();
 
         MotorAruncare1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         MotorAruncare1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorAruncare1.setDirection(DcMotorSimple.Direction.FORWARD);
-        MotorAruncare1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
         MotorAruncare2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         MotorAruncare2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         MotorAruncare2.setDirection(DcMotorSimple.Direction.REVERSE);
-        MotorAruncare2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
-        // CRITICAL: Ensure motors start at 0 velocity (don't retain previous commands)
         MotorAruncare1.setVelocity(0);
         MotorAruncare2.setVelocity(0);
 
@@ -167,11 +161,26 @@ public class Shooter implements Subsystem
 
     public void Run()
     {
-        // Update F based on filtered battery voltage (every 500ms)
         UpdateVoltageCompensation();
 
+        if (autoSpinUpBoost && autoBoostTimer.milliseconds() > 1800)
+        {
+            autoSpinUpBoost = false;
+
+            MotorAruncare1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            MotorAruncare2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            PIDFCoefficients pidfCoefficients = new PIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
+            MotorAruncare1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+            MotorAruncare2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+            PrepareLaunch();
+            SetShooterVelocity(motorPower);
+
+            telemetry.Log("✓ Raw→Velocity", String.format("Target: %.0f RPM @ %.2fm", motorPower, constDist));
+        }
+
         ReadButtons();
-        // Only process button inputs if buttons exist (teleop mode)
         if (Aruncare != null && Aruncare.wasJustPressed() && !mixer.IsEmpty())
         {
             shootingAllowed = true;
@@ -213,7 +222,6 @@ public class Shooter implements Subsystem
     }
     private void ReadButtons()
     {
-        // Only read buttons if they exist (teleop mode)
         if (OvverideShooting != null && VelocityChange != null &&
                 Aruncare != null && ThrowGreen != null && ThrowPurple != null)
         {
@@ -231,17 +239,19 @@ public class Shooter implements Subsystem
         runtime.reset();
     }
 
-    /**
-     * ✅ ULTRA-AGGRESSIVE BRAKING for ~0.5s deceleration
-     * Applies strong reverse power immediately when velocity needs to drop
-     */
     public void SetShooterVelocity(double velocity)
     {
         double currentVelocity = MotorAruncare1.getVelocity();
         double velocityDrop = lastMotorPower - velocity;
+        double velocityError = currentVelocity - velocity;
 
-        // ✅ TRIGGER BRAKING: Any drop >30 RPM gets aggressive braking
-        if (velocityDrop > 30 && currentVelocity > velocity + 20)
+        if (autoSpinUpBoost)
+        {
+            return;
+        }
+
+        // Brake on ANY downward velocity command if we're overshooting
+        if (velocityDrop > 7 && velocityError > 7)
         {
             if (!isBraking)
             {
@@ -250,13 +260,9 @@ public class Shooter implements Subsystem
                 telemetry.Log("⚡ BRAKE START", String.format("%.0f → %.0f RPM", currentVelocity, velocity));
             }
 
-            // ✅ EXTENDED BRAKING: 500ms of active reverse power
             if (brakingTimer.milliseconds() < 500)
             {
-                double velocityError = currentVelocity - velocity;
-
-                // ✅ ULTRA-STRONG brake power: 2x the error, capped at -1200 RPM
-                double brakePower = -Math.min(velocityError * 2.0, 1200);
+                double brakePower = -Math.min(velocityError * 2.6, 1200);
 
                 MotorAruncare1.setVelocity(brakePower);
                 MotorAruncare2.setVelocity(brakePower);
@@ -266,42 +272,32 @@ public class Shooter implements Subsystem
             }
             else
             {
-                // Braking complete
                 isBraking = false;
                 telemetry.Log("✓ BRAKE END", String.format("Now: %.0f RPM", currentVelocity));
             }
         }
-        else if (isBraking && (velocityDrop <= 30 || currentVelocity <= velocity + 20))
+        else if (isBraking && velocityError <= 5)
         {
-            // Target reached or changed - cancel braking
             isBraking = false;
             telemetry.Log("✓ BRAKE DONE", "Target reached");
         }
 
-        // Don't override while braking
         if (isBraking)
         {
             return;
         }
 
-        // Normal operation
         MotorAruncare1.setVelocity(velocity);
         MotorAruncare2.setVelocity(velocity);
         lastMotorPower = velocity;
     }
 
-    /**
-     * Update F based on filtered battery voltage
-     * Uses FlywheelVoltageHelper to compensate for battery drain
-     * Updates PIDF coefficients only when F changes significantly
-     */
     private void UpdateVoltageCompensation()
     {
         if (voltageHelper == null) return;
 
         double newF = voltageHelper.GetCompensatedF(BASE_SHOOTER_F);
 
-        // Only update motors if F changed significantly (reduce motor config spam)
         if (Math.abs(newF - shooterF) > 0.01)
         {
             shooterF = newF;
@@ -317,7 +313,7 @@ public class Shooter implements Subsystem
     public void StopShooterMotors() {
         SetShooterVelocity(0);
         lastMotorPower = 0;
-        isBraking = false; // ✅ Clear braking lock
+        isBraking = false;
     }
 
     private void Shooting()
@@ -384,7 +380,7 @@ public class Shooter implements Subsystem
         if (!isShooting && !mixer.IsEmpty() && currentShootingPosition >= 0)
         {
             isShooting = true;
-            caseSwitch = 0; // Reset state machine
+            caseSwitch = 0;
             ResetTimer();
             mixer.SetPozition(artPoz[currentShootingPosition]);
             telemetry.Log("Shooting position", currentShootingPosition);
@@ -450,14 +446,14 @@ public class Shooter implements Subsystem
             }
             else
             {
-                shootingAllowed = false; // Oprește shooting-ul curent
-                isShooting = false;      // Permite reapăsarea butonului
+                shootingAllowed = false;
+                isShooting = false;
             }
         }
         else
         {
             arrangedIndex++;
-            isShooting = false; // Reset for next shot in arranged/unarranged mode
+            isShooting = false;
         }
     }
 
@@ -474,32 +470,15 @@ public class Shooter implements Subsystem
         arrangedIndex = 0;
     }
 
-    private double GetTimeDist1()
-    {
-        // Get filtered battery voltage (this is the "true" battery when consistent)
-        double batteryVoltage = voltageHelper != null ? voltageHelper.GetFilteredVoltage() : 12.0;
-
-        if(constDist > 3.2)
-        {
-            // If battery is low (< 12V), motors need more time to reach target velocity
-            if(batteryVoltage < 12.3)
-                return 0.3;  // Extra time when battery is low
-            else
-                return 0.2;   // Normal time at full battery
-        }
-        else return 0.15;  // Short distance, quick shot
-    }
-
     private double GetTimeDist()
     {
-        // Get filtered battery voltage (this is the "true" battery when consistent)
         double batteryVoltage = voltageHelper != null ? voltageHelper.GetFilteredVoltage() : 12.0;
 
         if(constDist > 3.2 && batteryVoltage < 12.3)
-            return 0.3;  // Extra time at long distance when battery is low
+            return 0.31;
         else if (constDist < 3.2 && batteryVoltage < 12.3)
-            return 0.2;   // Extra time at normal distance
-        return 0.15;  // Short distance and battery, quick shot
+            return 0.2;
+        return 0.15;
     }
 
     private int GetShootingStateOld()
@@ -509,20 +488,20 @@ public class Shooter implements Subsystem
         double timerDependingOnDist  = GetTimeDist();
         double time = runtime.seconds();
         double currentVelocity = MotorAruncare1.getVelocity();
-        double velocityTolerance = 5; // RPM tolerance
+        double velocityTolerance = 5;
         boolean motorsReady = Math.abs(currentVelocity - motorPower) <= velocityTolerance;
 
         switch(caseSwitch)
         {
-            case 0: // Waiting for motors to spin up
-                if(time >= 0.25  && ( motorsReady || time >= timerDependingOnDist)) // Motors ready OR timeout
+            case 0:
+                if(time >= 0.25  && ( motorsReady || time >= timerDependingOnDist))
                 {
                     caseSwitch = 1;
                     ResetTimer();
                 }
                 return 0;
 
-            case 1: // Push lever (wait 0.3s)
+            case 1:
                 if(time >= 0.12)
                 {
                     caseSwitch = 2;
@@ -530,7 +509,7 @@ public class Shooter implements Subsystem
                 }
                 return 1;
 
-            case 2: // Retract lever (wait 0.2s)
+            case 2:
                 if(time >= 0.12)
                 {
                     caseSwitch = 3;
@@ -538,8 +517,8 @@ public class Shooter implements Subsystem
                 }
                 return 2;
 
-            case 3: // Complete shot
-                caseSwitch = 0; // Reset for next shot
+            case 3:
+                caseSwitch = 0;
                 return 3;
 
             default:
@@ -554,20 +533,18 @@ public class Shooter implements Subsystem
             return 0;
         double timerDependingOnDist  = GetTimeDist();
         double time = runtime.seconds();
-        double currentVelocity = MotorAruncare1.getVelocity();
-        double velocityTolerance = 5; // RPM tolerance
 
         switch(caseSwitch)
         {
-            case 0: // Waiting for motors to spin up
-                if(time >= timerDependingOnDist) // Motors ready OR timeout
+            case 0:
+                if(time >= timerDependingOnDist)
                 {
                     caseSwitch = 1;
                     ResetTimer();
                 }
                 return 0;
 
-            case 1: // Push lever (wait 0.3s)
+            case 1:
                 if(time >= 0.1)
                 {
                     caseSwitch = 2;
@@ -575,7 +552,7 @@ public class Shooter implements Subsystem
                 }
                 return 1;
 
-            case 2: // Retract lever (wait 0.2s)
+            case 2:
                 if(time >= 0.1  )
                 {
                     caseSwitch = 3;
@@ -583,8 +560,8 @@ public class Shooter implements Subsystem
                 }
                 return 2;
 
-            case 3: // Complete shot
-                caseSwitch = 0; // Reset for next shot
+            case 3:
+                caseSwitch = 0;
                 return 3;
 
             default:
@@ -598,34 +575,41 @@ public class Shooter implements Subsystem
         if(!isShooting)
             return 0;
         double time = runtime.seconds();
+        double timeout = 0.4;
+        double timerLever = 0.1;
+        if(mixer.GetArtifactCount() == 1)
+            timerLever = 0.16;
+        if(!isLong)
+            timeout = 0.2;
+
         switch(caseSwitch)
         {
-            case 0: // Waiting for motors to spin up
-                if(time >= 0.4) // Motors ready OR timeout
+            case 0:
+                if(time >= timeout)
                 {
                     caseSwitch = 1;
                     ResetTimer();
                 }
                 return 0;
 
-            case 1: // Push lever (wait 0.3s)
-                if(time >= 0.14)
+            case 1:
+                if(time >= 0.12)
                 {
                     caseSwitch = 2;
                     ResetTimer();
                 }
                 return 1;
 
-            case 2: // Retract lever (wait 0.2s)
-                if(time >= 0.14)
+            case 2:
+                if(time >= timerLever)
                 {
                     caseSwitch = 3;
                     ResetTimer();
                 }
                 return 2;
 
-            case 3: // Complete shot
-                caseSwitch = 0; // Reset for next shot
+            case 3:
+                caseSwitch = 0;
                 return 3;
 
             default:
@@ -633,7 +617,7 @@ public class Shooter implements Subsystem
                 return 0;
         }
     }
-    public boolean CanShootArranged() // verifica daca poate trage in ordinea data de husky
+    public boolean CanShootArranged()
     {
         if (mixer.IsEmpty())
             return false;
@@ -641,12 +625,11 @@ public class Shooter implements Subsystem
     }
     private void PrepareLaunch()
     {
-        // Get distance from RobotAllignment if available, otherwise use default distance
         if (robotAllignment != null) {
             constDist = robotAllignment.GetDistanceToTarget();
         } else {
             if(isLong)
-                constDist = 3.68 ; // meters - adjust as needed for your autonomous position
+                constDist = 3.97;
             else constDist = 2.15;
         }
         SetMotorPower();
@@ -656,11 +639,15 @@ public class Shooter implements Subsystem
     {
         double dist = constDist * 100;
         if(constDist > 2 && constDist < 5)
-            motorPower = 0.000017267*dist*dist*dist - 0.0106542*dist*dist + 2.96418*dist + 970; //1158.4306
+            motorPower = 0.000017267*dist*dist*dist - 0.0106542*dist*dist + 2.96418*dist + 970;
         else if(constDist >= 5)
             motorPower = 1500;
         else motorPower = 1100;
-        SetShooterVelocity(motorPower);
+
+        if (!autoSpinUpBoost)
+        {
+            SetShooterVelocity(motorPower);
+        }
     }
 
     private void HoodPosition()
@@ -675,19 +662,15 @@ public class Shooter implements Subsystem
 
     public double GetVelocityTarget() {return motorPower;}
 
-    // ==================== AUTONOMOUS SHOOTING ===========================================================
-
     public boolean AutoShoot()
     {
-        if (!autoShooting) return true; // Not shooting, done
+        if (!autoShooting) return true;
 
-        // Use the same shooting logic as teleop
         if (shootType == ShootingState.Arranged)
             Ordered();
         else
             Unordered();
 
-        // Check if shooting is complete
         if (mixer.IsEmpty())
         {
             autoShooting = false;
@@ -696,15 +679,12 @@ public class Shooter implements Subsystem
             arrangedIndex = 0;
             ResetShooter();
             telemetry.Log("Auto Shoot", "✓ COMPLETE!");
-            return true; // Done!
+            return true;
         }
 
-        return false; // Still shooting
+        return false;
     }
 
-    /**
-     * Start autonomous shooting sequence
-     */
     public void StartAutoShoot()
     {
         if (!mixer.IsEmpty() && !autoShooting)
@@ -714,21 +694,32 @@ public class Shooter implements Subsystem
             isShooting = false;
             arrangedIndex = 0;
 
-            // Determine shooting type (same logic as teleop)
             if (CanShootArranged())
                 shootType = ShootingState.Arranged;
             else
                 shootType = ShootingState.Unarranged;
-            SetShooterVelocity(motorPower);
+
+            telemetry.Log("⚡ Auto Shoot", String.format("Starting @ %.0f RPM", MotorAruncare1.getVelocity()));
         }
     }
 
-    // ==================== BATTERY COMPENSATION (INIT) ==================================================
+    public void StartAutoBoost()
+    {
+        if (!autoSpinUpBoost)
+        {
+            autoSpinUpBoost = true;
+            autoBoostTimer.reset();
 
-    /**
-     * Force immediate battery reading and F compensation during initialization
-     * No filtering - instant result for autonomous init
-     */
+            MotorAruncare1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            MotorAruncare2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            MotorAruncare1.setPower(1.0);
+            MotorAruncare2.setPower(1.0);
+
+            telemetry.Log("⚡ RAW POWER", "100% voltage boost!");
+        }
+    }
+
     public void ForceUpdateShooterF()
     {
         if (voltageHelper == null) return;
@@ -741,9 +732,6 @@ public class Shooter implements Subsystem
         telemetry.Log("Init F Comp", String.format("V=%.2fV → F=%.2f", voltageHelper.GetRawVoltage(), shooterF));
     }
 
-    /**
-     * Get current battery voltage for telemetry
-     */
     public double GetBatteryVoltage()
     {
         if (voltageHelper == null) return 12.0;

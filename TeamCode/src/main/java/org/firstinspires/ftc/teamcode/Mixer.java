@@ -115,7 +115,7 @@ public class Mixer implements Subsystem{
                 }
             }
         }
-        else if (isRunning && !waitForBall && GetTimerElapsed() > 0.25 && GetTimerElapsed() < 0.6)
+        else if (isRunning && !waitForBall && GetTimerElapsed() < 0.31)
         {
             waitForBall = true;
             if (artifactCount < 3)
@@ -124,7 +124,7 @@ public class Mixer implements Subsystem{
                 NextPosition();
             }
         }
-        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.6)
+        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.31)
         {
             isRunning = false;
             waitForBall = false;

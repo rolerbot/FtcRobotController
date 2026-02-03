@@ -37,7 +37,7 @@ public class AlbastruScurt6BallPark extends OpMode {
     private PathChain Path5; // Park
     private PathChain Path6;
 
-    private final double pickupWaitTime = 0.5; // seconds - wait time for field ball pickup
+    private final double pickupWaitTime = 0.2; // seconds - wait time for field ball pickup
 
     @Override
     public void init() {
@@ -97,7 +97,7 @@ public class AlbastruScurt6BallPark extends OpMode {
         Path3 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(53.000, 92.000),
-                                new Pose(47.761, 83)
+                                new Pose(47.761, 82)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
                 .build();
@@ -105,8 +105,8 @@ public class AlbastruScurt6BallPark extends OpMode {
         // Path 4: Pick up balls
         Path4 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(47.761, 83),
-                                new Pose(17.211, 83)
+                                new Pose(47.761, 82),
+                                new Pose(17.211, 82)
                         )
                 ).setTangentHeadingInterpolation()
                 .build();
@@ -123,7 +123,7 @@ public class AlbastruScurt6BallPark extends OpMode {
         // Path 5: Move to parking position
         Path6 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(54.000, 92.000),
+                                new Pose(53.000, 92.000),
                                 new Pose(47.876, 69.709)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(90))

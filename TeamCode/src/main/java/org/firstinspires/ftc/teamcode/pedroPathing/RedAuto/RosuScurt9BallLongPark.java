@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.pedroPathing.BlueAuto;
+package org.firstinspires.ftc.teamcode.pedroPathing.RedAuto;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -14,9 +14,9 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import org.firstinspires.ftc.teamcode.*;
 
-@Autonomous(name = "AlbastruScurt9BallLongPark", group = "Autonomous")
+@Autonomous(name = "RosuScurt9BallLongPark", group = "Autonomous")
 @Configurable // Panels
-public class AlbastruScurt9BallLongPark extends OpMode {
+public class RosuScurt9BallLongPark extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private Timer pathTimer, opmodeTimer;
@@ -67,8 +67,9 @@ public class AlbastruScurt9BallLongPark extends OpMode {
         shooter.Initialize(hardwareMap);
 
         // NOW create follower and set starting pose AFTER subsystems
+        // Blue: (19.092, 120.829, 144°) → Red: (124.908, 120.829, 36°)
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(19.092, 120.829, Math.toRadians(144)));
+        follower.setStartingPose(new Pose(124.908, 120.829, Math.toRadians(36)));
 
         buildPaths(); // Build paths
 
@@ -78,95 +79,115 @@ public class AlbastruScurt9BallLongPark extends OpMode {
     }
 
     public void buildPaths() {
-        // ✅ Path 1: First curve to intermediate position (from PedroAutonomous)
+        // ✅ Path 1: First curve to intermediate position
+        // Blue: (19.092, 120.829, 144°) → (61, 130) → (56, 107.139, 90°)
+        // Red: (124.908, 120.829, 36°) → (83, 130) → (88, 107.139, 90°)
         Path1 = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(19.092, 120.829),
-                                new Pose(61, 130),
-                                new Pose(56, 107.139)
+                                new Pose(124.908, 120.829),
+                                new Pose(83, 130),
+                                new Pose(88, 107.139)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(90))
+                ).setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(90))
                 .build();
 
-        // ✅ Path 2: Second line to shooting position (from PedroAutonomous)
+        // ✅ Path 2: Second line to shooting position
+        // Blue: (56, 107.139, 90°) → (53.000, 92.000, 136°)
+        // Red: (88, 107.139, 90°) → (91.000, 92.000, 44°)
         Path2 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(56, 107.139),
-                                new Pose(53.000, 92.000)
+                                new Pose(88, 107.139),
+                                new Pose(91.000, 92.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(136))
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(44))
                 .build();
 
         // Path 3: Prepare to pick up balls
+        // Blue: (53.000, 92.000, 136°) → (47.761, 82, 180°)
+        // Red: (91.000, 92.000, 44°) → (96.239, 82, 0°)
         Path3 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(53.000, 92.000),
-                                new Pose(47.761, 82)
+                                new Pose(91.000, 92.000),
+                                new Pose(96.239, 82)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(44), Math.toRadians(0))
                 .build();
 
         // Path 4: Pick up balls
+        // Blue: (47.761, 82) → (17.211, 82)
+        // Red: (96.239, 82) → (126.789, 82)
         Path4 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(47.761, 82),
-                                new Pose(17.211, 82)
+                                new Pose(96.239, 82),
+                                new Pose(126.789, 82)
                         )
                 ).setTangentHeadingInterpolation()
                 .build();
 
         // Path 5: Return to shooting position
+        // Blue: (17.211, 83, 180°) → (53.000, 92.000, 136°)
+        // Red: (126.789, 83, 0°) → (91.000, 92.000, 44°)
         Path5 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(17.211, 83),
-                                new Pose(53.000, 92.000)
+                                new Pose(126.789, 83),
+                                new Pose(91.000, 92.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(44))
                 .build();
 
         // Path 6: Prepare to pick up more balls
+        // Blue: (53.000, 92.000, 136°) → (48.641, 59, 180°)
+        // Red: (91.000, 92.000, 44°) → (95.359, 59, 0°)
         Path6 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(53.000, 92.000),
-                                new Pose(48.641, 59)
+                                new Pose(91.000, 92.000),
+                                new Pose(95.359, 59)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(44), Math.toRadians(0))
                 .build();
 
         // Path 7: Pick up more balls
+        // Blue: (48.641, 59) → (17.689, 59)
+        // Red: (95.359, 59) → (126.311, 59)
         Path7 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(48.641, 59),
-                                new Pose(17.689, 59)
+                                new Pose(95.359, 59),
+                                new Pose(126.311, 59)
                         )
                 ).setTangentHeadingInterpolation()
                 .build();
 
         // Path 8: Go back a bit
+        // Blue: (17.689, 59, 180°) → (30, 59, 180°)
+        // Red: (126.311, 59, 0°) → (114, 59, 0°)
         Path8 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(17.689, 59),
-                                new Pose(30, 59)
+                                new Pose(126.311, 59),
+                                new Pose(114, 59)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
                 .build();
 
         // Path 9: Return to shooting position
+        // Blue: (30, 59, 180°) → (53.000, 92.000, 136°)
+        // Red: (114, 59, 0°) → (91.000, 92.000, 44°)
         Path9 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(30, 59),
-                                new Pose(53.000, 92.000)
+                                new Pose(114, 59),
+                                new Pose(91.000, 92.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(44))
                 .build();
 
-        // Path 9: Park
+        // Path 10: Park
+        // Blue: (53.000, 92.000, 136°) → (52.956, 36.892, 180°)
+        // Red: (91.000, 92.000, 44°) → (91.044, 36.892, 0°)
         Path10 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(53.000, 92.000),
-                                new Pose(52.956, 36.892)
+                                new Pose(91.000, 92.000),
+                                new Pose(91.044, 36.892)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(44), Math.toRadians(0))
                 .build();
     }
 

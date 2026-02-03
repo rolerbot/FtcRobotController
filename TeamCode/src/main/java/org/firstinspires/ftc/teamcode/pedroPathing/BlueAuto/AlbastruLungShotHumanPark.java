@@ -37,7 +37,7 @@ public class AlbastruLungShotHumanPark extends OpMode {
     private PathChain Path5; // Parking
     private PathChain Path6;
 
-    private final double pickupWaitTime = 1.0; // seconds - wait time for ball pickup
+    private final double pickupWaitTime = 0.2; // seconds - wait time for ball pickup
 
     @Override
     public void init() {
@@ -87,17 +87,17 @@ public class AlbastruLungShotHumanPark extends OpMode {
         Path2 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(57.000, 35.000),
-                                new Pose(54, 15.000)
+                                new Pose(53, 15.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(111))
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(110.5))
                 .build();
 
         Path3 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(54, 15.000),
+                                new Pose(53, 15.000),
                                 new Pose(24.657, 13)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(111), Math.toRadians(189.5))
+                ).setLinearHeadingInterpolation(Math.toRadians(110.5), Math.toRadians(189.5))
                 .build();
 
         // Path 7: Final approach to human player
@@ -113,18 +113,18 @@ public class AlbastruLungShotHumanPark extends OpMode {
         Path5 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(13, 11),
-                                new Pose(58.000, 15.000)
+                                new Pose(53.000, 15.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(111))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(110.5))
                 .build();
 
         // Parking
         Path6 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(58.000, 15.000),
+                                new Pose(53.000, 15.000),
                                 new Pose(37.024, 15.127)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(111), Math.toRadians(90))
+                ).setLinearHeadingInterpolation(Math.toRadians(110.5), Math.toRadians(90))
                 .build();
     }
 
@@ -161,13 +161,15 @@ public class AlbastruLungShotHumanPark extends OpMode {
             case 0:
                 // Go to tag
                 follower.followPath(Path1, true);
+                intake.SetMotorPower(0.8);
+                follower.setMaxPower(0.2);
                 setPathState(1);
                 break;
 
             case 1:
                 // Wait to reach tag
                 if (!follower.isBusy()) {
-                    follower.setMaxPower(0.5); // Slower when going back from tag
+                    follower.setMaxPower(0.3); // Slower when going back from tag
                     follower.followPath(Path2, true);
                     setPathState(2);
                 }
@@ -178,6 +180,7 @@ public class AlbastruLungShotHumanPark extends OpMode {
                 if (!follower.isBusy()) {
                     follower.setMaxPower(0.8); // Reset to normal power
                     panelsTelemetry.debug("Status", "At shoot position - shooter spinning");
+                    pathTimer.resetTimer();
                     setPathState(3);
                 }
                 break;
@@ -190,8 +193,8 @@ public class AlbastruLungShotHumanPark extends OpMode {
                 panelsTelemetry.debug("Shooter", String.format("%.0f / %.0f RPM", currentRPM, targetRPM));
 
                 // When RPM is close to target OR timeout, start shooting
-                if (Math.abs(currentRPM - targetRPM) < 100 || pathTimer.getElapsedTimeSeconds() > 2.0) {
-                    panelsTelemetry.debug("Status", "Shooting!");
+                if (pathTimer.getElapsedTimeSeconds() > 0.8) {
+                    panelsTelemetry.debug("Status", "Shooting preload!");
                     shooter.StartAutoShoot(); // Start autonomous shooting
                     pathTimer.resetTimer();
                     setPathState(4);
@@ -199,11 +202,9 @@ public class AlbastruLungShotHumanPark extends OpMode {
                 break;
 
             case 4:
-                // Wait for shooting to complete
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 2.0) {
-                    panelsTelemetry.debug("Status", "Done shooting - going to human player");
-                    intake.SetPowerMax(); // Start intake for human player pickup
-                    follower.setMaxPower(0.4); // Slower for human player approach
+                // Wait for shooting to complete (3 preload balls)
+                if (shooter.IsShootingStateNone() && pathTimer.getElapsedTimeSeconds() > 3.4) {
+                    panelsTelemetry.debug("Status", "Done shooting - going to field balls");
                     follower.followPath(Path3, true);
                     setPathState(5);
                 }
@@ -250,7 +251,7 @@ public class AlbastruLungShotHumanPark extends OpMode {
 
             case 9:
                 // Wait for second shooting to complete
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 2.0) {
+                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 3.3) {
                     panelsTelemetry.debug("Status", "Done second shooting - parking");
                     intake.SetMotorPower(0.0); // Stop intake
                     follower.followPath(Path5, true);

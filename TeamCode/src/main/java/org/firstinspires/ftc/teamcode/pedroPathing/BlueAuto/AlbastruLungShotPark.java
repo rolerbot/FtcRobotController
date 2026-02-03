@@ -82,25 +82,15 @@ public class AlbastruLungShotPark extends OpMode {
         Path2 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(56.191, 40.590),
-                                new Pose(58.000, 15.000)
+                                new Pose(53.000, 15.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(111))
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(110.5))
                 .build();
 
-        // Go prepare for parking
-        Path4 = follower.pathBuilder().addPath(
-                        new BezierLine(
-                                new Pose(58.000, 15.000),
-                                new Pose(58.901, 10.327)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(111), Math.toRadians(90))
-                .build();
-
-        // Park
         Path3 = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(58.901, 10.327),
-                                new Pose(35.817, 10.892)
+                                new Pose(53, 15.000),
+                                new Pose(37.207, 12.809)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
                 .build();
@@ -180,20 +170,12 @@ public class AlbastruLungShotPark extends OpMode {
                 // Wait for shooting to complete
                 if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 2.0) {
                     panelsTelemetry.debug("Status", "Done shooting!");
-                    follower.followPath(Path4, true);
+                    follower.followPath(Path3, true);
                     setPathState(5);
                 }
                 break;
 
             case 5:
-                // Wait for prepare for parking
-                if (!follower.isBusy()) {
-                    follower.followPath(Path3, true);
-                    setPathState(6);
-                }
-                break;
-
-            case 6:
                 // Park and finish
                 if (!follower.isBusy()) {
                     panelsTelemetry.debug("Status", "COMPLETE!");

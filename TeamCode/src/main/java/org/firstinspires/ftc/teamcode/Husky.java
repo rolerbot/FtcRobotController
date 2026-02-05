@@ -42,7 +42,7 @@ public class Husky implements Subsystem
     private static final double HUSKYLENS_CENTER_X = HUSKYLENS_WIDTH / 2.0;
 
     // Camera offset relative to robot center
-    private static final double CAMERA_OFFSET_X = 4.52;  // 11cm to the Right
+    private static final double CAMERA_OFFSET_X = -4.52;  // 11cm to the Right
     private static final double CAMERA_OFFSET_Y = -1.53;
     private static final double CAMERA_HEIGHT = 12.48;     // 30cm above ground
 

@@ -13,6 +13,7 @@ public class Shooter implements Subsystem
     private ButtonReader ThrowGreen, ThrowPurple;
     private ButtonReader OvverideShooting;
     private ButtonReader VelocityChange;
+    ButtonReader AddMultiplier, SubtractMultiplier;
     private final GamepadEx ct1, ct2;
 
     private final double initialPosition = 0.257;
@@ -47,7 +48,9 @@ public class Shooter implements Subsystem
     private final double shooterI = 0.0;
     private final double shooterD = 8.0;
 
+    private final double IDLE_VELOCITY = 1500;
     private double motorPower = 1500;
+    private double targetShootingVelocity = 1500;
     private double lastMotorPower = 1500;
     private ElapsedTime brakingTimer = new ElapsedTime();
     private boolean isBraking = false;
@@ -55,7 +58,7 @@ public class Shooter implements Subsystem
     private boolean isLong = false;
     private boolean autoShooting = false;
     private boolean isAutoShooting = false;
-
+    private double breakMultiplier = 3.5;
     private ShootingState shootType = ShootingState.None;
 
     private final double offsetPosition = 0.1289;
@@ -93,6 +96,7 @@ public class Shooter implements Subsystem
         this.isLong = isLong;
         this.isAutoShooting = true;
     }
+
     public void LinkComponents(HardwareMap hardwareMap)
     {
         if (ct1 != null && ct2 != null)
@@ -102,6 +106,8 @@ public class Shooter implements Subsystem
             ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.X);
             VelocityChange = new ButtonReader(ct2, GamepadKeys.Button.B);
             OvverideShooting = new ButtonReader(ct2, GamepadKeys.Button.A);
+            AddMultiplier = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
+            SubtractMultiplier = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
         }
 
         ServoHood = hardwareMap.get(Servo.class, "ServoHood");
@@ -137,13 +143,17 @@ public class Shooter implements Subsystem
 
         telemetry.Log("Shooter Init", String.format("Base F: %.2f @ 12V (voltage-compensated)", BASE_SHOOTER_F));
     }
+
     public ShootingState GetShootingType(){return shootType;};
 
     public boolean IsShootingStateNone(){return shootType == ShootingState.None;};
+
     public void TriggerAutonomousShooting()
     {
         if (!mixer.IsEmpty())
         {
+            UpdateDistanceAndHood();
+            CalculateShootingVelocity();
             shootingAllowed = true;
             if (CanShootArranged())
             {
@@ -156,6 +166,7 @@ public class Shooter implements Subsystem
                 arrangedIndex = 0;
             }
             telemetry.Log("Auto ShootType:", shootType);
+            telemetry.Log("Target Vel:", String.format("%.0f RPM", targetShootingVelocity));
         }
     }
 
@@ -174,15 +185,16 @@ public class Shooter implements Subsystem
             MotorAruncare1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
             MotorAruncare2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
-            PrepareLaunch();
-            SetShooterVelocity(motorPower);
+            SetShooterVelocity(IDLE_VELOCITY);
 
-            telemetry.Log("✓ Raw→Velocity", String.format("Target: %.0f RPM @ %.2fm", motorPower, constDist));
+            telemetry.Log("✓ Raw→Velocity", String.format("Idle: %.0f RPM", IDLE_VELOCITY));
         }
 
         ReadButtons();
         if (Aruncare != null && Aruncare.wasJustPressed() && !mixer.IsEmpty())
         {
+            UpdateDistanceAndHood();
+            CalculateShootingVelocity();
             shootingAllowed = true;
             if (CanShootArranged())
             {
@@ -195,31 +207,43 @@ public class Shooter implements Subsystem
                 arrangedIndex = 0;
             }
             telemetry.Log("ShootType:", shootType);
+            telemetry.Log("Target Vel:", String.format("%.0f RPM", targetShootingVelocity));
         }
         else if(ThrowGreen != null && ThrowGreen.wasJustPressed() && !mixer.IsEmpty())
         {
+            UpdateDistanceAndHood();
+            CalculateShootingVelocity();
             shootType = ShootingState.Green;
             shootingAllowed = true;
+            telemetry.Log("Target Vel:", String.format("%.0f RPM", targetShootingVelocity));
         }
         else if(ThrowPurple != null && ThrowPurple.wasJustPressed() && !mixer.IsEmpty())
         {
+            UpdateDistanceAndHood();
+            CalculateShootingVelocity();
             shootType = ShootingState.Purple;
             shootingAllowed = true;
+            telemetry.Log("Target Vel:", String.format("%.0f RPM", targetShootingVelocity));
         }
         else if(OvverideShooting != null && OvverideShooting.wasJustPressed())
         {
             mixer.SetArtifacts();
+            UpdateDistanceAndHood();
+            CalculateShootingVelocity();
             shootType = ShootingState.Arranged;
             isShooting = false;
             arrangedIndex = 0;
             shootingAllowed = true;
+            telemetry.Log("Target Vel:", String.format("%.0f RPM", targetShootingVelocity));
         }
 
         if (shootingAllowed)
             Shooting();
-        PrepareLaunch();
-        HoodPosition();
+
+        UpdateDistanceAndHood();
+        MaintainVelocity();
     }
+
     private void ReadButtons()
     {
         if (OvverideShooting != null && VelocityChange != null &&
@@ -231,10 +255,22 @@ public class Shooter implements Subsystem
             ThrowGreen.readValue();
             ThrowPurple.readValue();
         }
+        AddMultiplier.readValue();
+        SubtractMultiplier.readValue();
     }
+
+    public void MultiplieBreaking()
+    {
+        if(AddMultiplier.wasJustPressed())
+            breakMultiplier += 0.5;
+        if(SubtractMultiplier.wasJustPressed() && breakMultiplier > 0.5)
+            breakMultiplier -= 0.5;
+    }
+
     public void SetPositionLever(double position){
         ServoRidicare.setPosition(position);
     }
+
     private void ResetTimer(){
         runtime.reset();
     }
@@ -250,24 +286,25 @@ public class Shooter implements Subsystem
             return;
         }
 
-        // Brake on ANY downward velocity command if we're overshooting
-        if (velocityDrop > 7 && velocityError > 7)
+        // Pure proportional braking - no cap, just velocity error * multiplier
+        if (shootingAllowed && velocityDrop > 7 && velocityError > 7)
         {
             if (!isBraking)
             {
                 brakingTimer.reset();
                 isBraking = true;
-                telemetry.Log("⚡ BRAKE START", String.format("%.0f → %.0f RPM", currentVelocity, velocity));
+                telemetry.Log("⚡ BRAKE START", String.format("%.0f → %.0f RPM (Δ%.0f)", currentVelocity, velocity, velocityError));
             }
 
             if (brakingTimer.milliseconds() < 500)
             {
-                double brakePower = -Math.min(velocityError * 2.6, 1200);
+                // Pure velocity error * multiplier - adjust 4.0 as needed for aggressiveness
+                double brakePower = -velocityError * breakMultiplier;
 
                 MotorAruncare1.setVelocity(brakePower);
                 MotorAruncare2.setVelocity(brakePower);
 
-                telemetry.Log("⚡ BRAKING", String.format("%.0f RPM @ %.0fms", brakePower, brakingTimer.milliseconds()));
+                telemetry.Log("⚡ BRAKING", String.format("%.0f RPM @ %.0fms (err:%.0f)", brakePower, brakingTimer.milliseconds(), velocityError));
                 return;
             }
             else
@@ -308,6 +345,7 @@ public class Shooter implements Subsystem
             telemetry.Log("F Voltage-Comp", String.format("V=%.2fV → F=%.2f", voltageHelper.GetFilteredVoltage(), shooterF));
         }
     }
+
     public double GetMotorPower() {return motorPower;}
 
     public void StopShooterMotors() {
@@ -369,8 +407,7 @@ public class Shooter implements Subsystem
                 currentShootingPosition = mixer.GetColorPosition(Color.Green);
             else if(shootType == ShootingState.Purple && mixer.GetCountPurple() > 0)
                 currentShootingPosition = mixer.GetColorPosition(Color.Purple);
-            else
-                currentShootingPosition = -1;
+            else currentShootingPosition = -1;
         }
         ShootColor();
     }
@@ -436,7 +473,6 @@ public class Shooter implements Subsystem
         }
         else if(shootType == ShootingState.Green || shootType == ShootingState.Purple)
         {
-
             if((shootType == ShootingState.Green && mixer.GetCountGreen() == 0) || (shootType == ShootingState.Purple && mixer.GetCountPurple() == 0))
             {
                 shootType = ShootingState.None;
@@ -459,10 +495,10 @@ public class Shooter implements Subsystem
 
     public boolean GetShootingAllow(){return shootingAllowed;};
 
-
     private void ResetShooter()
     {
-        StopShooterMotors();
+        SetShooterVelocity(IDLE_VELOCITY);
+        lastMotorPower = IDLE_VELOCITY;
         if (intake.IsMoving())
             intake.SetPowerMax();
         mixer.ResetServoPosition();
@@ -479,52 +515,6 @@ public class Shooter implements Subsystem
         else if (constDist < 3.2 && batteryVoltage < 12.3)
             return 0.2;
         return 0.15;
-    }
-
-    private int GetShootingStateOld()
-    {
-        if(!isShooting)
-            return 0;
-        double timerDependingOnDist  = GetTimeDist();
-        double time = runtime.seconds();
-        double currentVelocity = MotorAruncare1.getVelocity();
-        double velocityTolerance = 5;
-        boolean motorsReady = Math.abs(currentVelocity - motorPower) <= velocityTolerance;
-
-        switch(caseSwitch)
-        {
-            case 0:
-                if(time >= 0.25  && ( motorsReady || time >= timerDependingOnDist))
-                {
-                    caseSwitch = 1;
-                    ResetTimer();
-                }
-                return 0;
-
-            case 1:
-                if(time >= 0.12)
-                {
-                    caseSwitch = 2;
-                    ResetTimer();
-                }
-                return 1;
-
-            case 2:
-                if(time >= 0.12)
-                {
-                    caseSwitch = 3;
-                    ResetTimer();
-                }
-                return 2;
-
-            case 3:
-                caseSwitch = 0;
-                return 3;
-
-            default:
-                caseSwitch = 0;
-                return 0;
-        }
     }
 
     private int GetShootingState()
@@ -617,13 +607,15 @@ public class Shooter implements Subsystem
                 return 0;
         }
     }
+
     public boolean CanShootArranged()
     {
         if (mixer.IsEmpty())
             return false;
         return mixer.GetCountGreen() == 1 && mixer.GetCountPurple() == 2 && husky.GetID() != 0;
     }
-    private void PrepareLaunch()
+
+    private void UpdateDistanceAndHood()
     {
         if (robotAllignment != null) {
             constDist = robotAllignment.GetDistanceToTarget();
@@ -632,21 +624,28 @@ public class Shooter implements Subsystem
                 constDist = 3.97;
             else constDist = 2.15;
         }
-        SetMotorPower();
+        HoodPosition();
     }
 
-    private void SetMotorPower()
+    private void CalculateShootingVelocity()
     {
         double dist = constDist * 100;
         if(constDist > 2 && constDist < 5)
-            motorPower = 0.000017267*dist*dist*dist - 0.0106542*dist*dist + 2.96418*dist + 970;
+            targetShootingVelocity = 0.000017267 * dist * dist * dist - 0.0106542 * dist * dist + 2.96418 * dist + 970;
         else if(constDist >= 5)
-            motorPower = 1500;
-        else motorPower = 1100;
+            targetShootingVelocity = 1500;
+        else
+            targetShootingVelocity = 1100;
 
+        motorPower = targetShootingVelocity;
+    }
+
+    private void MaintainVelocity()
+    {
         if (!autoSpinUpBoost)
         {
-            SetShooterVelocity(motorPower);
+            if (shootingAllowed) {SetShooterVelocity(targetShootingVelocity);}
+            else {SetShooterVelocity(IDLE_VELOCITY);}
         }
     }
 
@@ -660,7 +659,7 @@ public class Shooter implements Subsystem
 
     public double GetVelocityCurrent() {return MotorAruncare1.getVelocity();}
 
-    public double GetVelocityTarget() {return motorPower;}
+    public double GetVelocityTarget() {return shootingAllowed ? targetShootingVelocity : IDLE_VELOCITY;}
 
     public boolean AutoShoot()
     {
@@ -689,6 +688,8 @@ public class Shooter implements Subsystem
     {
         if (!mixer.IsEmpty() && !autoShooting)
         {
+            UpdateDistanceAndHood();
+            CalculateShootingVelocity();
             autoShooting = true;
             shootingAllowed = true;
             isShooting = false;
@@ -699,7 +700,7 @@ public class Shooter implements Subsystem
             else
                 shootType = ShootingState.Unarranged;
 
-            telemetry.Log("⚡ Auto Shoot", String.format("Starting @ %.0f RPM", MotorAruncare1.getVelocity()));
+            telemetry.Log("⚡ Auto Shoot", String.format("Starting @ %.0f RPM → %.0f RPM", MotorAruncare1.getVelocity(), targetShootingVelocity));
         }
     }
 

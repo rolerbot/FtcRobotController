@@ -25,7 +25,7 @@ public class RosuLungShotPark extends OpMode {
     // Robot subsystems
     private TelemetryCustom telemetryCustom;
     private Intake intake;
-    private Husky husky;
+    private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
 
@@ -55,15 +55,15 @@ public class RosuLungShotPark extends OpMode {
         intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
-        husky = new Husky(telemetryCustom);
-        husky.Initialize(hardwareMap);
+        limeLight = new LimeLight(false, false);
+        limeLight.Initialize(hardwareMap);
 
         mixer = new Mixer(telemetryCustom, intake);
         mixer.Initialize(hardwareMap);
         mixer.SetArtifacts(); // Load 3 balls
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, true);
+        shooter = new Shooter(telemetryCustom, mixer, intake, limeLight, true);
         shooter.Initialize(hardwareMap);
 
         // NOW create follower and set starting pose AFTER subsystems
@@ -195,7 +195,7 @@ public class RosuLungShotPark extends OpMode {
         shooter.Run();
         if (shooter.IsShootingStateNone())
             mixer.Run();
-        husky.Run();
+        limeLight.Run();
 
         autonomousPathUpdate(); // Update autonomous state machine
 

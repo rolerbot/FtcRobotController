@@ -25,7 +25,7 @@ public class AlbastruLung8BallPark extends OpMode {
     // Robot subsystems
     private TelemetryCustom telemetryCustom;
     private Intake intake;
-    private Husky husky;
+    private LimeLight limelight;
     private Shooter shooter;
     private Mixer mixer;
 
@@ -55,15 +55,15 @@ public class AlbastruLung8BallPark extends OpMode {
         intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
-        husky = new Husky(telemetryCustom);
-        husky.Initialize(hardwareMap);
+        limelight = new LimeLight(true, false);
+        limelight.Initialize(hardwareMap);
 
         mixer = new Mixer(telemetryCustom, intake);
         mixer.Initialize(hardwareMap);
         mixer.SetArtifacts(); // Load 3 balls
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, true);
+        shooter = new Shooter(telemetryCustom, mixer, intake, limelight, true);
         shooter.Initialize(hardwareMap);
 
         // NOW create follower and set starting pose AFTER subsystems
@@ -176,7 +176,7 @@ public class AlbastruLung8BallPark extends OpMode {
         shooter.Run();
         if (shooter.IsShootingStateNone())
             mixer.Run();
-        husky.Run();
+        limelight.Run();
 
         autonomousPathUpdate(); // Update autonomous state machine
 

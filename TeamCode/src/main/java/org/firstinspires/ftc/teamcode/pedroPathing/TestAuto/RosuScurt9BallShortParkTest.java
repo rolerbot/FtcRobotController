@@ -24,7 +24,7 @@ public class RosuScurt9BallShortParkTest extends OpMode {
 
     private TelemetryCustom telemetryCustom;
     private Intake intake;
-    private Husky husky;
+    private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
 
@@ -41,14 +41,14 @@ public class RosuScurt9BallShortParkTest extends OpMode {
         intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
-        husky = new Husky(telemetryCustom);
-        husky.Initialize(hardwareMap);
+        limeLight = new LimeLight(true, false);
+        limeLight.Initialize(hardwareMap);
 
         mixer = new Mixer(telemetryCustom, intake);
         mixer.Initialize(hardwareMap);
         mixer.SetArtifacts();
 
-        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, false);
+        shooter = new Shooter(telemetryCustom, mixer, intake, limeLight, false);
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
@@ -168,7 +168,7 @@ public class RosuScurt9BallShortParkTest extends OpMode {
         follower.update();
 
         shooter.Run();
-        husky.Run();
+        limeLight.Run();
 
         autonomousPathUpdate();
 

@@ -26,8 +26,6 @@ public class Shooter implements Subsystem
     private final Mixer mixer;
     private final Intake intake;
     private final TelemetryCustom telemetry;
-    private final Husky husky;
-    private final RobotAlignment robotAllignment;
 
     private boolean shootingAllowed = false;
 
@@ -41,6 +39,7 @@ public class Shooter implements Subsystem
     private DcMotorEx MotorAruncare2 = null;
 
     private ShooterVoltageHelper voltageHelper = null;
+    private LimeLight limelight;
 
     private final double BASE_SHOOTER_F = 13.9;
     private double shooterF = BASE_SHOOTER_F;
@@ -54,7 +53,6 @@ public class Shooter implements Subsystem
     private double lastMotorPower = 1500;
     private ElapsedTime brakingTimer = new ElapsedTime();
     private boolean isBraking = false;
-
     private boolean isLong = false;
     private boolean autoShooting = false;
     private boolean isAutoShooting = false;
@@ -73,28 +71,26 @@ public class Shooter implements Subsystem
     private boolean autoSpinUpBoost = false;
     private ElapsedTime autoBoostTimer = new ElapsedTime();
 
-    public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk,Husky husky,RobotAlignment robotAllignment,GamepadEx ct1, GamepadEx ct2)
+    public Shooter(TelemetryCustom tl, Mixer mixer,Intake intk, GamepadEx ct1, GamepadEx ct2, LimeLight limelight)
     {
         this.ct1 = ct1;
         this.ct2 = ct2;
         this.mixer = mixer;
         this.intake = intk;
         this.telemetry = tl;
-        this.husky = husky;
-        this.robotAllignment = robotAllignment;
+        this.limelight = limelight;
     }
 
-    public Shooter(TelemetryCustom tl, Mixer mixer, Intake intk, Husky husky, RobotAlignment robotAllignment, boolean isLong)
+    public Shooter(TelemetryCustom tl, Mixer mixer, Intake intk,LimeLight limelight ,boolean isLong)
     {
         this.ct1 = null;
         this.ct2 = null;
         this.mixer = mixer;
         this.intake = intk;
         this.telemetry = tl;
-        this.husky = husky;
-        this.robotAllignment = robotAllignment;
         this.isLong = isLong;
         this.isAutoShooting = true;
+        this.limelight = limelight;
     }
 
     public void LinkComponents(HardwareMap hardwareMap)
@@ -402,8 +398,8 @@ public class Shooter implements Subsystem
     {
         if (!isShooting && !mixer.IsEmpty())
         {
-            currentShootingPosition = mixer.GetColorPosition(husky.artifactOrder[arrangedIndex]);
-            telemetry.Log("Target Color", ColorToString(husky.artifactOrder[arrangedIndex]));
+            currentShootingPosition = mixer.GetColorPosition(limelight.artifactOrder[arrangedIndex]);
+            telemetry.Log("Target Color", ColorToString(limelight.artifactOrder[arrangedIndex]));
         }
         ShootColor();
     }
@@ -621,13 +617,14 @@ public class Shooter implements Subsystem
     {
         if (mixer.IsEmpty())
             return false;
-        return mixer.GetCountGreen() == 1 && mixer.GetCountPurple() == 2 && husky.GetID() != 0;
+        return mixer.GetCountGreen() == 1 && mixer.GetCountPurple() == 2 && limelight.GetID() != 0;
     }
 
     private void UpdateDistanceAndHood()
     {
-        if (robotAllignment != null) {
-            constDist = robotAllignment.GetDistanceToTarget();
+        if (!isAutoShooting) {
+            constDist = limelight.GetDistanceToTarget();
+            constDist = 3;
         } else {
             if(isLong)
                 constDist = 3.97;

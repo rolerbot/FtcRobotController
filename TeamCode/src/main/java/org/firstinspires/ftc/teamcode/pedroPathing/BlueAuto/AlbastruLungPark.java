@@ -24,7 +24,7 @@ public class AlbastruLungPark extends OpMode {
     // Robot subsystems
     private TelemetryCustom telemetryCustom;
     private Intake intake;
-    private Husky husky;
+    private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
 
@@ -43,14 +43,14 @@ public class AlbastruLungPark extends OpMode {
         intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
-        husky = new Husky(telemetryCustom);
-        husky.Initialize(hardwareMap);
+        limeLight = new LimeLight(true, false);
+        limeLight.Initialize(hardwareMap);
 
         mixer = new Mixer(telemetryCustom, intake);
         mixer.Initialize(hardwareMap);
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, true);
+        shooter = new Shooter(telemetryCustom, mixer, intake, limeLight, true);
         shooter.Initialize(hardwareMap);
 
         // NOW create follower and set starting pose AFTER subsystems
@@ -85,7 +85,7 @@ public class AlbastruLungPark extends OpMode {
         follower.update(); // Update Pedro Pathing
 
         // Update subsystems
-        husky.Run();
+        limeLight.Run();
 
         autonomousPathUpdate(); // Update autonomous state machine
 

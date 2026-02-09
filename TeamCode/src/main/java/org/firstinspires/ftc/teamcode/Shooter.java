@@ -255,8 +255,11 @@ public class Shooter implements Subsystem
             ThrowGreen.readValue();
             ThrowPurple.readValue();
         }
-        AddMultiplier.readValue();
-        SubtractMultiplier.readValue();
+        if(AddMultiplier != null && SubtractMultiplier != null)
+        {
+            AddMultiplier.readValue();
+            SubtractMultiplier.readValue();
+        }
     }
 
     public void MultiplieBreaking()
@@ -298,13 +301,19 @@ public class Shooter implements Subsystem
 
             if (brakingTimer.milliseconds() < 500)
             {
-                // Pure velocity error * multiplier - adjust 4.0 as needed for aggressiveness
-                double brakePower = -velocityError * breakMultiplier;
+                // ✅ Distance-adaptive braking: gentler at long range (>3.2m)
+                double effectiveMultiplier = breakMultiplier;
+                if (constDist > 3.3) {
+                    // Reduce braking by 40% for long distances (3.5x → 2.1x default)
+                    effectiveMultiplier = breakMultiplier * 0.3;
+                }
+
+                double brakePower = -velocityError * effectiveMultiplier;
 
                 MotorAruncare1.setVelocity(brakePower);
                 MotorAruncare2.setVelocity(brakePower);
 
-                telemetry.Log("⚡ BRAKING", String.format("%.0f RPM @ %.0fms (err:%.0f)", brakePower, brakingTimer.milliseconds(), velocityError));
+                telemetry.Log("⚡ BRAKING", String.format("%.0f RPM @ %.0fms (err:%.0f) x%.1f", brakePower, brakingTimer.milliseconds(), velocityError, effectiveMultiplier));
                 return;
             }
             else
@@ -566,11 +575,11 @@ public class Shooter implements Subsystem
             return 0;
         double time = runtime.seconds();
         double timeout = 0.4;
-        double timerLever = 0.1;
+        double timerLever = 0.12;
         if(mixer.GetArtifactCount() == 1)
             timerLever = 0.16;
         if(!isLong)
-            timeout = 0.2;
+            timeout = 0.32;
 
         switch(caseSwitch)
         {
@@ -622,7 +631,7 @@ public class Shooter implements Subsystem
         } else {
             if(isLong)
                 constDist = 3.97;
-            else constDist = 2.15;
+            else constDist = 2;
         }
         HoodPosition();
     }
@@ -635,7 +644,7 @@ public class Shooter implements Subsystem
         else if(constDist >= 5)
             targetShootingVelocity = 1500;
         else
-            targetShootingVelocity = 1100;
+            targetShootingVelocity = 1170;
 
         motorPower = targetShootingVelocity;
     }

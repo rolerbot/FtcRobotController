@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.pedroPathing.BlueAuto;
+package org.firstinspires.ftc.teamcode.pedroPathing.TestAuto;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -14,25 +14,21 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import org.firstinspires.ftc.teamcode.*;
 
-@Autonomous(name = "AlbastruScurtShotPark", group = "Autonomous")
-@Configurable // Panels
-public class AlbastruScurtShotPark extends OpMode {
-    private TelemetryManager panelsTelemetry; // Panels Telemetry instance
-    public Follower follower; // Pedro Pathing follower instance
+@Autonomous(name = "AlbastruScurtShotParkTest", group = "Autonomous")
+@Configurable
+public class AlbastruScurtShotParkTest extends OpMode {
+    private TelemetryManager panelsTelemetry;
+    public Follower follower;
     private Timer pathTimer, opmodeTimer;
-    private int pathState; // Current autonomous path state (state machine)
+    private int pathState;
 
-    // Robot subsystems
     private TelemetryCustom telemetryCustom;
     private Intake intake;
     private Husky husky;
     private Shooter shooter;
     private Mixer mixer;
 
-    // Paths
-    private PathChain Path1; // Move to reading pos
-    private PathChain Path2; // Move to shooting pos
-    private PathChain Path3; // Park
+    private PathChain Path1, Path2, Path3;
 
     @Override
     public void init() {
@@ -40,7 +36,6 @@ public class AlbastruScurtShotPark extends OpMode {
         pathTimer = new Timer();
         opmodeTimer = new Timer();
 
-        // CRITICAL: Initialize subsystems FIRST, before creating follower
         telemetryCustom = new TelemetryCustom(telemetry);
 
         intake = new Intake(telemetryCustom);
@@ -51,18 +46,16 @@ public class AlbastruScurtShotPark extends OpMode {
 
         mixer = new Mixer(telemetryCustom, intake);
         mixer.Initialize(hardwareMap);
-        mixer.SetArtifacts(); // Load 3 balls
+        mixer.SetArtifacts();
 
-        // Pass null for robotAllignment - no IMU conflicts!
         shooter = new Shooter(telemetryCustom, mixer, intake, husky, null, false);
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        // NOW create follower and set starting pose AFTER subsystems
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(19.092, 120.829, Math.toRadians(144)));
 
-        buildPaths(); // Build paths
+        buildPaths();
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.debug("Mixer", "3 balls loaded");
@@ -70,56 +63,52 @@ public class AlbastruScurtShotPark extends OpMode {
     }
 
     public void buildPaths() {
-        // ✅ Path 1: First curve to intermediate position (from PedroAutonomous)
+        // Path 1: First curve to intermediate position
         Path1 = follower.pathBuilder().addPath(
-                        new BezierCurve(
-                                new Pose(19.092, 120.829),
-                                new Pose(61, 130),
-                                new Pose(56, 107.139)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(90))
+                new BezierCurve(
+                        new Pose(19.092, 120.829),
+                        new Pose(61, 130),
+                        new Pose(56, 107.139)
+                )
+        ).setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(90))
                 .build();
 
-        // ✅ Path 2: Second line to shooting position (from PedroAutonomous)
+        // Path 2: Second line to shooting position
         Path2 = follower.pathBuilder().addPath(
-                        new BezierLine(
-                                new Pose(56, 107.139),
-                                new Pose(53.000, 92.000)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(136))
+                new BezierLine(
+                        new Pose(56, 107.139),
+                        new Pose(53.000, 92.000)
+                )
+        ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(136))
                 .build();
 
-        // Path 2: Move from shooting position to parking position
+        // Path 3: Move to parking position
         Path3 = follower.pathBuilder().addPath(
-                        new BezierLine(
-                                new Pose(53, 92),
-                                new Pose(17, 107)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(90))
+                new BezierLine(
+                        new Pose(53, 92),
+                        new Pose(17, 107)
+                )
+        ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(90))
                 .build();
     }
 
     @Override
     public void start() {
         opmodeTimer.resetTimer();
-        shooter.ServoHood.setPosition(0.565);
         intake.SetMotorPower(0.8);
+        shooter.StartAutoBoost();
         setPathState(0);
     }
 
     @Override
     public void loop() {
-        follower.update(); // Update Pedro Pathing
+        follower.update();
 
-        // Update subsystems
         shooter.Run();
-        if (!shooter.GetShootingAllow())
-            mixer.Run();
         husky.Run();
 
-        autonomousPathUpdate(); // Update autonomous state machine
+        autonomousPathUpdate();
 
-        // Log values to Panels and Driver Station
         panelsTelemetry.debug("Path State", pathState);
         panelsTelemetry.debug("X", follower.getPose().getX());
         panelsTelemetry.debug("Y", follower.getPose().getY());
@@ -131,23 +120,30 @@ public class AlbastruScurtShotPark extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                // Go to shooting position
+                // Path 1: First curve to intermediate
+                mixer.Run();
                 follower.followPath(Path1, true);
+                follower.setMaxPower(0.7);
                 setPathState(1);
                 break;
 
             case 1:
-                if(!follower.isBusy())
-                {
+                // Wait to reach intermediate position
+                mixer.Run();
+                if (!follower.isBusy()) {
+                    follower.setMaxPower(0.7);
                     follower.followPath(Path2, true);
                     setPathState(2);
                 }
                 break;
 
             case 2:
-                // Wait to reach shooting position
+                // Wait for return to shoot position
+                mixer.Run();
                 if (!follower.isBusy()) {
+                    follower.setMaxPower(0.7);
                     panelsTelemetry.debug("Status", "At shoot position - shooter spinning");
+                    pathTimer.resetTimer();
                     setPathState(3);
                 }
                 break;
@@ -156,23 +152,22 @@ public class AlbastruScurtShotPark extends OpMode {
                 // Wait for shooter to spin up
                 double currentRPM = shooter.GetVelocityCurrent();
                 double targetRPM = shooter.GetVelocityTarget();
-
+                mixer.Run();
                 panelsTelemetry.debug("Shooter", String.format("%.0f / %.0f RPM", currentRPM, targetRPM));
 
-                // When RPM is close to target OR timeout, start shooting
-                if (Math.abs(currentRPM - targetRPM) < 100 || pathTimer.getElapsedTimeSeconds() > 1.7 ) {
-                    panelsTelemetry.debug("Status", "Shooting!");
-                    shooter.StartAutoShoot(); // Start autonomous shooting
+                if (pathTimer.getElapsedTimeSeconds() > 1.3) {
+                    panelsTelemetry.debug("Status", "Shooting preload!");
+                    shooter.StartAutoShoot();
                     pathTimer.resetTimer();
                     setPathState(4);
                 }
                 break;
 
             case 4:
-                // Wait for shooting to complete
-                if (shooter.AutoShoot() && pathTimer.getElapsedTimeSeconds() > 3.0) {
+                // Wait for shooting to complete (3 preload balls)
+                if (mixer.IsEmpty()) {
                     panelsTelemetry.debug("Status", "Done shooting - parking");
-                    intake.SetMotorPower(0.0); // Stop intake
+                    intake.SetMotorPower(0.0);
                     follower.followPath(Path3, true);
                     setPathState(5);
                 }
@@ -180,9 +175,10 @@ public class AlbastruScurtShotPark extends OpMode {
 
             case 5:
                 // Park and finish
+                mixer.Run();
                 if (!follower.isBusy()) {
-                    panelsTelemetry.debug("Status", "COMPLETE!");
-                    intake.SetMotorPower(0.0); // Ensure intake off
+                    panelsTelemetry.debug("Status", "COMPLETE - 3 BALLS SCORED!");
+                    intake.SetMotorPower(0.0);
                     setPathState(-1);
                 }
                 break;
@@ -197,6 +193,6 @@ public class AlbastruScurtShotPark extends OpMode {
     @Override
     public void stop() {
         follower.breakFollowing();
-        intake.SetMotorPower(0.0); // Stop intake
+        intake.SetMotorPower(0.0);
     }
 }

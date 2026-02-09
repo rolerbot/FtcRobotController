@@ -52,8 +52,7 @@ public class LimeLight
     }
     public void RelocalizationBlue()
     {
-        // Switch to pipeline for blue tag
-        limelight.pipelineSwitch(1); // Set to the number you assign Blue Tag in the Limelight UI
+       // Set to the number you assign Blue Tag in the Limelight UI
         Relocalization();
     }
     private void Relocalization()

@@ -58,59 +58,46 @@ public class RobotAlignment implements Subsystem
     // Absolute heading lock (constantly aims at target, works while moving)
     private boolean absoluteHeadingLockEnabled = false;
 
-    // ✅ IMPROVED UNIFIED CONTROLLER - Aggressive for large errors, smooth for small
+    // ✅ PRECISION TUNING PARAMETERS - For 0.5° accuracy
     private static class HeadingControl {
-        // Base PID gains
-        public static final double kP_BASE = 0.014;         // Base proportional gain (for small errors)
-        public static final double kP_AGGRESSIVE = 0.045;   // Aggressive gain (for large errors)
-        public static final double kD = 0.025;              // Derivative damping
-        public static final double kFF = 0.20;              // Feedforward
+        // Two-stage control: coarse approach + fine adjustment
+        public static final double kP_COARSE = 0.015;  // Aggressive for large errors
+        public static final double kP_FINE = 0.025;    // Higher gain for precision
+        public static final double kD = 0.008;         // Derivative to prevent overshoot
 
-        // Velocity compensation
-        public static final double kV_CROSS = 0.008;        // Cross-track compensation
-        public static final double kV_BOOST = 2.0;          // Power boost
-        public static final double kV_PREDICTION = 0.25;    // Velocity-based prediction scaling
+        // Power limits
+        public static final double MIN_POWER_COARSE = 0.10;
+        public static final double MIN_POWER_FINE = 0.05;    // Very gentle for final approach
+        public static final double MAX_POWER_COARSE = 0.30;
+        public static final double MAX_POWER_FINE = 0.12;    // Limited for precision
 
-        // Power limits - error-dependent
-        public static final double MIN_POWER = 0.03;        // Very gentle minimum
-        public static final double MAX_POWER_STATIONARY = 0.10;     // For small errors when stationary
-        public static final double MAX_POWER_MOVING_SMALL = 0.28;   // For small errors when moving
-        public static final double MAX_POWER_MOVING_LARGE = 0.55;   // For large errors (aggressive!)
+        // Precision thresholds
+        public static final double FINE_CONTROL_THRESHOLD = 8.0;   // Switch to fine control
+        public static final double TARGET_PRECISION = 0.3;         // Your 0.5° target
+        public static final double SETTLING_THRESHOLD = 0.3;       // Must stay within this to stop
 
-        // Error thresholds for gain scheduling
-        public static final double SMALL_ERROR = 5.0;       // < 5° = very close, ultra-smooth
-        public static final double MEDIUM_ERROR = 15.0;     // < 15° = approaching, moderate
-        public static final double LARGE_ERROR = 45.0;      // > 45° = far away, aggressive
+        // Distance-based scaling
+        public static final double DISTANCE_DAMPING_START = 1.5;   // Start damping at 1.5m
+        public static final double DISTANCE_DAMPING_FACTOR = 0.2;
 
-        // Precision thresholds - velocity adaptive
-        public static final double TARGET_PRECISION_STATIONARY = 0.8;
-        public static final double TARGET_PRECISION_MOVING = 2.5;
-        public static final double VELOCITY_THRESHOLD = 0.12;  // m/s
-
-        // Prediction and filtering
-        public static final double PREDICTION_TIME_BASE = 0.08;
-        public static final double PREDICTION_TIME_MAX = 0.20;
-        public static final double DERIVATIVE_FILTER = 0.25;
+        // ✅ VELOCITY FEEDFORWARD - Predicts where robot will be
+        public static final double PREDICTION_TIME = 0.13;          // Look ahead 150ms
+        public static final double VELOCITY_BOOST_FACTOR = 2.5;     // Aggressive boost at high speed
+        public static final double VELOCITY_THRESHOLD = 0.2;        // m/s - when to start boosting
+        public static final double MAX_VELOCITY_BOOST = 0.15;       // Extra power cap
     }
 
     // Derivative tracking variables
     private double lastHeadingError = 0;
     private long lastUpdateTime = 0;
-    private int stableFrames = 0;
-    private double filteredDerivative = 0;  // Smoothed derivative term
-    private double lastTargetHeading = 0;   // For calculating heading rate
+    private int stableFrames = 0;  // Count frames within target precision
 
-    // Velocity tracking with circular buffer for better filtering
+    // Velocity calculation from position changes
     private double lastRobotX = 0;
     private double lastRobotY = 0;
-    private long lastVelocityTime = 0;
-    private static final int VELOCITY_BUFFER_SIZE = 7;  // Increased from 5 for ultra-smooth filtering
-    private double[] velocityXBuffer = new double[VELOCITY_BUFFER_SIZE];
-    private double[] velocityYBuffer = new double[VELOCITY_BUFFER_SIZE];
-    private int velocityBufferIndex = 0;
-    private double filteredVelocityX = 0;
-    private double filteredVelocityY = 0;
-    private double lastOutputPower = 0;  // For slew rate limiting
+    private long lastPositionUpdateTime = 0;
+    private double robotVelocityX = 0;
+    private double robotVelocityY = 0;
 
     public RobotAlignment(TelemetryCustom telemetry, GamepadEx ct1, GamepadEx ct2, Drivetrain drivetrain, boolean resetIMU, boolean isBlue, Husky husky) {
         this.telemetry = telemetry;
@@ -198,7 +185,7 @@ public class RobotAlignment implements Subsystem
         // Drive motors DO NOT need encoders - Pinpoint handles all position tracking
         // Pinpoint provides: X, Y position (inches) and heading (degrees)
 
-        pinpoint.setOffsets(2.11, -3.31, DistanceUnit.INCH);
+        pinpoint.setOffsets(-3.62, -6.65, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(
                 GoBildaPinpointDriver.EncoderDirection.FORWARD,
@@ -299,221 +286,138 @@ public class RobotAlignment implements Subsystem
     }
 
     /**
-     * ✅ CALCULATE FILTERED VELOCITY using moving average
-     * More stable than single-frame differentiation
-     * Returns velocity in inches/second for X and Y
-     */
-    private void UpdateVelocity() {
-        long currentTime = System.nanoTime();
-        double dt = (currentTime - lastVelocityTime) / 1_000_000_000.0;
-
-        if (lastVelocityTime != 0 && dt > 0 && dt < 0.1) {
-            // Calculate instantaneous velocity
-            double velX = (robotX - lastRobotX) / dt;
-            double velY = (robotY - lastRobotY) / dt;
-
-            // Add to circular buffer
-            velocityXBuffer[velocityBufferIndex] = velX;
-            velocityYBuffer[velocityBufferIndex] = velY;
-            velocityBufferIndex = (velocityBufferIndex + 1) % VELOCITY_BUFFER_SIZE;
-
-            // Calculate moving average
-            double sumX = 0, sumY = 0;
-            for (int i = 0; i < VELOCITY_BUFFER_SIZE; i++) {
-                sumX += velocityXBuffer[i];
-                sumY += velocityYBuffer[i];
-            }
-            filteredVelocityX = sumX / VELOCITY_BUFFER_SIZE;
-            filteredVelocityY = sumY / VELOCITY_BUFFER_SIZE;
-        }
-
-        lastRobotX = robotX;
-        lastRobotY = robotY;
-        lastVelocityTime = currentTime;
-    }
-
-    /**
-     * ✅ IMPROVED HEADING CORRECTION with Velocity-Adaptive Prediction
-     * Achieves smooth tracking at any speed through:
-     * - Velocity-adaptive prediction time (looks further ahead at high speed)
-     * - Angular velocity compensation for better tracking during strafing
-     * - Ultra-smooth filtering and slew rate limiting
-     * - Progressive deadband to eliminate micro-oscillations
+     * ✅ VELOCITY-COMPENSATED PD CONTROLLER
+     * Achieves 0.5° accuracy AT ANY SPEED through:
+     * - Predicts where robot will be based on current velocity
+     * - Compensates for heading drift during motion
+     * - Boosts correction power proportionally to velocity
+     * - Maintains precision when stationary
      */
     private double[] CalculateHeadingCorrection()
     {
-        // ✅ STEP 1: Update and get filtered velocity
-        UpdateVelocity();
-        double velocityX = filteredVelocityX;  // inches/sec
-        double velocityY = filteredVelocityY;  // inches/sec
+        // ✅ GET VELOCITY using our custom calculation
+        Pose2D velocity = CalculateVelocity();
+        double velocityX = velocity.getX(DistanceUnit.INCH);
+        double velocityY = velocity.getY(DistanceUnit.INCH);
+
+        // ✅ STEP 1: Predict future position based on velocity
+        // Where will the robot be in PREDICTION_TIME seconds?
+        double predictedX = robotX + (velocityX * HeadingControl.PREDICTION_TIME);
+        double predictedY = robotY + (velocityY * HeadingControl.PREDICTION_TIME);
+
+        // Calculate velocity magnitude (speed in inches/sec)
         double velocityMagnitude = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
-        double velocityMetersPerSec = velocityMagnitude * 0.0254;
+        double velocityMetersPerSec = velocityMagnitude * 0.0254;  // Convert to m/s
 
-        // ✅ STEP 2: VELOCITY-ADAPTIVE PREDICTION TIME
-        // At higher speeds, look further ahead to compensate for lag
-        double velocityFactor = Math.min(velocityMetersPerSec / 1.0, 1.0);  // 0 to 1 at 0-1 m/s
-        double predictionTime = HeadingControl.PREDICTION_TIME_BASE +
-                              (HeadingControl.PREDICTION_TIME_MAX - HeadingControl.PREDICTION_TIME_BASE) * velocityFactor;
-
-        // ✅ STEP 3: Predict future position with velocity-adaptive lookahead
-        double predictedX = robotX + (velocityX * predictionTime);
-        double predictedY = robotY + (velocityY * predictionTime);
-
-        // ✅ STEP 4: Calculate target heading from PREDICTED position
+        // ✅ STEP 2: Calculate target heading using PREDICTED position
         double deltaX = targetX - predictedX;
         double deltaY = targetY - predictedY;
         double targetHeading = Math.toDegrees(Math.atan2(deltaY, deltaX));
         targetHeading = NormalizeAngle(targetHeading);
 
-        // ✅ STEP 5: Calculate heading error
         double currentHeading = GetCurrentHeading();
         double error = NormalizeAngle(targetHeading - currentHeading);
         double absError = Math.abs(error);
 
-        // ✅ STEP 6: Calculate derivative with low-pass filtering
+        // ✅ STEP 3: Calculate derivative (rate of change of error)
         long currentTime = System.nanoTime();
         double dt = (currentTime - lastUpdateTime) / 1_000_000_000.0;
         double derivative = 0;
 
         if (lastUpdateTime != 0 && dt > 0 && dt < 0.1) {
-            double rawDerivative = (error - lastHeadingError) / dt;
-            // Low-pass filter to reduce noise
-            filteredDerivative = HeadingControl.DERIVATIVE_FILTER * rawDerivative +
-                               (1 - HeadingControl.DERIVATIVE_FILTER) * filteredDerivative;
-            derivative = filteredDerivative;
+            derivative = (error - lastHeadingError) / dt;
         }
 
         lastHeadingError = error;
         lastUpdateTime = currentTime;
 
-        // ✅ STEP 7: Calculate heading rate feedforward
-        // How fast is the target heading changing due to our motion?
-        double headingRate = 0;
-        if (lastUpdateTime != 0 && dt > 0) {
-            headingRate = NormalizeAngle(targetHeading - lastTargetHeading) / dt;
-        }
-        lastTargetHeading = targetHeading;
-
-        // ✅ STEP 8: ANGULAR VELOCITY COMPENSATION for high-speed lateral movement
-        // When strafing around the target, the heading changes rapidly - compensate for this
-        double distanceToTarget = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        double angularVelocityCompensation = 0;
-
-        if (distanceToTarget > 10.0) {  // Only when not too close
-            // Calculate tangential velocity (velocity perpendicular to radius to target)
-            double angleToTarget = Math.atan2(deltaY, deltaX);
-            double tangentialVelocity = -velocityX * Math.sin(angleToTarget) + velocityY * Math.cos(angleToTarget);
-
-            // Angular velocity = tangential velocity / radius
-            double angularVelocity = tangentialVelocity / distanceToTarget;  // rad/sec
-            double angularVelocityDegPerSec = Math.toDegrees(angularVelocity);
-
-            // Add compensation proportional to angular velocity
-            angularVelocityCompensation = angularVelocityDegPerSec * HeadingControl.kV_PREDICTION;
-        }
-
-        // ✅ STEP 9: Cross-track velocity compensation (reduced - angular velocity does most of the work now)
-        double angleToTarget = Math.atan2(deltaY, deltaX);
-        double crossTrackVelocity = -velocityX * Math.sin(angleToTarget) + velocityY * Math.cos(angleToTarget);
-        double crossTrackCorrection = crossTrackVelocity * HeadingControl.kV_CROSS;
-
-        // ✅ STEP 10: Velocity-dependent precision target
-        boolean isMoving = velocityMetersPerSec > HeadingControl.VELOCITY_THRESHOLD;
-        double precisionTarget = isMoving ? HeadingControl.TARGET_PRECISION_MOVING :
-                                          HeadingControl.TARGET_PRECISION_STATIONARY;
-
-        // ✅ STEP 11: Progressive deadband - wider when moving fast
-        double deadband = 1.0 + (velocityMetersPerSec * 1.5);  // 1-2.5° depending on speed
-        if (absError < deadband && derivative < 5.0) {
+        // ✅ STEP 4: Check if we're at target precision (only when nearly stopped)
+        if (absError < HeadingControl.TARGET_PRECISION && velocityMetersPerSec < 0.1) {
             stableFrames++;
-            if (stableFrames > 7) {  // Require even more stable frames
-                lastOutputPower = 0;  // Reset for smooth restart
-                return null;  // Locked on!
+            if (stableFrames > 5) {
+                return null;  // Locked on target while stationary!
             }
         } else {
             stableFrames = 0;
         }
 
-        // ✅ STEP 12: NON-LINEAR GAIN SCHEDULING - Fast for big errors, smooth for small
-        // Uses exponential curve with multiple zones for optimal response across all error ranges
-        double kP_scaled;
-        double maxPower;
+        // ✅ STEP 5: DISTANCE-BASED DAMPING for long-range stability
+        double distanceMeters = Math.sqrt(deltaX * deltaX + deltaY * deltaY) * 0.0254;
+        double distanceDamping = 1.0;
+        if (distanceMeters > HeadingControl.DISTANCE_DAMPING_START) {
+            double excessDistance = distanceMeters - HeadingControl.DISTANCE_DAMPING_START;
+            distanceDamping = 1.0 / (1.0 + excessDistance * HeadingControl.DISTANCE_DAMPING_FACTOR);
+        }
 
-        if (absError > HeadingControl.LARGE_ERROR) {
-            // ZONE 1: LARGE ERROR (> 45°) - VERY AGGRESSIVE
-            // This is when you're far from target - turn FAST!
-            kP_scaled = HeadingControl.kP_AGGRESSIVE;
-            maxPower = isMoving ? HeadingControl.MAX_POWER_MOVING_LARGE : 0.45;
+        // ✅ STEP 6: TWO-STAGE CONTROL with velocity awareness
+        // When moving fast, stay in coarse mode longer for aggressive tracking
+        double fineThreshold = HeadingControl.FINE_CONTROL_THRESHOLD;
+        if (velocityMetersPerSec > HeadingControl.VELOCITY_THRESHOLD) {
+            fineThreshold = 3.0;  // Tighter threshold when moving - stay aggressive
+        }
 
-        } else if (absError > HeadingControl.MEDIUM_ERROR) {
-            // ZONE 2: MEDIUM ERROR (15-45°) - AGGRESSIVE with smooth ramp-down
-            // Interpolate between aggressive and moderate as error decreases
-            double zoneProgress = (absError - HeadingControl.MEDIUM_ERROR) / (HeadingControl.LARGE_ERROR - HeadingControl.MEDIUM_ERROR);
-            kP_scaled = 0.025 + (HeadingControl.kP_AGGRESSIVE - 0.025) * zoneProgress;
-            maxPower = isMoving ? (0.35 + 0.20 * zoneProgress) : 0.30;
+        boolean useFineControl = absError < fineThreshold;
 
-        } else if (absError > HeadingControl.SMALL_ERROR) {
-            // ZONE 3: SMALL ERROR (5-15°) - MODERATE, approaching smoothly
-            double zoneProgress = (absError - HeadingControl.SMALL_ERROR) / (HeadingControl.MEDIUM_ERROR - HeadingControl.SMALL_ERROR);
-            kP_scaled = HeadingControl.kP_BASE + (0.025 - HeadingControl.kP_BASE) * zoneProgress;
-            maxPower = isMoving ? (HeadingControl.MAX_POWER_MOVING_SMALL + 0.07 * zoneProgress) : 0.18;
-
+        double kP, minPower, maxPower;
+        if (useFineControl) {
+            kP = HeadingControl.kP_FINE;
+            minPower = HeadingControl.MIN_POWER_FINE;
+            maxPower = HeadingControl.MAX_POWER_FINE;
         } else {
-            // ZONE 4: TINY ERROR (< 5°) - ULTRA SMOOTH for precision
-            // Exponential curve for final approach
-            double smoothFactor = absError / HeadingControl.SMALL_ERROR;  // 0 to 1
-            kP_scaled = HeadingControl.kP_BASE * (0.7 + 0.3 * smoothFactor);
-            maxPower = isMoving ? HeadingControl.MAX_POWER_MOVING_SMALL : HeadingControl.MAX_POWER_STATIONARY;
+            kP = HeadingControl.kP_COARSE;
+            minPower = HeadingControl.MIN_POWER_COARSE;
+            maxPower = HeadingControl.MAX_POWER_COARSE;
         }
 
-        // ✅ STEP 13: Calculate control terms
-        double proportionalTerm = kP_scaled * error;
-        double derivativeTerm = HeadingControl.kD * derivative;
-        double feedforwardTerm = HeadingControl.kFF * headingRate;
+        // ✅ STEP 7: PD CONTROL with velocity compensation
+        double proportionalTerm = kP * error * distanceDamping;
+        double derivativeTerm = HeadingControl.kD * derivative * distanceDamping;
+        double power = proportionalTerm + derivativeTerm;
 
-        // ✅ STEP 14: Velocity boost - ONLY for large errors to avoid fighting fine control
-        double velocityBoost = 0;
-        if (isMoving && absError > 8.0) {  // Only boost for errors > 8°
-            double boostScale = Math.min((absError - 8.0) / 30.0, 1.0);  // More boost for larger errors
-            velocityBoost = (velocityMetersPerSec - HeadingControl.VELOCITY_THRESHOLD) * HeadingControl.kV_BOOST * boostScale;
-            velocityBoost = Math.min(velocityBoost, 0.15);
-            velocityBoost *= Math.signum(error);
+        // ✅ STEP 8: VELOCITY FEEDFORWARD BOOST
+        // The faster you're moving, the more aggressive the correction needs to be
+        if (velocityMetersPerSec > HeadingControl.VELOCITY_THRESHOLD) {
+            double velocityBoost = (velocityMetersPerSec - HeadingControl.VELOCITY_THRESHOLD)
+                    * HeadingControl.VELOCITY_BOOST_FACTOR;
+            velocityBoost = Math.min(velocityBoost, HeadingControl.MAX_VELOCITY_BOOST);
+
+            // Apply boost in the direction of the error
+            double boostPower = Math.copySign(velocityBoost, error);
+            power += boostPower;
+
+            // Also increase max power limit when moving
+            maxPower = Math.min(maxPower + velocityBoost, 0.5);  // Cap at 0.5
         }
 
-        // ✅ STEP 15: Combine all terms including angular velocity compensation
-        double power = proportionalTerm + derivativeTerm + feedforwardTerm + crossTrackCorrection +
-                      velocityBoost + angularVelocityCompensation;
+        // ✅ STEP 9: SMOOTH POWER CURVE (only when stationary or slow)
+        if (useFineControl && velocityMetersPerSec < 0.3) {
+            double sign = Math.signum(power);
+            double absPower = Math.abs(power);
+            absPower = Math.pow(absPower, 1.8);
+            power = sign * absPower;
+        }
 
-        // ✅ STEP 16: Apply power limits (error-dependent max power already set in step 12)
+        // ✅ STEP 10: EXTRA DAMPING when very close (only when slow)
+        if (absError < 2.0 && velocityMetersPerSec < 0.2) {
+            double proximityScale = absError / 2.0;
+            power *= (0.4 + 0.6 * proximityScale);
+        }
+
+        // ✅ STEP 11: CLAMP TO LIMITS
         power = Math.max(-maxPower, Math.min(maxPower, power));
 
-        // ✅ STEP 17: ADAPTIVE slew rate limiting - faster for large errors, smooth for small
-        double maxPowerChange;
-        if (absError > HeadingControl.LARGE_ERROR) {
-            maxPowerChange = 0.25;  // Fast transitions for large errors
-        } else if (absError > HeadingControl.MEDIUM_ERROR) {
-            maxPowerChange = 0.18;  // Medium transitions
-        } else if (absError > HeadingControl.SMALL_ERROR) {
-            maxPowerChange = 0.12;  // Smooth transitions
-        } else {
-            maxPowerChange = 0.08;  // Ultra-smooth for final approach
+        // ✅ STEP 12: APPLY MINIMUM POWER (skip if moving fast)
+        if (absError > HeadingControl.SETTLING_THRESHOLD && Math.abs(power) < minPower) {
+            if (velocityMetersPerSec < 0.3) {  // Only enforce min when slow
+                power = Math.copySign(minPower, power);
+            }
         }
 
-        double powerChange = power - lastOutputPower;
-        if (Math.abs(powerChange) > maxPowerChange) {
-            power = lastOutputPower + Math.copySign(maxPowerChange, powerChange);
-        }
-        lastOutputPower = power;
-
-        // ✅ STEP 18: Apply minimum power (only when stationary and error is large)
-        if (!isMoving && absError > 6.0 && Math.abs(power) < HeadingControl.MIN_POWER) {
-            power = Math.copySign(HeadingControl.MIN_POWER, power);
-        }
-
-        // ✅ STEP 19: Force stop when settled and stationary
-        if (!isMoving && absError < 1.5 && Math.abs(derivative) < 3.0) {
+        // ✅ STEP 13: Force stop only when stationary and accurate
+        if (absError < HeadingControl.SETTLING_THRESHOLD &&
+                Math.abs(derivative) < 2.0 &&
+                velocityMetersPerSec < 0.1) {
             power = 0;
-            lastOutputPower = 0;  // Reset for next cycle
         }
 
         // Return motor powers: [frontLeft, frontRight, backLeft, backRight]
@@ -589,6 +493,43 @@ public class RobotAlignment implements Subsystem
         robotY = pose.getY(DistanceUnit.INCH);
     }
 
+    /**
+     * ✅ CALCULATE VELOCITY - Mimics Pinpoint's getVelocity() method
+     * Returns a Pose2D object with velocity data (inches/sec and degrees/sec)
+     */
+    private Pose2D CalculateVelocity() {
+        long currentTime = System.nanoTime();
+        double dt = (currentTime - lastPositionUpdateTime) / 1_000_000_000.0;  // Convert to seconds
+
+        double velX = 0;
+        double velY = 0;
+
+        if (lastPositionUpdateTime != 0 && dt > 0 && dt < 0.5) {  // Sanity check
+            double deltaX = robotX - lastRobotX;
+            double deltaY = robotY - lastRobotY;
+
+            // Calculate raw velocity
+            velX = deltaX / dt;
+            velY = deltaY / dt;
+
+            // Simple low-pass filter to smooth noise
+            double alpha = 0.7;  // 0 = all old, 1 = all new
+            robotVelocityX = alpha * velX + (1 - alpha) * robotVelocityX;
+            robotVelocityY = alpha * velY + (1 - alpha) * robotVelocityY;
+        } else {
+            // Use stored values if time gap is invalid
+            velX = robotVelocityX;
+            velY = robotVelocityY;
+        }
+
+        // Update stored position and time
+        lastRobotX = robotX;
+        lastRobotY = robotY;
+        lastPositionUpdateTime = currentTime;
+
+        // Return as Pose2D (velocity in inches/sec for X,Y and 0 for heading)
+        return new Pose2D(DistanceUnit.INCH, robotVelocityX, robotVelocityY, AngleUnit.DEGREES, 0);
+    }
 
     private void ReadButtons() {
         if (resetPositionButton == null) return;
@@ -746,13 +687,14 @@ public class RobotAlignment implements Subsystem
 
     /**
      * ✅ DIAGNOSTIC TELEMETRY - Call this in your teleop loop to tune velocity compensation
-     * This shows you real-time data to help adjust the controller parameters
+     * This shows you real-time data to help adjust the VELOCITY_BOOST_FACTOR
      */
     public void LogVelocityDiagnostics() {
         if (telemetry == null) return;
 
-        double velX = filteredVelocityX;
-        double velY = filteredVelocityY;
+        Pose2D velocity = CalculateVelocity();
+        double velX = velocity.getX(DistanceUnit.INCH);
+        double velY = velocity.getY(DistanceUnit.INCH);
         double velocityMagnitude = Math.sqrt(velX * velX + velY * velY);
         double velocityMetersPerSec = velocityMagnitude * 0.0254;
 

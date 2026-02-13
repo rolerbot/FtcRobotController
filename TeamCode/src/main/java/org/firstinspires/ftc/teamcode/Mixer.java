@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.LED;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 public class Mixer implements Subsystem{
@@ -29,7 +30,6 @@ public class Mixer implements Subsystem{
     }
     public void LinkComponents(HardwareMap hardwareMap)
     {
-
         cSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
         ServoMixer1 = hardwareMap.get(Servo.class, "ServoMixer1");
         ServoMixer2 = hardwareMap.get(Servo.class, "ServoMixer2");
@@ -161,6 +161,18 @@ public class Mixer implements Subsystem{
         }
         logger.Log("Color not found", -1);
         return -1;
+    }
+
+    private void ReactualizareLED(LED led, int poz)
+    {
+        if(artifacte[poz] == Color.None)
+            led.close();
+        else
+        {
+            led.enableLight(true);
+        }
+
+
     }
 
     public int GetFirstAvailablePosition()

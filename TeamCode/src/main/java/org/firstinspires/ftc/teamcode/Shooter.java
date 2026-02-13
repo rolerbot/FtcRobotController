@@ -274,6 +274,11 @@ public class Shooter implements Subsystem
         runtime.reset();
     }
 
+    public void SetCustomDistanceMeters(double meters) {
+        this.constDist = meters;
+        HoodPosition();
+    }
+
     public void SetShooterVelocity(double velocity)
     {
         double currentVelocity = MotorAruncare1.getVelocity();
@@ -633,15 +638,25 @@ public class Shooter implements Subsystem
         HoodPosition();
     }
 
-    private void CalculateShootingVelocity()
-    {
-        double dist = constDist * 100;
-        if(constDist > 2 && constDist < 5)
-            targetShootingVelocity = 0.000017267 * dist * dist * dist - 0.0106542 * dist * dist + 2.96418 * dist + 970;
-        else if(constDist >= 5)
+    private void CalculateShootingVelocity() {
+        // SAFETY: Clamp distance to reasonable field limits
+        double safeDist = constDist;
+        if (safeDist < 1.0) {
+            safeDist = 1.0;
+            telemetry.Log("⚠️ Dist Clamp", String.format("%.2fm → 1.0m (too close)", constDist));
+        } else if (safeDist > 4.0) {
+            safeDist = 4.0;
+            telemetry.Log("⚠️ Dist Clamp", String.format("%.2fm → 4.0m (spike!)", constDist));
+        }
+
+        double dist = safeDist * 100; // Convert to cm for polynomial
+        if (safeDist > 1.5 && safeDist < 3.2)
+            targetShootingVelocity = 0.00000276112 * dist * dist * dist * dist - 0.0023425 * dist * dist * dist
+                    + 0.69986 * dist * dist - 83.41607 * dist + 4422.28104;
+        else if (safeDist >= 3.2)
             targetShootingVelocity = 1500;
         else
-            targetShootingVelocity = 1170;
+            targetShootingVelocity = 1100;
 
         motorPower = targetShootingVelocity;
     }

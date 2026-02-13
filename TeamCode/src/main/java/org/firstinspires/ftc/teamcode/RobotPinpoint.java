@@ -13,6 +13,9 @@ public class RobotPinpoint implements Subsystem {
     private GoBildaPinpointDriver pinpoint;
     private TelemetryCustom telemetry;
 
+    private GamepadEx gamepad1;
+    private GamepadEx gamepad2;
+
     // Button reader for reset
     private ButtonReader resetButton;
 
@@ -26,12 +29,14 @@ public class RobotPinpoint implements Subsystem {
     private double initialY = 0;
     private double initialHeading = 0;
 
-    public RobotPinpoint(TelemetryCustom telemetry, GamepadEx gamepad) {
+    public RobotPinpoint(TelemetryCustom telemetry, GamepadEx ct1, GamepadEx ct2) {
         this.telemetry = telemetry;
+        this.gamepad1 = ct1;
+        this.gamepad2 = ct2;
 
-        // Button for reset (example: DPAD_DOWN on gamepad)
-        if (gamepad != null) {
-            resetButton = new ButtonReader(gamepad, GamepadKeys.Button.DPAD_DOWN);
+        // Button for reset (DPAD_DOWN on gamepad 2)
+        if (gamepad2 != null) {
+            resetButton = new ButtonReader(gamepad2, GamepadKeys.Button.DPAD_DOWN);
         }
     }
 
@@ -45,7 +50,8 @@ public class RobotPinpoint implements Subsystem {
 
         // NU resetăm poziția - păstrăm poziția din Auto!
         // pinpoint.resetPosAndIMU();
-        // pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, initialX, initialY, AngleUnit.DEGREES, initialHeading));
+        // pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, initialX, initialY,
+        // AngleUnit.DEGREES, initialHeading));
         // pinpoint.recalibrateIMU();
 
         telemetry.Log("RobotPinpoint", "Initialized - Position preserved from Auto");
@@ -58,8 +64,7 @@ public class RobotPinpoint implements Subsystem {
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(
                 GoBildaPinpointDriver.EncoderDirection.FORWARD,
-                GoBildaPinpointDriver.EncoderDirection.FORWARD
-        );
+                GoBildaPinpointDriver.EncoderDirection.FORWARD);
     }
 
     public void Run() {
@@ -89,6 +94,7 @@ public class RobotPinpoint implements Subsystem {
 
     /**
      * Reset pinpoint position to initial values
+     * Also rumbles both controllers to provide haptic feedback
      */
     public void ResetPosition() {
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, initialX, initialY, AngleUnit.DEGREES, initialHeading));
@@ -121,12 +127,25 @@ public class RobotPinpoint implements Subsystem {
     }
 
     // Getters
-    public double GetX() { return x; }
-    public double GetY() { return y; }
-    public double GetHeading() { return heading; }
-    public double GetHeadingRadians() { return Math.toRadians(heading); }
+    public double GetX() {
+        return x;
+    }
 
-    public GoBildaPinpointDriver GetPinpoint() { return pinpoint; }
+    public double GetY() {
+        return y;
+    }
+
+    public double GetHeading() {
+        return heading;
+    }
+
+    public double GetHeadingRadians() {
+        return Math.toRadians(heading);
+    }
+
+    public GoBildaPinpointDriver GetPinpoint() {
+        return pinpoint;
+    }
 
     public void UpdateTelemetry(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
         telemetry.addLine("=== PINPOINT ===");

@@ -112,6 +112,13 @@ public class LimeLight implements Subsystem {
 
     public Color[] artifactOrder = { Color.None, Color.None, Color.None };
 
+    // Stability tracking for MT2 relocalization
+    private double lastMT2_X = 0;
+    private double lastMT2_Y = 0;
+    private int mt2StabilityCounter = 0;
+    private final int MT2_STABILITY_REQUIRED = 5; // Number of stable frames required
+    private final double MT2_DRIFT_THRESHOLD = 0.5; // Max inches of drift to consider "stable"
+
     public LimeLight(boolean IsBlue, boolean isAuto) {
         this.isBlue = IsBlue;
         this.IsAuto = isAuto;
@@ -175,10 +182,31 @@ public class LimeLight implements Subsystem {
             if (llResult.getFiducialResults() != null && !llResult.getFiducialResults().isEmpty()) {
                 int detectedId = llResult.getFiducialResults().get(0).getFiducialId();
                 // Update IdTag if it's currently 0 or if we see a different tag
-                if (IdTag == 0 || detectedId != IdTag) {
+                if ((IdTag == 0 || detectedId != IdTag) && detectedId >= 21 && detectedId <= 23) {
                     IdTag = detectedId;
+                    SetOrder(IdTag);
                 }
             }
+        }
+    }
+
+    private void SetOrder(int id) {
+        if (id == 21) {
+            artifactOrder[0] = Color.Green;
+            artifactOrder[1] = Color.Purple;
+            artifactOrder[2] = Color.Purple;
+            return;
+        }
+        if (id == 22) {
+            artifactOrder[0] = Color.Purple;
+            artifactOrder[1] = Color.Green;
+            artifactOrder[2] = Color.Purple;
+            return;
+        }
+        if (id == 23) {
+            artifactOrder[0] = Color.Purple;
+            artifactOrder[1] = Color.Purple;
+            artifactOrder[2] = Color.Green;
         }
     }
 
@@ -292,25 +320,42 @@ public class LimeLight implements Subsystem {
     }
 
     /**
-     * Compensates Pinpoint position for turret rotation offset.
-     * Call this method to update Pinpoint when using vision-corrected position with
-     * a rotating turret.
-     *
-     * The idea: MT2 gives robot position, but assumes camera is at robot center.
-     * We need to adjust for the actual camera offset due to turret rotation.
-     *
-     * @param turretAngleDeg Current turret angle in degrees
+     * /**
+     * ✅ UPDATED: Relocalizes Pinpoint using MT2 data with stability checks.
+     * accounting for turret offset.
      */
+    public void RelocalizePinpointWithMT2(double turretAngleDeg) {
+        if (!mt2_Valid) {
+            mt2StabilityCounter = 0;
+            return;
+        }
+
+        // 1. Check for stability (oscillation check)
+        double drift = Math.sqrt(Math.pow(mt2_X - lastMT2_X, 2) + Math.pow(mt2_Y - lastMT2_Y, 2));
+        if (drift < MT2_DRIFT_THRESHOLD) {
+            mt2StabilityCounter++;
+        } else {
+            mt2StabilityCounter = 0;
+        }
+
+        lastMT2_X = mt2_X;
+        lastMT2_Y = mt2_Y;
+
+        // 2. Only relocalize if stable over multiple frames
+        if (mt2StabilityCounter >= MT2_STABILITY_REQUIRED) {
+            CompensatePinpointForTurret(turretAngleDeg);
+            // mt2StabilityCounter = 0; // Optional: Reset to wait for next stable window
+        }
+    }
+
     public void CompensatePinpointForTurret(double turretAngleDeg) {
         if (pinpoint == null)
             return;
 
-        // 1. Update Limelight with CAMERA orientation (Robot Heading + Turret Angle)
-        // MT2 NEEDS to know the absolute field heading of the camera to work correctly.
+        // 1. Update Limelight with absolute camera orientation
         double robotHeadingDegWithOffset = pinpointHeading + HEADING_OFFSET_DEG;
         double cameraAbsoluteHeadingDeg = robotHeadingDegWithOffset + turretAngleDeg;
 
-        // Normalize for Limelight API
         while (cameraAbsoluteHeadingDeg <= -180)
             cameraAbsoluteHeadingDeg += 360;
         while (cameraAbsoluteHeadingDeg > 180)
@@ -318,42 +363,34 @@ public class LimeLight implements Subsystem {
 
         limelight.updateRobotOrientation(cameraAbsoluteHeadingDeg);
 
-        // Get current camera offset
+        // 2. Calculate camera offset relative to robot center
         double angleRad = Math.toRadians(turretAngleDeg);
         double camX = TURRET_ROBOT_X + Math.cos(angleRad) * CAMERA_TURRET_X_AT_ZERO
                 - Math.sin(angleRad) * CAMERA_TURRET_Y_AT_ZERO;
         double camY = TURRET_ROBOT_Y + Math.sin(angleRad) * CAMERA_TURRET_X_AT_ZERO
                 + Math.cos(angleRad) * CAMERA_TURRET_Y_AT_ZERO;
 
-        // 3. If we have valid vision data, compensate Pinpoint
-        // MT2 returns position assuming camera is at robot center (0,0,0) and facing
-        // "forward" (0,0,0)
+        // 3. Compensate Pinpoint
         if (mt2_Valid) {
-            // Transform camera offset by current robot heading to get FIELD space offset
+            // Field-space offset based on robot heading
             double robotHeadingRad = Math.toRadians(pinpointHeading);
             double cosH = Math.cos(robotHeadingRad);
             double sinH = Math.sin(robotHeadingRad);
 
-            // Rotate offset by robot heading
             double offsetX = camX * cosH - camY * sinH;
             double offsetY = camX * sinH + camY * cosH;
 
-            // Calculatecompensated robot position
-            // Robot center = Vision position - Rotated Camera Offset
+            // Vision Pose (MT2 gives robot center estimation already, but we refine it)
             double compensatedX = mt2_X - offsetX;
             double compensatedY = mt2_Y - offsetY;
 
-            // Update Pinpoint with compensated position
-            // USER REQUEST: Disabled for now to test differences
-            /*
-             * pinpoint.setPosition(new
-             * org.firstinspires.ftc.robotcore.external.navigation.Pose2D(
-             * org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.INCH,
-             * compensatedX,
-             * compensatedY,
-             * org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES,
-             * pinpointHeading));
-             */
+            // Apply to Pinpoint (Keep existing heading)
+            pinpoint.setPosition(new org.firstinspires.ftc.robotcore.external.navigation.Pose2D(
+                    org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.INCH,
+                    compensatedX,
+                    compensatedY,
+                    org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES,
+                    pinpointHeading));
         }
     }
 
@@ -555,6 +592,50 @@ public class LimeLight implements Subsystem {
      */
     public double GetDistanceToAprilTag() {
         return distanceToAprilTagInches;
+    }
+
+    /**
+     * ✅ Calculează distanța 2D (doar X și Y) de la CAMERĂ direct la AprilTag.
+     *
+     * Ignoră componenta Z (înălțimea) - perfectă pentru calcule de shooter pe plan
+     * orizontal.
+     * NU compensează pentru poziția robotului sau turetă - distanță PURĂ de la
+     * cameră!
+     *
+     * @return Distanța 2D în inches de la cameră la tag, sau -1 dacă nu vede tag-ul
+     */
+    public double GetDistance2DToAprilTagFromCamera() {
+        LLResult result = limelight.getLatestResult();
+
+        if (result == null || !result.isValid()) {
+            return -1;
+        }
+
+        if (result.getFiducialResults() == null || result.getFiducialResults().isEmpty()) {
+            return -1;
+        }
+
+        // Ia primul tag detectat
+        LLResultTypes.FiducialResult fiducial = result.getFiducialResults().get(0);
+
+        // Obține poziția robotului relativ la tag (în target space)
+        Pose3D robotPoseTargetSpace = fiducial.getRobotPoseTargetSpace();
+
+        if (robotPoseTargetSpace == null) {
+            return -1;
+        }
+
+        // robotPoseTargetSpace = unde e CAMERA față de TAG
+        // În sistemul camerei: X = left/right, Y = up/down, Z = forward/back
+        // Pentru distanță 2D ignorăm Y (înălțimea)
+        double x = robotPoseTargetSpace.getPosition().x; // Left/Right
+        double z = robotPoseTargetSpace.getPosition().z; // Forward/Back
+
+        // Calculează distanța 2D (doar pe planul orizontal)
+        double distance_meters_2D = Math.sqrt(x * x + z * z);
+
+        // Convertește în inches
+        return distance_meters_2D * METERS_TO_INCHES;
     }
 
     /**

@@ -6,17 +6,18 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.hardware.limelightvision.LLResult;
 
-public class TurretMechanismTutorial implements Subsystem {
+public class TurretManualPIDPosition implements Subsystem {
     private DcMotorEx MotorTurela = null;
     private LimeLight limeLight;
     private Shooter shooter;
 
-    private double kp = 0.023; // Standard kp
-    private double kd = 0.001; // Standard kd
+    // ✅ OPTIMIZAT pentru viteză mai mare
+    private double kp = 0.023; // Crescut de la 0.023 → 0.035 pentru răspuns mai rapid
+    private double kd = 0.0012; // Crescut de la 0.001 → 0.0015 pentru amortizare mai bună
     private double avgDistance = 0; // Filtered distance for smoothing
-    private double kp_rotation = 0.8; // Aggressive Vision-Only
-    private double kd_rotation = 0.006;
-    private double kv_head = 0.02; // High feedforward for rotation response
+    private double kp_rotation = 0.85; // Crescut de la 0.8 → 1.2 pentru tracking agresiv în mișcare
+    private double kd_rotation = 0.009; // Crescut de la 0.006 → 0.009
+    private double kv_head = 0.035; // Crescut de la 0.02 → 0.035 pentru compensare mai puternică
     private double persistentTargetAngle = 0; // Persistent target for tracking through blur
     private final double MAX_SLEW = 1.0; // Unlimited for tuning response
     private ElapsedTime deltaTimer = new ElapsedTime(); // For inertial integration
@@ -47,12 +48,12 @@ public class TurretMechanismTutorial implements Subsystem {
 
     private boolean hasTrackingLock = false; // Flag: have we seen a tag yet?
 
-    public TurretMechanismTutorial(LimeLight limeLight, Shooter shooter) {
+    public TurretManualPIDPosition(LimeLight limeLight, Shooter shooter) {
         this.limeLight = limeLight;
         this.shooter = shooter;
     }
 
-    public TurretMechanismTutorial(LimeLight limeLight) {
+    public TurretManualPIDPosition(LimeLight limeLight) {
         this.limeLight = limeLight;
         this.shooter = null;
     }
@@ -96,12 +97,9 @@ public class TurretMechanismTutorial implements Subsystem {
         deltaTime = deltaTimer.seconds();
         deltaTimer.reset();
 
-        // LIMITATION: Pure Vision-Only tracking cannot work through blur
-        // without "Inertial Tracking". If we lose the tag, we estimate where
-        // it went based on our own rotation.
-        // double rawRobotTurnVelocity = limeLight.GetRobotHeadingVelocity(); //
-        // DISABLED PINPOINT
-        double rawRobotTurnVelocity = 0.0;
+        // ✅ TRACKING INERTIAL ACTIVAT - permite shooting din mișcare!
+        // Obține viteza de rotație a robotului de la Pinpoint (prin LimeLight)
+        double rawRobotTurnVelocity = limeLight.GetRobotHeadingVelocity(); // ACTIVAT pentru mișcare!
 
         if (isTrackingTag) {
             LLResult result = limeLight.getLimelight().getLatestResult();
@@ -142,16 +140,22 @@ public class TurretMechanismTutorial implements Subsystem {
                 hasTrackingLock = true;
 
             } else {
-                // INERTIAL TRACKING: Disabled for now (User Request).
+                // ✅ TRACKING INERTIAL ACTIV - compensează când pierde tag-ul!
                 // Logic Flow:
-                // 1. If we have seen a tag before (hasTrackingLock), hold current position
-                // relative to robot.
-                // 2. If we have NEVER seen a tag (Start of TeleOp), go to CENTER (0.0).
+                // 1. Dacă a văzut tag-ul înainte ȘI nu a depășit timeout-ul → compensează rotația
+                // 2. Dacă a depășit timeout-ul → menține poziția curentă
+                // 3. Dacă nu a văzut niciodată tag → revine la centru
 
-                if (hasTrackingLock) {
-                    persistentTargetAngle = currentTurretAngle; // Hold Position
+                if (hasTrackingLock && lastTargetTimer.seconds() < VISION_TIMEOUT_SEC) {
+                    // Compensare activă - estimează unde s-a mutat tag-ul
+                    double inertialDelta = -rawRobotTurnVelocity * deltaTime;
+                    persistentTargetAngle += inertialDelta;
+                } else if (hasTrackingLock) {
+                    // Timeout depășit - menține ultima poziție cunoscută
+                    persistentTargetAngle = currentTurretAngle;
                 } else {
-                    persistentTargetAngle = 0; // go to Center (Start Position)
+                    // Nu a văzut niciodată tag - revine la centru
+                    persistentTargetAngle = 0;
                 }
             }
         } else {
@@ -176,9 +180,7 @@ public class TurretMechanismTutorial implements Subsystem {
 
         // Use Dynamic PID Scaling based on filtered robot rotation velocity
         // 1. LOW-PASS FILTER: (Alpha = 0.8 for faster response)
-        // rawRobotTurnVelocity = limeLight.GetRobotHeadingVelocity(); // DISABLED
-        // PINPOINT
-        rawRobotTurnVelocity = 0.0;
+        // ✅ Viteza de rotație este DEJA obținută mai sus - NU o mai reseta la 0!
         filteredRobotTurnSpeed = (0.8 * rawRobotTurnVelocity) + (0.2 * filteredRobotTurnSpeed);
 
         // Reach full aggressive rotation PID by 100 deg/s

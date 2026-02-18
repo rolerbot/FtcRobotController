@@ -48,9 +48,9 @@ public class AlbastruScurt9BallShortParkTest extends OpMode {
         mixer.Initialize(hardwareMap);
         mixer.SetArtifacts();
 
-        shooter = new Shooter(telemetryCustom, mixer, intake, limeLight, false);
+        shooter = new Shooter(telemetryCustom, mixer, limeLight, false);
         shooter.Initialize(hardwareMap);
-        shooter.ForceUpdateShooterF();
+        //shooter.ForceUpdateShooterF();
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(19.092, 120.829, Math.toRadians(144)));

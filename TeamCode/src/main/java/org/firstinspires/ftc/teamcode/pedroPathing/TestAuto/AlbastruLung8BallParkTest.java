@@ -70,9 +70,9 @@ public class AlbastruLung8BallParkTest extends OpMode {
         mixer.SetArtifacts(); // Load 3 balls
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, limeLight, true);
+        shooter = new Shooter(telemetryCustom, mixer, limeLight, true);
         shooter.Initialize(hardwareMap);
-        shooter.ForceUpdateShooterF();
+        //shooter.ForceUpdateShooterF();
 
         // NOW create follower and set starting pose AFTER subsystems
         // Blue: (57.000, 9.000, 90°)

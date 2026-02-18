@@ -63,7 +63,7 @@ public class AlbastruScurt9BallLongPark extends OpMode {
         mixer.SetArtifacts(); // Load 3 balls
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, limeLight, false);
+        shooter = new Shooter(telemetryCustom, mixer, limeLight, false);
         shooter.Initialize(hardwareMap);
 
         // NOW create follower and set starting pose AFTER subsystems

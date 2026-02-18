@@ -14,7 +14,7 @@ public class TeleOpRosu extends LinearOpMode {
     Mixer mixer;
     Shooter shooter;
     LimeLight limelight;
-    TurretMechanismTutorial turretMechanism;
+    TurretPositionControl turretMechanism;
     RobotPinpoint robotPinpoint;
     ButtonReader left;
     ButtonReader right;
@@ -50,10 +50,10 @@ public class TeleOpRosu extends LinearOpMode {
         limelight = new LimeLight(false, false);
         limelight.Initialize(hardwareMap);
 
-        shooter = new Shooter(myLogger, mixer, intake, ct1, ct2, limelight);
+        shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight);
         shooter.Initialize(hardwareMap);
 
-        turretMechanism = new TurretMechanismTutorial(limelight, shooter);
+        turretMechanism = new TurretPositionControl(limelight, shooter);
         turretMechanism.Initialize(hardwareMap);
 
         left = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
@@ -62,6 +62,7 @@ public class TeleOpRosu extends LinearOpMode {
     }
 
     public void runOpMode() {
+
         Initialize();
         waitForStart();
         InitAfter();
@@ -76,25 +77,7 @@ public class TeleOpRosu extends LinearOpMode {
                 mixer.Run();
             shooter.Run();
 
-            // Afișează telemetria de la RobotPinpoint
-            robotPinpoint.UpdateTelemetry(telemetry);
-
-            // Afișează telemetria de la LimeLight (Pinpoint, MT1, MT2)
-            limelight.UpdateTelemetry(telemetry);
-
-            /*
-             * telemetry.addLine("\n=== SHOOTER INFO ===");
-             * telemetry.addData("ShoottingAllowed", !shooter.IsNotShooting());
-             * 
-             * telemetry.addLine("\n=== MIXER INFO ===");
-             * telemetry.addData("Balls", mixer.GetArtifactCount());
-             * telemetry.addData("Ball 1:", mixer.GetColorForPoz(0));
-             * telemetry.addData("Ball 2:", mixer.GetColorForPoz(1));
-             * telemetry.addData("Ball 3:", mixer.GetColorForPoz(2));
-             * telemetry.addData("Sensor color R:", mixer.GetColorRed());
-             * telemetry.addData("Sensor color G:", mixer.GetColorGreen());
-             * telemetry.addData("Sensor color B:", mixer.GetColorBlue());
-             */
+            shooter.CalculateShootingVelocityTelemetry();
 
             telemetry.update();
         }

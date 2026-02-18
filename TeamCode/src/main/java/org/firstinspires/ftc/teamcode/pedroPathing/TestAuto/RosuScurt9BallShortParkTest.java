@@ -48,7 +48,7 @@ public class RosuScurt9BallShortParkTest extends OpMode {
         mixer.Initialize(hardwareMap);
         mixer.SetArtifacts();
 
-        shooter = new Shooter(telemetryCustom, mixer, intake, limeLight, false);
+        shooter = new Shooter(telemetryCustom, mixer, limeLight, false);
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 

@@ -5,198 +5,163 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.*;
 
-@TeleOp(name = "Shooter Tuning - Steps", group = "Tuning")
-public class ShooterTuning extends OpMode {
 
-    private DcMotorEx shooterMotor1, shooterMotor2;
+@TeleOp
+public class ShooterTuning extends OpMode
+{
+
+    private DcMotor shooterMotor1, shooterMotor2;
+    private Servo hoodServo;
     private LimeLight limelight;
-    private TurretMechanismTutorial turret;
-    private GamepadEx ct1;
-    private ButtonReader nextStep, prevStep, increaseValue, decreaseValue;
-
-    // Current tuning step
-    private int currentStep = 0;
-    private static final int TOTAL_STEPS = 2;
-
-    // Step names
-    private static final String[] STEP_NAMES = {
-            "PIDF - F Value (Feedforward)",
-            "Velocity Testing"
-    };
-
-    // PIDF values
-    private double F = 15.16;
-    private double P = 0.002; // Fixed
-    private double I = 0.0; // Not used
-    private double D = 0.0; // Not used
-
-    // Test velocity
-    private double testVelocity = 1000;
+    private Drivetrain drivetrain;
+    private double currenttargetVelocity = 1100;
+    double F = 0;
+    double P = 0;
+    double[] stepsizes = {10.0, 1.0, 0.1, 0.01, 0.001};
+    int stepIndex = 1;
+    ButtonReader stepIncrease, Fincrease, Fdescrease, Pincrease, Pdecrease,
+            HoodUp, HoodDown, VelocityUp, VelocityDown;
+    GamepadEx ct1, ct2;
 
     @Override
-    public void init() {
+    public void init()
+    {
         ct1 = new GamepadEx(gamepad1);
+        ct2 = new GamepadEx(gamepad2);
 
-        // Initialize Limelight
+        shooterMotor1  = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
+        shooterMotor2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
+        hoodServo = hardwareMap.get(Servo.class, "ServoHood");
+
+        shooterMotor1.setDirection(DcMotor.Direction.REVERSE);
+        shooterMotor2.setDirection(DcMotor.Direction.FORWARD);
+        shooterMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooterMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        hoodServo.setDirection(Servo.Direction.FORWARD);
+        hoodServo.setPosition(0.5);
+
+        drivetrain = new Drivetrain(ct1, null);
+        drivetrain.Initialize(hardwareMap);
+
         limelight = new LimeLight(true, false);
         limelight.Initialize(hardwareMap);
-        limelight.getLimelight().pipelineSwitch(2); // Blue pipeline
 
-        // Initialize Turret
-        turret = new TurretMechanismTutorial(limelight, null);
-        turret.Initialize(hardwareMap);
+        PIDFCoefficients pidfCoefficients = new  PIDFCoefficients(P,0, 0, F);
+        ((DcMotorEx) shooterMotor1).setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+        ((DcMotorEx) shooterMotor2).setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
-        // Initialize shooter motors
-        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "MotorAruncare1");
-        shooterMotor2 = hardwareMap.get(DcMotorEx.class, "MotorAruncare2");
+        // Gamepad1 - PIDF tuning
+        stepIncrease = new  ButtonReader(ct1, GamepadKeys.Button.B);
+        Fincrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
+        Fdescrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
+        Pincrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+        Pdecrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
 
-        shooterMotor1.setDirection(DcMotorEx.Direction.FORWARD);
-        shooterMotor2.setDirection(DcMotorEx.Direction.REVERSE);
+        HoodUp = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
+        HoodDown = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
 
-        shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        shooterMotor2.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        // Gamepad2 - Velocity control
+        VelocityUp = new ButtonReader(ct2, GamepadKeys.Button.Y);
+        VelocityDown = new ButtonReader(ct2, GamepadKeys.Button.A);
 
-        // Apply PIDF
-        updatePIDF();
-
-        // Button setup
-        nextStep = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
-        prevStep = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
-        increaseValue = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
-        decreaseValue = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
-
-        telemetry.addLine("=============================");
-        telemetry.addLine("  SHOOTER TUNING - READY");
-        telemetry.addLine("=============================");
-        telemetry.addLine();
-        telemetry.addLine("Controls:");
-        telemetry.addLine("• DPAD LEFT/RIGHT: Change step");
-        telemetry.addLine("• DPAD UP/DOWN: Adjust value");
-        telemetry.update();
+        telemetry.addLine("Initialized");
     }
 
     @Override
-    public void loop() {
-        // Read buttons
-        nextStep.readValue();
-        prevStep.readValue();
-        increaseValue.readValue();
-        decreaseValue.readValue();
+    public void loop()
+    {
+        //get button inputs
+        stepIncrease.readValue();
+        Fincrease.readValue();
+        Fdescrease.readValue();
+        Pincrease.readValue();
+        Pdecrease.readValue();
+        HoodUp.readValue();
+        HoodDown.readValue();
+        VelocityUp.readValue();
+        VelocityDown.readValue();
 
-        // Step navigation
-        if (nextStep.wasJustPressed()) {
-            currentStep = (currentStep + 1) % TOTAL_STEPS;
-        }
-        if (prevStep.wasJustPressed()) {
-            currentStep = (currentStep - 1 + TOTAL_STEPS) % TOTAL_STEPS;
-        }
-
-        // Value adjustment based on current step
-        if (increaseValue.wasJustPressed()) {
-            adjustValue(true);
-        }
-        if (decreaseValue.wasJustPressed()) {
-            adjustValue(false);
-        }
-
-        // Run turret and limelight
         limelight.Run();
-        turret.Run();
+        drivetrain.Run();
 
-        // Set motor velocity
-        shooterMotor1.setVelocity(testVelocity);
-        shooterMotor2.setVelocity(testVelocity);
+        if(stepIncrease.wasJustPressed())
+            stepIndex = (stepIndex + 1) % stepsizes.length;
 
-        // Read actual velocities
-        double vel1 = shooterMotor1.getVelocity();
-        double vel2 = shooterMotor2.getVelocity();
-        double avgVel = (vel1 + vel2) / 2.0;
-        double error = testVelocity - avgVel;
+        if(Fincrease.wasJustPressed())
+            F += stepsizes[stepIndex];
 
-        // Calculate distance
-        double turretAngle = turret.getCurrentAngle();
-        double rawDist = limelight.GetDistance2DToAprilTagFromRobotCenter(turretAngle);
-        double POI_OFFSET_INCHES = 18.11;
-        double finalDistInches = (rawDist > 0) ? (rawDist + POI_OFFSET_INCHES) : -1;
-        double finalDistCm = (finalDistInches > 0) ? finalDistInches * 2.54 : -1;
+        if(Fdescrease.wasJustPressed())
+            F -= stepsizes[stepIndex];
 
-        // Display telemetry
-        displayTelemetry(avgVel, error, finalDistCm);
-    }
+        if(Pincrease.wasJustPressed())
+            P += stepsizes[stepIndex];
 
-    private void adjustValue(boolean increase) {
-        double delta = increase ? 1 : -1;
+        if(Pdecrease.wasJustPressed())
+            P -= stepsizes[stepIndex];
 
-        switch (currentStep) {
-            case 0: // F value
-                F += delta * 0.1;
-                if (F < 0)
-                    F = 0;
-                updatePIDF();
-                break;
-
-            case 1: // Velocity
-                testVelocity += delta * (increase ? 20 : -10);
-                if (testVelocity < 0)
-                    testVelocity = 0;
-                break;
+        if(HoodUp.wasJustPressed())
+        {
+            double newPos = hoodServo.getPosition() + 0.003;
+            if(newPos <= 1.0)
+                hoodServo.setPosition(newPos);
         }
-    }
 
-    private void updatePIDF() {
-        PIDFCoefficients pidf = new PIDFCoefficients(P, I, D, F);
-        shooterMotor1.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, pidf);
-        shooterMotor2.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, pidf);
-    }
-
-    private void displayTelemetry(double avgVel, double error, double distCm) {
-        telemetry.addLine("============================");
-        telemetry.addData(">>> STEP", String.format("%d/%d: %s",
-                currentStep + 1, TOTAL_STEPS, STEP_NAMES[currentStep]));
-        telemetry.addLine("============================");
-        telemetry.addLine();
-
-        // Current step highlight
-        telemetry.addLine("--- CURRENT TUNING ---");
-        switch (currentStep) {
-            case 0:
-                telemetry.addData(">> F", String.format("%.2f", F));
-                telemetry.addData("   P (fixed)", String.format("%.4f", P));
-                break;
-            case 1:
-                telemetry.addData("   F", String.format("%.2f", F));
-                telemetry.addData(">> Target Vel", String.format("%.0f ticks/s", testVelocity));
-                break;
+        if(HoodDown.wasJustPressed())
+        {
+            double newPos = hoodServo.getPosition() - 0.003;
+            if(newPos >= 0.0)
+                hoodServo.setPosition(newPos);
         }
-        telemetry.addLine();
 
-        // Performance metrics
-        telemetry.addLine("--- PERFORMANCE ---");
-        telemetry.addData("Target Velocity", String.format("%.0f ticks/s", testVelocity));
-        telemetry.addData("Actual Velocity", String.format("%.0f ticks/s", avgVel));
-        telemetry.addData("Error", String.format("%.0f ticks/s (%.1f%%)",
-                error, (testVelocity > 0 ? Math.abs(error / testVelocity) * 100 : 0)));
-        telemetry.addLine();
-
-        // Distance
-        telemetry.addLine("--- DISTANCE ---");
-        if (distCm > 0) {
-            telemetry.addData("Distance", String.format("%.1f cm (%.1f in)",
-                    distCm, distCm / 2.54));
-        } else {
-            telemetry.addData("Distance", "No Target");
+        // Velocity control with gamepad2 Y/A buttons
+        if(VelocityUp.wasJustPressed())
+        {
+            currenttargetVelocity += 50; // Increase by 50 RPM
+            currenttargetVelocity = Math.min(5000, currenttargetVelocity); // Max 5000 RPM
         }
+
+        if(VelocityDown.wasJustPressed())
+        {
+            currenttargetVelocity -= 50; // Decrease by 50 RPM
+            currenttargetVelocity = Math.max(0, currenttargetVelocity); // Min 0 RPM
+        }
+
+        //set new PIDF values
+        PIDFCoefficients pidfCoefficients = new  PIDFCoefficients(P,0, 0, F);
+        ((DcMotorEx) shooterMotor1).setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+        ((DcMotorEx) shooterMotor2).setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+        //set velocity
+        ((DcMotorEx) shooterMotor1).setVelocity(currenttargetVelocity);
+        ((DcMotorEx) shooterMotor2).setVelocity(currenttargetVelocity);
+
+        double curVel1 = ((DcMotorEx) shooterMotor1).getVelocity();
+        double curVel2 = ((DcMotorEx) shooterMotor2).getVelocity();
+        double error = currenttargetVelocity - curVel1;
+
+        //telemetry
+        telemetry.addLine("=== SHOOTER TUNING ===");
+        telemetry.addData("Target Velocity", "%.0f RPM", currenttargetVelocity);
+        telemetry.addData("Motor 1 Velocity", "%.0f RPM", curVel1);
+        telemetry.addData("Motor 2 Velocity", "%.0f RPM", curVel2);
+        telemetry.addData("Error", "%.0f RPM", error);
+        telemetry.addData("Error %", "%.1f%%", (error / currenttargetVelocity) * 100);
         telemetry.addLine();
-
-        // Controls
-        telemetry.addLine("--- CONTROLS ---");
-        telemetry.addLine("DPAD ←/→: Change step");
-        telemetry.addLine("DPAD ↑/↓: Adjust value");
-        telemetry.addLine("B/X: Quick velocity adjust");
-
+        telemetry.addLine("=== GAMEPAD 1 - PIDF TUNING ===");
+        telemetry.addData("  F (D-Pad ←/→)", "%.4f", F);
+        telemetry.addData("  P (D-Pad ↑/↓)", "%.4f", P);
+        telemetry.addData("  Step (B)", "%.3f", stepsizes[stepIndex]);
+        telemetry.addData("  Hood (Bumpers)", "%.3f", hoodServo.getPosition());
+        telemetry.addLine();
+        telemetry.addLine("=== GAMEPAD 2 - VELOCITY ===");
+        telemetry.addLine("  Y: +50 RPM  |  A: -50 RPM");
+        telemetry.addLine();
+        telemetry.addData("Distance", "%.2f m", limelight.GetDistanceToTarget());
         telemetry.update();
+
     }
+
 }

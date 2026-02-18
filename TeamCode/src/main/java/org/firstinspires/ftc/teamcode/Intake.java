@@ -34,13 +34,13 @@ public class Intake implements Subsystem {
 
         // Only initialize buttons if gamepad exists (teleop mode)
         if (ct1 != null) {
-            ButtonSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
-            ButtonJos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+            ButtonSus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+            ButtonJos = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
         }
 
         MotorIN.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorIN.setDirection(DcMotorSimple.Direction.FORWARD);
+        MotorIN.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     private void ReadButtons() {

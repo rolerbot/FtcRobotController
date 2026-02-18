@@ -1,106 +1,171 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
-import com.qualcomm.robotcore.hardware.ColorSensor;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.LED;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.ElapsedTime;
-public class Mixer implements Subsystem{
+
+public class Mixer implements Subsystem {
     public Servo ServoMixer1 = null;
     public Servo ServoMixer2 = null;
+    public DcMotorEx MotorMixer = null;
     private TelemetryCustom logger;
     private final Intake intake;
     private final ElapsedTime runtime = new ElapsedTime();
+    private final ElapsedTime timerReset = new ElapsedTime();
     private boolean isRunning = false;
     private boolean waitForBall = false;
-    private final double initialPosition = 0.0317; //0.01
+    private boolean startedReset = false;
+    private boolean needsInitialReset = true;
+    private final double initialPosition = 0.0317;
     private double currentPosition = initialPosition;
-    private double offsetPosition = 0.1289;
+    private double offsetPosition = 0.1257;
+    boolean waitForReset = false;
+    public boolean stopDetection = false;
     private int countPurple = 0;
     private int countGreen = 0;
     ColorSensor cSensor;
-    public Color[] artifacte= {Color.None, Color.None, Color.None};
+    public Color[] artifacte = { Color.None, Color.None, Color.None };
     int artifactCount = 0;
 
-    public Mixer(TelemetryCustom lg, Intake intake)
-    {
+    public Mixer(TelemetryCustom lg, Intake intake) {
         this.intake = intake;
         this.logger = lg;
     }
-    public void LinkComponents(HardwareMap hardwareMap)
-    {
+
+    public void LinkComponents(HardwareMap hardwareMap) {
+
         cSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
         ServoMixer1 = hardwareMap.get(Servo.class, "ServoMixer1");
         ServoMixer2 = hardwareMap.get(Servo.class, "ServoMixer2");
+        MotorMixer = hardwareMap.get(DcMotorEx.class, "MotorIN");
     }
-    public void Initialize(HardwareMap hwMap){
+
+    public void Initialize(HardwareMap hwMap) {
         LinkComponents(hwMap);
         ServoMixer1.setDirection(Servo.Direction.REVERSE);
         ServoMixer2.setDirection(Servo.Direction.REVERSE);
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
+        MotorMixer.setDirection(DcMotorEx.Direction.FORWARD);
+        MotorMixer.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+
     }
-    public void StartTimer() {runtime.reset(); runtime.startTime();}
-    public int GetColorBlue()
-    {
+
+    public double GetServoPosConstant() {
+        return MotorMixer.getCurrentPosition();
+    }
+
+    private void PerformReset() {
+        if (!startedReset) {
+            logger.Log("Auto Reset", "Step 1: Servo Home...");
+            ServoMixer1.setPosition(initialPosition);
+            ServoMixer2.setPosition(initialPosition);
+            timerReset.reset();
+            startedReset = true;
+            return;
+        }
+
+        // Wait precisely 0.4 seconds for servos to settle
+        if (timerReset.seconds() < 0.43) {
+            return;
+        }
+
+        logger.Log("Auto Reset", "Step 2: Encoder Zero...");
+        // Reset encoder (Note: only works if encoder is in incremental mode "S")
+        MotorMixer.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        MotorMixer.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+
+        // Reset position tracking
+        currentPosition = initialPosition;
+        if (offsetPosition < 0)
+            offsetPosition *= (-1);
+
+        // Clear all artifact data
+        artifactCount = 0;
+        for (int i = 0; i <= 2; i++)
+            artifacte[i] = Color.None;
+        countPurple = 0;
+        countGreen = 0;
+
+        // Reset state flags
+        isRunning = false;
+        waitForBall = false;
+        waitForReset = false;
+
+        // Reset timers
+        runtime.reset();
+
+
+        logger.Log("✓ Reset Complete", "Ready to detect balls");
+        logger.Log("Encoder Position", MotorMixer.getCurrentPosition());
+
+        needsInitialReset = false; // FINISHED Reset
+        startedReset = false;
+    }
+
+    public void StartTimer() {
+        runtime.reset();
+        runtime.startTime();
+    }
+
+    public int GetColorBlue() {
         return cSensor.blue();
     }
 
-    public int GetColorGreen()
-    {
+    public int GetColorGreen() {
         return cSensor.green();
     }
 
-    public int GetColorRed()
-    {
+    public int GetColorRed() {
         return cSensor.red();
     }
-    public double GetCurrentPosition(){
+
+    public double GetCurrentPosition() {
         return currentPosition;
     }
 
-    public void ReverseIncrement()
-    {
+    public void ReverseIncrement() {
         offsetPosition *= (-1);
     }
-    private void IncrementPosition()
-    {
-        if(this.currentPosition + this.offsetPosition > 1.0 || this.currentPosition + this.offsetPosition < -1.0)
+
+    private void IncrementPosition() {
+        if (this.currentPosition + this.offsetPosition > 1.0 || this.currentPosition + this.offsetPosition < -1.0)
             this.offsetPosition *= (-1);
         this.currentPosition += this.offsetPosition;
     }
-    ///  Rotates the Mixer 60 degrees to a side, depending on servo limits.
-    void NextPosition()
-    {
+
+    /// Rotates the Mixer 60 degrees to a side, depending on servo limits.
+    void NextPosition() {
         IncrementPosition();
         ServoMixer1.setPosition(this.GetCurrentPosition());
         ServoMixer2.setPosition(this.GetCurrentPosition());
     }
-    public double GetServoPosition() {return ServoMixer1.getPosition();}
 
-    public void ResetServoPosition()
-    {
+    public void ResetServoPosition() {
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
         currentPosition = initialPosition;
         artifactCount = 0;
         isRunning = false;
-        if(offsetPosition < 0)
+        waitForBall = false;
+        runtime.reset();
+        if (offsetPosition < 0)
             offsetPosition *= (-1);
         for (int i = 0; i <= 2; i++)
             artifacte[i] = Color.None;
     }
 
-    void ArtifacteIndx()
-    {
-        if (!intake.IsStopped() && !isRunning && !waitForBall && artifactCount < 3)
-        {
+    void ArtifacteIndx() {
+        // Don't run if we're busy or if Shooter has taken priority
+        if (startedReset || waitForReset || stopDetection)
+            return;
+
+        if (!intake.IsStopped() && !isRunning && !waitForBall && artifactCount < 3) {
             StartTimer();
             Color detectedColor = Culoare(cSensor);
 
-            if(detectedColor != Color.None)
-            {
+            if (detectedColor != Color.None) {
                 artifacte[artifactCount++] = detectedColor;
                 CalculateFrequency();
                 isRunning = true;
@@ -114,30 +179,23 @@ public class Mixer implements Subsystem{
                     index++;
                 }
             }
-        }
-        else if (isRunning && !waitForBall && GetTimerElapsed() < 0.31)
-        {
+        } else if (isRunning && !waitForBall && GetTimerElapsed() < 0.31) {
             waitForBall = true;
-            if (artifactCount < 3)
-            {
+            if (artifactCount < 3) {
                 IncrementPosition();
                 NextPosition();
             }
-        }
-        else if(isRunning && waitForBall && GetTimerElapsed() >= 0.31)
-        {
+        } else if (isRunning && waitForBall && GetTimerElapsed() >= 0.31) {
             isRunning = false;
             waitForBall = false;
             CalculateFrequency();
         }
     }
 
-    private void CalculateFrequency()
-    {
+    private void CalculateFrequency() {
         countPurple = 0;
         countGreen = 0;
-        for (Color col : artifacte)
-        {
+        for (Color col : artifacte) {
             if (col == Color.Purple)
                 countPurple++;
             else if (col == Color.Green)
@@ -147,14 +205,11 @@ public class Mixer implements Subsystem{
         logger.Log("Nr. bile verzi", countGreen);
     }
 
-    public int GetColorPosition(Color color)
-    {
+    public int GetColorPosition(Color color) {
         logger.Log("Searching for", Utils.ColorToString(color));
-        for (int i = 0; i < 3; i++)
-        {
+        for (int i = 0; i < 3; i++) {
             logger.Log(String.format("Slot %d", i), Utils.ColorToString(artifacte[i]));
-            if (artifacte[i] != Color.None && artifacte[i] == color)
-            {
+            if (artifacte[i] != Color.None && artifacte[i] == color) {
                 logger.Log("Found at position", i);
                 return i;
             }
@@ -163,30 +218,21 @@ public class Mixer implements Subsystem{
         return -1;
     }
 
-    private void ReactualizareLED(LED led, int poz)
-    {
-        if(artifacte[poz] == Color.None)
-            led.close();
-        else
-        {
-            led.enableLight(true);
-        }
-
-
-    }
-
-    public int GetFirstAvailablePosition()
-    {
-        for(int i = 0; i < artifacte.length; i++)
-        {
-            if(artifacte[i] != Color.None)
+    public int GetFirstAvailablePosition() {
+        for (int i = 0; i < artifacte.length; i++) {
+            if (artifacte[i] != Color.None)
                 return i;
         }
         return -1;
     }
 
-    public int GetCountGreen(){return countGreen;}
-    public int GetCountPurple(){return countPurple;}
+    public int GetCountGreen() {
+        return countGreen;
+    }
+
+    public int GetCountPurple() {
+        return countPurple;
+    }
 
     private Color Culoare2(ColorSensor cSensor) {
         int red = cSensor.red();
@@ -213,6 +259,7 @@ public class Mixer implements Subsystem{
 
         return Color.None;
     }
+
     private Color Culoare(ColorSensor cSensor) {
         int red = cSensor.red();
         int green = cSensor.green();
@@ -243,8 +290,7 @@ public class Mixer implements Subsystem{
         return Color.None;
     }
 
-    private Color Culoare1(ColorSensor cSensor)
-    {
+    private Color Culoare1(ColorSensor cSensor) {
         int red = cSensor.red();
         int green = cSensor.green();
         int blue = cSensor.blue();
@@ -257,24 +303,24 @@ public class Mixer implements Subsystem{
 
         return Color.None;
     }
-    public boolean IsEmpty()
-    {
+
+    public boolean IsEmpty() {
         return artifactCount == 0;
     }
-    public void RemoveArtifact(int position)
-    {
-        if(position >= 0 && position < artifacte.length)
-        {
+
+    public void RemoveArtifact(int position) {
+        if (position >= 0 && position < artifacte.length) {
             artifacte[position] = Color.None;
             artifactCount--;
             CalculateFrequency();
         }
     }
 
-    public Color GetColorForPoz(int poz) {return artifacte[poz];}
+    public Color GetColorForPoz(int poz) {
+        return artifacte[poz];
+    }
 
-    public void SetArtifacts()
-    {
+    public void SetArtifacts() {
         artifacte[0] = Color.Green;
         artifacte[1] = Color.Purple;
         artifacte[2] = Color.Purple;
@@ -282,14 +328,29 @@ public class Mixer implements Subsystem{
         CalculateFrequency();
     }
 
-    public void SetPozition(double pos)
-    {
+    public void SetPozition(double pos) {
         if (pos < 0.0 || pos > 1.0)
             return;
         ServoMixer1.setPosition(pos);
         ServoMixer2.setPosition(pos);
     }
-    public double GetTimerElapsed(){return runtime.seconds();}
-    public int GetArtifactCount(){return artifactCount;}
-    public void Run(){ArtifacteIndx();}
+
+    public double GetTimerElapsed() {
+        return runtime.seconds();
+    }
+
+    public int GetArtifactCount() {
+        return artifactCount;
+    }
+
+    public void Run() {
+        // Auto-reset once at the start (Multi-phase)
+        if (needsInitialReset) {
+            PerformReset();
+            return; // Skip ball detection until reset phases are complete
+        }
+
+        // Normal operation - detect balls
+        ArtifacteIndx();
+    }
 }

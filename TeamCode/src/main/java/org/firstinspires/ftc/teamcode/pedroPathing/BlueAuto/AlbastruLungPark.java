@@ -50,7 +50,7 @@ public class AlbastruLungPark extends OpMode {
         mixer.Initialize(hardwareMap);
 
         // Pass null for robotAllignment - no IMU conflicts!
-        shooter = new Shooter(telemetryCustom, mixer, intake, limeLight, true);
+        shooter = new Shooter(telemetryCustom, mixer, limeLight, true);
         shooter.Initialize(hardwareMap);
 
         // NOW create follower and set starting pose AFTER subsystems

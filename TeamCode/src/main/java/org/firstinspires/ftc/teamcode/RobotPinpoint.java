@@ -104,6 +104,14 @@ public class RobotPinpoint implements Subsystem {
         y = initialY;
         heading = initialHeading;
 
+        // Rumble feedback for both gamepads
+        if (gamepad1 != null) {
+            gamepad1.gamepad.rumble(300); // Lighter rumble for driver
+        }
+        if (gamepad2 != null) {
+            gamepad2.gamepad.rumble(450); // Stronger rumble for operator
+        }
+
         telemetry.Log("Pinpoint Reset", String.format("X:%.1f\" Y:%.1f\" H:%.1f°", initialX, initialY, initialHeading));
     }
 

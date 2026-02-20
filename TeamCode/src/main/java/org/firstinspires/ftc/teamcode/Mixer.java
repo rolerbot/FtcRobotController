@@ -5,6 +5,8 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+
 public class Mixer implements Subsystem {
     public Servo ServoMixer1 = null;
     public Servo ServoMixer2 = null;
@@ -17,9 +19,9 @@ public class Mixer implements Subsystem {
     private boolean waitForBall = false;
     private boolean startedReset = false;
     private boolean needsInitialReset = true;
-    private final double initialPosition = 0.0317;
+    private final double initialPosition = 0.0607;
     private double currentPosition = initialPosition;
-    private double offsetPosition = 0.1257;
+    private double offsetPosition = 0.1707 - 0.05;
     boolean waitForReset = false;
     public boolean stopDetection = false;
     private int countPurple = 0;
@@ -47,7 +49,7 @@ public class Mixer implements Subsystem {
         ServoMixer2.setDirection(Servo.Direction.REVERSE);
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
-        MotorMixer.setDirection(DcMotorEx.Direction.FORWARD);
+        MotorMixer.setDirection(DcMotorEx.Direction.REVERSE);
         MotorMixer.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
 
     }
@@ -95,7 +97,6 @@ public class Mixer implements Subsystem {
 
         // Reset timers
         runtime.reset();
-
 
         logger.Log("✓ Reset Complete", "Ready to detect balls");
         logger.Log("Encoder Position", MotorMixer.getCurrentPosition());
@@ -161,6 +162,9 @@ public class Mixer implements Subsystem {
         if (startedReset || waitForReset || stopDetection)
             return;
 
+        if (artifactCount < 0)
+            artifactCount = 0; // Absolute safety check
+
         if (!intake.IsStopped() && !isRunning && !waitForBall && artifactCount < 3) {
             StartTimer();
             Color detectedColor = Culoare(cSensor);
@@ -216,6 +220,12 @@ public class Mixer implements Subsystem {
         }
         logger.Log("Color not found", -1);
         return -1;
+    }
+
+    public void TelemetryColor() {
+        logger.Log("Color red", cSensor.red());
+        logger.Log("Color blue", cSensor.blue());
+        logger.Log("Color green", cSensor.green());
     }
 
     public int GetFirstAvailablePosition() {
@@ -290,6 +300,18 @@ public class Mixer implements Subsystem {
         return Color.None;
     }
 
+    /*
+     * purple:
+     * r: 759
+     * g: 580
+     * b: 406
+     * 
+     * green:
+     * r:727
+     * b:400
+     * g:590
+     */
+
     private Color Culoare1(ColorSensor cSensor) {
         int red = cSensor.red();
         int green = cSensor.green();
@@ -310,9 +332,13 @@ public class Mixer implements Subsystem {
 
     public void RemoveArtifact(int position) {
         if (position >= 0 && position < artifacte.length) {
-            artifacte[position] = Color.None;
-            artifactCount--;
-            CalculateFrequency();
+            if (artifacte[position] != Color.None) {
+                artifacte[position] = Color.None;
+                artifactCount--;
+                if (artifactCount < 0)
+                    artifactCount = 0;
+                CalculateFrequency();
+            }
         }
     }
 

@@ -111,6 +111,7 @@ public class LimeLight implements Subsystem {
     // the camera's position relative to the turret's CENTER (pivot point).
 
     public Color[] artifactOrder = { Color.None, Color.None, Color.None };
+    private boolean artifactOrderDetected = false;
 
     // Stability tracking for MT2 relocalization
     private double lastMT2_X = 0;
@@ -156,39 +157,52 @@ public class LimeLight implements Subsystem {
         // Set "Exposure" < 2ms and "Gain" High!
     }
 
+    // Update the Run() method:
     public void Run() {
-        // Update Pinpoint position (raw odometry)
+
+        // Read current Pinpoint position (continuously updated by RobotPinpoint.Run())
         UpdatePinpointPosition();
 
-        // Update robot orientation from Pinpoint IMU for MT2
-        UpdateOrientationFromPinpoint();
-
-        // Update robot position from MT2 and MT1
         UpdateRobotPositionFromLimelight();
-
-        // ALWAYS keep AprilTag pipeline active for continuous tracking
-        // Don't stop switching pipelines after first detection!
-        if (isBlue)
-            RelocalizationBlue();
-        else
-            RelocalizationRed();
-
         CalculateDistanceToTarget();
         UpdateDistanceToAprilTag();
 
-        // Update IdTag if we detect a new one
-        if (limelight.getLatestResult() != null && limelight.getLatestResult().isValid()) {
-            LLResult llResult = limelight.getLatestResult();
-            if (llResult.getFiducialResults() != null && !llResult.getFiducialResults().isEmpty()) {
-                int detectedId = llResult.getFiducialResults().get(0).getFiducialId();
-                // Update IdTag if it's currently 0 or if we see a different tag
-                if ((IdTag == 0 || detectedId != IdTag) && detectedId >= 21 && detectedId <= 23) {
-                    IdTag = detectedId;
-                    SetOrder(IdTag);
+        // If we haven't detected artifact order yet, use pipeline 0
+        if (!artifactOrderDetected) {
+            limelight.pipelineSwitch(0); // Detection pipeline for tags 21-23
+
+            // Check if we detected an artifact tag
+            if (limelight.getLatestResult() != null && limelight.getLatestResult().isValid()) {
+                LLResult llResult = limelight.getLatestResult();
+                if (llResult.getFiducialResults() != null && !llResult.getFiducialResults().isEmpty()) {
+                    int detectedId = llResult.getFiducialResults().get(0).getFiducialId();
+
+                    // If we detect a tag in range 21-23, save order and switch mode
+                    if (detectedId >= 21 && detectedId <= 23) {
+                        IdTag = detectedId;
+                        SetOrder(IdTag);
+                        artifactOrderDetected = true; // Mark as detected, switch pipelines next frame
+                    }
                 }
             }
+        } else {
+            // Artifact order detected, now track alliance basket
+            if (isBlue)
+                RelocalizationBlue(); // Pipeline 2 for blue basket
+            else
+                RelocalizationRed(); // Pipeline 1 for red basket
         }
     }
+
+    // Add a method to reset if you need to detect artifacts again (optional):
+    public void ResetArtifactDetection() {
+        artifactOrderDetected = false;
+        IdTag = 0;
+        artifactOrder[0] = Color.None;
+        artifactOrder[1] = Color.None;
+        artifactOrder[2] = Color.None;
+    }
+
 
     private void SetOrder(int id) {
         if (id == 21) {
@@ -211,21 +225,18 @@ public class LimeLight implements Subsystem {
     }
 
     /**
-     * Actualizează poziția de la Pinpoint (odometry pur)
+     * Citește poziția curentă de la Pinpoint (care se actualizează continuu în RobotPinpoint.Run())
      */
     private void UpdatePinpointPosition() {
         if (pinpoint != null) {
-            pinpoint.update();
+            // ❌ NU apelăm pinpoint.update() - RobotPinpoint.Run() deja face asta
+            // Doar citim poziția curentă actualizată
+
             org.firstinspires.ftc.robotcore.external.navigation.Pose2D pose = pinpoint.getPosition();
             pinpointX = pose.getX(org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.INCH);
             pinpointY = pose.getY(org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.INCH);
             pinpointHeading = Math
                     .toDegrees(pose.getHeading(org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.RADIANS));
-
-            // Capture velocity for turret feedforward
-            org.firstinspires.ftc.robotcore.external.navigation.Pose2D velocity = pinpoint.getVelocity();
-            pinpointHeadingVelocity = Math.toDegrees(
-                    velocity.getHeading(org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.RADIANS));
         }
     }
 

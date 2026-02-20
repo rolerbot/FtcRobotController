@@ -12,8 +12,8 @@ public class Shooter implements Subsystem {
     private ButtonReader ThrowGreen, ThrowPurple;
     private final GamepadEx ct1, ct2;
 
-    private final double initialPosition = 0.257;
-    private final double finalPosition = 0.48;
+    private final double initialPosition = 0.2;
+    private final double finalPosition = 0.48 - 0.1;
     private final double hoodInitialPosition = 0.48;
     private ElapsedTime runtime = new ElapsedTime();
     private boolean isShooting = false;
@@ -42,10 +42,10 @@ public class Shooter implements Subsystem {
     private final double shooterI = 0.0;
     private final double shooterD = 8.0;
 
-    private final double IDLE_VELOCITY_MAX = 1500;
-    private double motorPower = 1500;
-    private double targetShootingVelocity = 1500;
-    private double lastMotorPower = 1500;
+    private final double IDLE_VELOCITY_MAX = 1580;
+    private double motorPower = 1580;
+    private double targetShootingVelocity = 1580;
+    private double lastMotorPower = 1580;
     private ElapsedTime brakingTimer = new ElapsedTime();
     private boolean isBraking = false;
     private boolean isLong = false;
@@ -55,10 +55,10 @@ public class Shooter implements Subsystem {
     private double velocityConstant = 650;
     private ShootingState shootType = ShootingState.None;
 
-    private final double offsetPositionMixer = 0.1289;
-    private final double initialPosMixer = 0.0317;
+    private final double offsetPositionMixer = 0.1707 - 0.05;
+    private final double initialPosMixer = 0.0607;
 
-    private final double mixerOffsetEncoder = 2805;
+    private final double mixerOffsetEncoder = 2715 / 2;
 
     private final double[] artPoz = {
             initialPosMixer + 3 * offsetPositionMixer, // Slot 0
@@ -308,8 +308,14 @@ public class Shooter implements Subsystem {
 
     private void Ordered() {
         if (!isShooting && !mixer.IsEmpty()) {
-            currentShootingPosition = mixer.GetColorPosition(limelight.artifactOrder[arrangedIndex]);
-            telemetry.Log("Target Color", ColorToString(limelight.artifactOrder[arrangedIndex]));
+            if (arrangedIndex >= 0 && arrangedIndex < limelight.artifactOrder.length) {
+                currentShootingPosition = mixer.GetColorPosition(limelight.artifactOrder[arrangedIndex]);
+                telemetry.Log("Target Color", ColorToString(limelight.artifactOrder[arrangedIndex]));
+            } else {
+                // If we finished the sequence but mixer isn't empty, shoot whatever is left
+                currentShootingPosition = mixer.GetFirstAvailablePosition();
+                telemetry.Log("Order Complete", "Shooting remaining balls");
+            }
         }
         ShootColor();
     }
@@ -355,8 +361,8 @@ public class Shooter implements Subsystem {
     }
 
     private int StateAutoTeleop() {
-        if (isAutoShooting)
-            return GetShootingStateAuto();
+        // Now using the encoder-based state machine for both Auto and Teleop
+        // as it's faster and reliable with through-bore encoder feedback.
         return GetShootingState();
     }
 
@@ -434,7 +440,7 @@ public class Shooter implements Subsystem {
         switch (caseSwitch) {
             case 0:
                 // Wait for encoder to arrive at slot
-                if (Math.abs(enc - target) < 100 || time > 0.3) {
+                if (Math.abs(enc - target) < 70 || time > 0.32) {
                     caseSwitch = 1;
                     ResetTimer();
                 }
@@ -545,8 +551,8 @@ public class Shooter implements Subsystem {
         double safeDist = constDist;
         if (safeDist < 0.8) {
             safeDist = 0.8;
-        } else if (safeDist > 3.3) {
-            safeDist = 3.5;
+        } else if (safeDist > 4) {
+            safeDist = 4;
         }
 
         double dist = safeDist * 100; // Convert to cm for polynomial
@@ -555,7 +561,7 @@ public class Shooter implements Subsystem {
                     + 0.0000229718 * dist * dist * dist
                     - 0.0166181 * dist * dist + 5.32713 * dist + velocityConstant;
         else if (safeDist >= 4)
-            targetShootingVelocity = 1550;
+            targetShootingVelocity = 1580;
         else
             targetShootingVelocity = 1100;
 
@@ -596,10 +602,10 @@ public class Shooter implements Subsystem {
     private void HoodPosition() {
         double calculateServoPos = hoodInitialPosition;
         double dist = constDist * 100;
-        if (constDist >= 1.41 && constDist <= 3.4)
-            calculateServoPos = (-0.000245041 * dist * dist + 0.163034 * dist + 467) / 1000;
-        else if (constDist > 3.7)
-            calculateServoPos = 0.49;
+        if (constDist >= 1.41 && constDist <= 2.9)
+            calculateServoPos = (-0.000245041 * dist * dist + 0.163034 * dist + 469) / 1000;
+        else if (constDist > 2.9)
+            calculateServoPos = 0.5;
         ServoHood.setPosition(calculateServoPos);
     }
 

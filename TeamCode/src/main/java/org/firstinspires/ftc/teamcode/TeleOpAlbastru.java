@@ -75,7 +75,7 @@ public class TeleOpAlbastru extends LinearOpMode {
                 mixer.Run();
             shooter.Run();
             shooter.CalculateShootingVelocityTelemetry();
-
+            mixer.TelemetryColor();
             telemetry.update();
         }
         telemetry.update();

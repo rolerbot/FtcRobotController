@@ -48,7 +48,7 @@ public class TurretPositionControl implements Subsystem {
 
     // ✅ TRACKING INERTIAL - Compensare rotație robot
     private double filteredRobotTurnSpeed = 0; // Viteza de rotație filtrată a robotului (deg/sec)
-    private final double VISION_TIMEOUT_SEC = 0.7; // ⬆️ Crescut pentru shooting din mișcare (0.3→0.5s)
+    private final double VISION_TIMEOUT_SEC = 0.7; // ⬆️ 1 second timeout before odometry fallback
     private boolean useInertialTracking = true; // Flag pentru activare/dezactivare
 
     // Tolerance for "on target"
@@ -59,6 +59,7 @@ public class TurretPositionControl implements Subsystem {
     private double currentAngle = 0;
     private double targetAngle = 0;
     private int currentTicks = 0;
+    private boolean usePinpointFallback = true; // ✅ Flag to disable odometry fallback in Auto
 
     public TurretPositionControl(LimeLight limeLight, Shooter shooter) {
         this.limeLight = limeLight;
@@ -156,24 +157,25 @@ public class TurretPositionControl implements Subsystem {
                     avgDistance = (0.70 * avgDistance) + (0.30 * distanceInches);
                 }
 
-                // ✅ RELOCALIZARE PINPOINT: Actualizează poziția odometry folosind MT2 (cu
-                // stability check)
-                limeLight.RelocalizePinpointWithMT2(currentAngle);
+                // ❌ RELOCALIZARE PINPOINT DISABLED: Nu corupe odometria Pinpoint cu date din
+                // cameră
+                // Doar reset-ul manual (din Shooter) ar trebui să modifice Pinpoint
+                // limeLight.RelocalizePinpointWithMT2(currentAngle);
 
             } else {
                 // ✅ VISION LOST - Fallback logic
-                if (hasTrackingLock && useInertialTracking && lastTargetTimer.seconds() < VISION_TIMEOUT_SEC) {
-                    // 1. TRACKING INERTIAL (Compensare rotație rapidă)
-                    double inertialDelta = -filteredRobotTurnSpeed * timer.seconds();
-                    persistentTargetAngle += inertialDelta;
-                } else {
-                    // 2. ODOMETRY FALLBACK (Pinpoint calculated field angle)
+                if (hasTrackingLock && usePinpointFallback && lastTargetTimer.seconds() >= VISION_TIMEOUT_SEC) {
+                    // After 0.7 seconds without vision, use odometry fallback
                     persistentTargetAngle = getClosestAngleByPinpoint();
                 }
+                // Otherwise keep the last known persistentTargetAngle (do nothing)
             }
         } else {
-            // Tracking dezactivat manual - Folosește odometria per-default
-            persistentTargetAngle = getClosestAngleByPinpoint();
+            // Tracking dezactivat manual - Folosește odometria per-default (dacă e
+            // activată)
+            if (usePinpointFallback) {
+                persistentTargetAngle = getClosestAngleByPinpoint();
+            }
         }
 
         // Reset timer pentru tracking inertial
@@ -230,8 +232,8 @@ public class TurretPositionControl implements Subsystem {
 
         if (limeLight.IsBlue()) {
             // ALIANȚA ALBASTRĂ - Vizează colțul stânga-jos (CENTRUL)
-            TARGET_X = 144.0; // Stânga (origin)
-            TARGET_Y = 0.0; // Jos (origin)
+            TARGET_X = 0.0; // Stânga (origin)
+            TARGET_Y = 144.0; // Jos (origin)
         } else {
             // ALIANȚA ROȘIE - Vizează colțul dreapta-sus (OPUS)
             TARGET_X = 144.0; // Dreapta (144 inches)
@@ -241,7 +243,8 @@ public class TurretPositionControl implements Subsystem {
         // Obține poziția curentă a robotului de la Pinpoint (prin LimeLight)
         double robotX = limeLight.GetRobotX();
         double robotY = limeLight.GetRobotY();
-        double robotHeading = limeLight.GetRobotHeading();
+        double robotHeadingRad = limeLight.GetRobotHeading();
+        double robotHeading = Math.toDegrees(robotHeadingRad); // Convert radians → degrees
 
         // Calculează vectorul de la robot la țintă
         double deltaX = TARGET_X - robotX;
@@ -285,6 +288,14 @@ public class TurretPositionControl implements Subsystem {
 
     public boolean isTrackingTag() {
         return isTrackingTag;
+    }
+
+    public void setUsePinpointFallback(boolean use) {
+        this.usePinpointFallback = use;
+    }
+
+    public boolean isUsingPinpointFallback() {
+        return usePinpointFallback;
     }
 
     public double getCurrentDistance() {

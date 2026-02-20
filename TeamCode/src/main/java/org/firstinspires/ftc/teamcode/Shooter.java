@@ -14,7 +14,7 @@ public class Shooter implements Subsystem {
 
     private final double initialPosition = 0.2;
     private final double finalPosition = 0.48 - 0.1;
-    private final double hoodInitialPosition = 0.48;
+    private final double hoodInitialPosition = 0.5;
     private ElapsedTime runtime = new ElapsedTime();
     private boolean isShooting = false;
     private int arrangedIndex = 0;
@@ -549,21 +549,21 @@ public class Shooter implements Subsystem {
     private void CalculateShootingVelocity() {
         // SAFETY: Clamp distance to reasonable field limits
         double safeDist = constDist;
-        if (safeDist < 0.8) {
-            safeDist = 0.8;
+        if (safeDist < 1) {
+            safeDist = 1;
         } else if (safeDist > 4) {
             safeDist = 4;
         }
 
         double dist = safeDist * 100; // Convert to cm for polynomial
-        if (safeDist > 1.4 && safeDist < 4)
+        if (safeDist > 1 && safeDist < 4)
             targetShootingVelocity = -(1.35657 / 1000000000) * dist * dist * dist * dist
                     + 0.0000229718 * dist * dist * dist
                     - 0.0166181 * dist * dist + 5.32713 * dist + velocityConstant;
         else if (safeDist >= 4)
             targetShootingVelocity = 1580;
         else
-            targetShootingVelocity = 1100;
+            targetShootingVelocity = 1000;
 
         motorPower = targetShootingVelocity;
     }
@@ -578,13 +578,13 @@ public class Shooter implements Subsystem {
 
         double velocity;
 
-        if (constDist > 1.4 && constDist < 3.3)
+        if (constDist > 1 && constDist < 3.3)
             velocity = -(1.35657 / 1000000000) * dist * dist * dist * dist + 0.0000229718 * dist * dist * dist
                     - 0.0166181 * dist * dist + 5.32713 * dist + velocityConstant;
         else if (constDist >= 3.3)
             velocity = 1550;
         else
-            velocity = 1100;
+            velocity = 1000;
         telemetry.Log("MixerPos", mixer.GetServoPosConstant());
         telemetry.Log("Velocity", velocity);
     }
@@ -602,8 +602,8 @@ public class Shooter implements Subsystem {
     private void HoodPosition() {
         double calculateServoPos = hoodInitialPosition;
         double dist = constDist * 100;
-        if (constDist >= 1.41 && constDist <= 2.9)
-            calculateServoPos = (-0.000245041 * dist * dist + 0.163034 * dist + 469) / 1000;
+        if (constDist >= 1 && constDist <= 2.9)
+            calculateServoPos = (-0.000245041 * dist * dist + 0.163034 * dist + 476) / 1000;
         else if (constDist > 2.9)
             calculateServoPos = 0.5;
         ServoHood.setPosition(calculateServoPos);

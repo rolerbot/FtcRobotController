@@ -49,7 +49,7 @@ public class Mixer implements Subsystem {
         ServoMixer2.setDirection(Servo.Direction.REVERSE);
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
-        MotorMixer.setDirection(DcMotorEx.Direction.REVERSE);
+        MotorMixer.setDirection(DcMotorEx.Direction.FORWARD);
         MotorMixer.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
 
     }

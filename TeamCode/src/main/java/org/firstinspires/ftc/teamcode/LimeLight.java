@@ -203,7 +203,6 @@ public class LimeLight implements Subsystem {
         artifactOrder[2] = Color.None;
     }
 
-
     private void SetOrder(int id) {
         if (id == 21) {
             artifactOrder[0] = Color.Green;
@@ -225,7 +224,8 @@ public class LimeLight implements Subsystem {
     }
 
     /**
-     * Citește poziția curentă de la Pinpoint (care se actualizează continuu în RobotPinpoint.Run())
+     * Citește poziția curentă de la Pinpoint (care se actualizează continuu în
+     * RobotPinpoint.Run())
      */
     private void UpdatePinpointPosition() {
         if (pinpoint != null) {

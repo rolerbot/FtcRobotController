@@ -1,5 +1,6 @@
 
 package org.firstinspires.ftc.teamcode.PedroAutoTurret;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.bylazar.configurables.annotations.Configurable;
@@ -11,214 +12,462 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.util.Timer;
+import org.firstinspires.ftc.teamcode.*;
+import org.firstinspires.ftc.teamcode.TurretPositionControl;
 
-
-@Autonomous(name = "PAS12Gate", group = "Autonomous")
+@Autonomous(name = "AS12Gate", group = "Autonomous")
 @Configurable // Panels
 public class AS12Gate extends OpMode {
-    private TelemetryManager panelsTelemetry; // Panels Telemetry instance
-    public Follower follower; // Pedro Pathing follower instance
-    private int pathState; // Current autonomous path state (state machine)
-    private Paths paths; // Paths defined in the Paths class
+        private TelemetryManager panelsTelemetry; // Panels Telemetry instance
+        public Follower follower; // Pedro Pathing follower instance
+        private Timer pathTimer, opmodeTimer;
+        private int pathState; // Current autonomous path state (state machine)
 
-    @Override
-    public void init() {
-        panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
+        // Robot subsystems
+        private TelemetryCustom telemetryCustom;
+        private Intake intake;
+        private LimeLight limeLight;
+        private Shooter shooter;
+        private Mixer mixer;
+        private TurretPositionControl turret;
 
-        follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        private Paths paths; // Paths defined in the Paths class
 
-        paths = new Paths(follower); // Build paths
+        private final double maxShootingTime = 2.8; // seconds
+        private final double pickupWaitTime = 0.5; // seconds
 
-        panelsTelemetry.debug("Status", "Initialized");
-        panelsTelemetry.update(telemetry);
-    }
+        @Override
+        public void init() {
+                panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
+                pathTimer = new Timer();
+                opmodeTimer = new Timer();
 
-    @Override
-    public void loop() {
-        follower.update(); // Update Pedro Pathing
-        pathState = autonomousPathUpdate(); // Update autonomous state machine
+                telemetryCustom = new TelemetryCustom(telemetry);
 
-        // Log values to Panels and Driver Station
-        panelsTelemetry.debug("Path State", pathState);
-        panelsTelemetry.debug("X", follower.getPose().getX());
-        panelsTelemetry.debug("Y", follower.getPose().getY());
-        panelsTelemetry.debug("Heading", follower.getPose().getHeading());
-        panelsTelemetry.update(telemetry);
-    }
+                intake = new Intake(telemetryCustom);
+                intake.Initialize(hardwareMap);
 
+                // Initialize LimeLight for Blue alliance (Pipeline 0 for detection first)
+                limeLight = new LimeLight(true, true);
+                limeLight.Initialize(hardwareMap);
 
-    public static class Paths {
+                mixer = new Mixer(telemetryCustom, intake);
+                mixer.Initialize(hardwareMap);
+                mixer.SetArtifacts(); // Load 3 balls
 
-        public PathChain Path1;
-        public PathChain Path2;
-        public PathChain Path3;
-        public PathChain Path4;
-        public PathChain Path5;
-        public PathChain Path6;
-        public PathChain Path7;
-        public PathChain Path14;
-        public PathChain Path8;
-        public PathChain Path9;
-        public PathChain Path10;
-        public PathChain Path11;
-        public PathChain Path12;
+                shooter = new Shooter(telemetryCustom, mixer, limeLight, false);
+                shooter.Initialize(hardwareMap);
+                shooter.ForceUpdateShooterF();
 
-        public Paths(Follower follower) {
+                turret = new TurretPositionControl(limeLight, shooter);
+                turret.Initialize(hardwareMap, true); // Reset encoder at start (Right barrier = 0)
+                turret.setUsePinpointFallback(false); // Disable odometry fallback
+                turret.setTargetTicks(0); // Set turret to encoder position 0 (physical start) in init
 
-            //position to shoot
-            Path1 = follower.pathBuilder().addPath(
-                            new BezierCurve(
-                                    new Pose(33.476, 134.481),
-                                    new Pose(57.369, 124.144),
-                                    new Pose(59.080, 112.235)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+                follower = Constants.createFollower(hardwareMap);
+                follower.setStartingPose(new Pose(19.5, 121.6, Math.toRadians(234)));
 
-                    .build();
+                paths = new Paths(follower); // Build paths
 
-            //prepare to pick up balls
-            Path2 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(59.080, 112.235),
-
-                                    new Pose(54.000, 85.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-
-            //pick up balls
-            Path3 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(54.000, 85.000),
-
-                                    new Pose(15.610, 84.979)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            // open gate
-            Path4 = follower.pathBuilder().addPath(
-                            new BezierCurve(
-                                    new Pose(15.610, 84.979),
-                                    new Pose(30.992, 73.479),
-                                    new Pose(17.529, 72.214)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
-
-                    .build();
-
-            // go to shoot
-            Path5 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(17.529, 72.214),
-
-                                    new Pose(54.000, 85.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
-
-                    .build();
-
-            // prepare to pick up baalls
-            Path6 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(54.000, 85.000),
-
-                                    new Pose(53.225, 59.615)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            //pick up balls
-            Path7 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(53.225, 59.615),
-
-                                    new Pose(16.786, 59.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            // go back a bit
-            Path14 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(16.786, 59.000),
-
-                                    new Pose(25.000, 59.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            // got to shoot
-            Path8 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(25.000, 59.000),
-
-                                    new Pose(55.000, 85.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            // prepare to pick up balls
-            Path9 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(55.000, 85.000),
-
-                                    new Pose(49.765, 35.610)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            //pick up balls
-            Path10 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(49.765, 35.610),
-
-                                    new Pose(13.636, 35.471)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            // go to shoot
-            Path11 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(13.636, 35.471),
-
-                                    new Pose(55.000, 85.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            //park
-            Path12 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(55.000, 85.000),
-
-                                    new Pose(30.000, 60.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
+                panelsTelemetry.debug("Status", "Initialized");
+                panelsTelemetry.update(telemetry);
         }
-    }
 
+        @Override
+        public void start() {
+                opmodeTimer.resetTimer();
+                intake.SetMotorPower(0.8);
+                shooter.StartAutoBoost(); // Optimized spin-up
+                setPathState(0);
+        }
 
-    public int autonomousPathUpdate() {
-        // Event markers will automatically trigger at their positions
-        // Make sure to register NamedCommands in your RobotContainer
-        return pathState;
-    }
+        @Override
+        public void loop() {
+                follower.update(); // Update Pedro Pathing
+                shooter.Run();
+                limeLight.Run();
+                turret.Run();
+                // Mixer called broadly as requested
 
+                autonomousPathUpdate(); // Update autonomous state machine
+
+                // Log values to Panels and Driver Station
+                panelsTelemetry.debug("Path State", pathState);
+                panelsTelemetry.debug("X", follower.getPose().getX());
+                panelsTelemetry.debug("Y", follower.getPose().getY());
+                panelsTelemetry.debug("Heading", Math.toDegrees(follower.getPose().getHeading()));
+                panelsTelemetry.debug("Turret Angle", turret.getCurrentAngle());
+                panelsTelemetry.debug("Shooter RPM", shooter.GetVelocityCurrent());
+                panelsTelemetry.debug("Limelight ID", limeLight.GetID());
+                panelsTelemetry.update(telemetry);
+        }
+
+        public static class Paths {
+
+                public PathChain Path1;
+                public PathChain Path2;
+                public PathChain Path3;
+                public PathChain Path4;
+                public PathChain Path5;
+                public PathChain Path6;
+                public PathChain Path7;
+                public PathChain Path14;
+                public PathChain Path8;
+                public PathChain Path9;
+                public PathChain Path10;
+                public PathChain Path11;
+                public PathChain Path12;
+
+                public Paths(Follower follower) {
+
+                        // position to shoot
+                        Path1 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(19.5, 121.6),
+                                                        new Pose(54, 85)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(234), Math.toRadians(180))
+
+                                        .build();
+
+                        // pick up balls
+                        Path2 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(54.000, 85.000),
+
+                                                        new Pose(21, 85)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                                        .build();
+
+                        // open gate
+                        Path3 = follower.pathBuilder().addPath(
+                                        new BezierCurve(
+                                                        new Pose(21, 85),
+                                                        new Pose(30, 80),
+                                                        new Pose(19, 76)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
+
+                                        .build();
+
+                        // go to shoot
+                        Path4 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(19, 76),
+
+                                                        new Pose(54.000, 85.000)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
+
+                                        .build();
+
+                        // prepare to pick up baalls
+                        Path5 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(54.000, 85.000),
+
+                                                        new Pose(53.225, 59.615)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                                        .build();
+
+                        // pick up balls
+                        Path6 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(53.225, 59.615),
+
+                                                        new Pose(20, 59.000)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                                        .build();
+
+                        // go back a bit
+                        Path7 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(20, 59.000),
+
+                                                        new Pose(25.000, 59.000)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                                        .build();
+
+                        // got to shoot
+                        Path8 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(25.000, 59.000),
+
+                                                        new Pose(55.000, 85.000)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                                        .build();
+
+                        // prepare to pick up balls
+                        Path9 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(55.000, 85.000),
+
+                                                        new Pose(49.765, 35.610)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                                        .build();
+
+                        // pick up balls
+                        Path10 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(49.765, 35.610),
+
+                                                        new Pose(16, 35.471)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                                        .build();
+
+                        // go to shoot
+                        Path11 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(16, 35.471),
+
+                                                        new Pose(55.000, 85.000)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                                        .build();
+
+                        // park
+                        Path12 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(55.000, 85.000),
+
+                                                        new Pose(30.000, 60.000)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                                        .build();
+                }
+        }
+
+        public void autonomousPathUpdate() {
+                switch (pathState) {
+                        case 0:
+                                // 1. Drive to shooting position and Search (Pipeline 0)
+                                follower.setMaxPower(1);
+                                follower.followPath(paths.Path1, true);
+                                limeLight.getLimelight().pipelineSwitch(0);
+                                turret.setTrackingTag(false); // No tracking while driving
+                                setPathState(1);
+                                break;
+
+                        case 1:
+                                // 2. Wait to arrive at position
+                                if (!follower.isBusy()) {
+                                        setPathState(2);
+                                }
+                                break;
+
+                        case 2:
+                                // 3. Arrived. Check if we saw the tag. If not, wait for it (Pipeline 0).
+                                if (limeLight.GetID() != 0) {
+                                        setPathState(3);
+                                } else if (pathTimer.getElapsedTimeSeconds() > 1) {
+                                        // Timeout: proceed even if tag not seen (relies on last known or fallback)
+                                        setPathState(3);
+                                }
+                                break;
+
+                        case 3:
+                                // 4. START ROTATION to midway point (-45 degrees)
+                                turret.setTrackingTag(false); // Safety: ensure tracking is OFF
+                                turret.setTargetAngle(-45); // Manually move to ~229 ticks from Right
+                                setPathState(4);
+                                break;
+
+                        case 4:
+                                // 5. WAIT for turret to finish its manual rotation
+                                // Must wait at least 0.4s and check if turret reached target
+                                if (pathTimer.getElapsedTimeSeconds() > 0.4
+                                                && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1)) {
+                                        limeLight.RelocalizationBlue(); // Switch to Blue Shooting Pipeline (2)
+                                        turret.setTrackingTag(true); // Enable Active Tracking now
+                                        setPathState(5); // Proceed to 1s settle wait
+                                }
+                                break;
+
+                        case 5:
+                                // 6. Track for a full 1.0 second to ensure accuracy
+                                if (pathTimer.getElapsedTimeSeconds() > 0.5) {
+                                        shooter.StartAutoShoot();
+                                        setPathState(6);
+                                }
+                                break;
+
+                        case 6:
+                                // 7. Monitor shooting progress
+                                if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > maxShootingTime) {
+                                        follower.followPath(paths.Path2, true);
+                                        follower.setMaxPower(0.7);
+                                        setPathState(100); // Changed to avoid overlap with existing states
+                                }
+                                break;
+
+                        case 100: // Original case 6
+                                  // Picking up balls (Path 2)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        intake.SetPowerMax();
+                                        if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
+                                                follower.followPath(paths.Path3, true);
+                                                setPathState(7);
+                                        }
+                                } else {
+                                        pathTimer.resetTimer();
+                                }
+                                break;
+
+                        case 7:
+                                // Opening gate (Path 3)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        follower.followPath(paths.Path4, true);
+                                        setPathState(8);
+                                }
+                                break;
+
+                        case 8:
+                                // Go to shoot after gate (Path 4)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        if (pathTimer.getElapsedTimeSeconds() > 1) {
+                                                shooter.StartAutoShoot();
+                                                setPathState(9);
+                                        }
+                                } else {
+                                        pathTimer.resetTimer();
+                                }
+                                break;
+
+                        case 9:
+                                // Finished shooting, prepare to pick up more balls (Path 5)
+                                if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > maxShootingTime) {
+                                        follower.followPath(paths.Path5, true);
+                                        setPathState(10);
+                                }
+                                break;
+
+                        case 10:
+                                // Moving to pickup position (Path 6)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        intake.SetPowerMax();
+                                        follower.followPath(paths.Path6, true);
+                                        setPathState(11);
+                                }
+                                break;
+
+                        case 11:
+                                // Picking up balls (Path 6 wait)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
+                                                follower.followPath(paths.Path7, true);
+                                                setPathState(12);
+                                        }
+                                } else {
+                                        pathTimer.resetTimer();
+                                }
+                                break;
+
+                        case 12:
+                                // Go back a bit (Path 7)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        follower.followPath(paths.Path8, true);
+                                        setPathState(13);
+                                }
+                                break;
+
+                        case 13:
+                                // Shooting position again (Path 8)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        if (pathTimer.getElapsedTimeSeconds() > 1) {
+                                                shooter.StartAutoShoot();
+                                                setPathState(14);
+                                        }
+                                } else {
+                                        pathTimer.resetTimer();
+                                }
+                                break;
+
+                        case 14:
+                                // Finished shooting, prepare for final pickup (Path 9)
+                                if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > maxShootingTime) {
+                                        follower.followPath(paths.Path9, true);
+                                        setPathState(15);
+                                }
+                                break;
+
+                        case 15:
+                                // Moving to final pickup (Path 10)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        intake.SetPowerMax();
+                                        follower.followPath(paths.Path10, true);
+                                        setPathState(16);
+                                }
+                                break;
+
+                        case 16:
+                                // Picking up final balls (Path 10 wait)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
+                                                follower.followPath(paths.Path11, true);
+                                                setPathState(17);
+                                        }
+                                } else {
+                                        pathTimer.resetTimer();
+                                }
+                                break;
+
+                        case 17:
+                                // Final shooting position (Path 11)
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        if (pathTimer.getElapsedTimeSeconds() > 1) {
+                                                shooter.StartAutoShoot();
+                                                setPathState(18);
+                                        }
+                                } else {
+                                        pathTimer.resetTimer();
+                                }
+                                break;
+
+                        case 18:
+                                // Finish shooting and park (Path 12)
+                                if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > maxShootingTime) {
+                                        follower.followPath(paths.Path12, true);
+                                        setPathState(19);
+                                }
+                                break;
+
+                        case 19:
+                                // Parking
+                                mixer.Run();
+                                if (!follower.isBusy()) {
+                                        intake.SetMotorPower(0.0);
+                                        setPathState(-1);
+                                }
+                                break;
+                }
+        }
+
+        public void setPathState(int pState) {
+                pathState = pState;
+                pathTimer.resetTimer();
+        }
+
+        @Override
+        public void stop() {
+                follower.breakFollowing();
+                intake.SetMotorPower(0.0);
+                if (shooter != null)
+                        shooter.StopShooterMotors();
+        }
 
 }
-    

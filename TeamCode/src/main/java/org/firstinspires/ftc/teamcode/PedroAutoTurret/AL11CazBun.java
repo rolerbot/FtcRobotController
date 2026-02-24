@@ -62,8 +62,8 @@ public class AL11CazBun extends OpMode {
                 shooter.ForceUpdateShooterF();
 
                 turret = new TurretPositionControl(limeLight, shooter);
-                turret.Initialize(hardwareMap, true); // Reset encoder at start
-                turret.setUsePinpointFallback(false); // ✅ Disable odometry fallback in Auto
+                turret.Initialize(hardwareMap, true); // Reset encoder at start (Right barrier = 0)
+                turret.setUsePinpointFallback(false); // Disable odometry fallback in Auto
                 turret.setTargetTicks(0); // Set turret to encoder position 0 (physical start) in init
 
                 follower = Constants.createFollower(hardwareMap);
@@ -115,6 +115,9 @@ public class AL11CazBun extends OpMode {
                 public PathChain Path7Extra;
                 public PathChain Path8;
                 public PathChain Path9;
+                public PathChain Path10;
+                public PathChain Path10Extra;
+                public PathChain Path11;
 
                 public Paths(Follower follower) {
                         // Go to shooting pos
@@ -156,7 +159,7 @@ public class AL11CazBun extends OpMode {
                                                         new Pose(45.000, 17.000),
                                                         new Pose(35.076, 12.950),
                                                         new Pose(10.000, 12.000)))
-                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(200))
                                         .build();
 
                         // Path 5 Extra: slow crawl 1 inch further at HP
@@ -164,7 +167,7 @@ public class AL11CazBun extends OpMode {
                                         new BezierLine(
                                                         new Pose(10.000, 12.000),
                                                         new Pose(7.000, 12.000)))
-                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                                        .setLinearHeadingInterpolation(Math.toRadians(200), Math.toRadians(160))
                                         .build();
 
                         // go to shoting pose
@@ -172,7 +175,7 @@ public class AL11CazBun extends OpMode {
                                         new BezierLine(
                                                         new Pose(7.000, 12.000),
                                                         new Pose(45.000, 17.000)))
-                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                                        .setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(180))
                                         .build();
 
                         // go to humanplayer closer
@@ -181,7 +184,7 @@ public class AL11CazBun extends OpMode {
                                                         new Pose(45.000, 17.000),
                                                         new Pose(39.147, 12.484),
                                                         new Pose(10.000, 12.000)))
-                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                                        .setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(200))
                                         .build();
 
                         // Path 7 Extra: slow crawl 1 inch further at HP
@@ -189,7 +192,7 @@ public class AL11CazBun extends OpMode {
                                         new BezierLine(
                                                         new Pose(10.000, 12.000),
                                                         new Pose(7.000, 12.000)))
-                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                                        .setLinearHeadingInterpolation(Math.toRadians(200), Math.toRadians(160))
                                         .build();
 
                         // go to shooting pose
@@ -197,13 +200,38 @@ public class AL11CazBun extends OpMode {
                                         new BezierLine(
                                                         new Pose(7.000, 12.000),
                                                         new Pose(45.000, 17.000)))
-                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                                        .setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(180))
+                                        .build();
+
+                        // go to humanplayer even closer
+                        Path10 = follower.pathBuilder().addPath(
+                                        new BezierCurve(
+                                                        new Pose(45.000, 17.000),
+                                                        new Pose(42.000, 12.000),
+                                                        new Pose(10.000, 12.000)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(200))
+                                        .build();
+
+                        // Path 10 Extra: slow crawl 1 inch further at HP
+                        Path10Extra = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(10.000, 12.000),
+                                                        new Pose(7.000, 12.000)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(200), Math.toRadians(160))
+                                        .build();
+
+                        // go to shooting pose
+                        Path11 = follower.pathBuilder().addPath(
+                                        new BezierLine(
+                                                        new Pose(7.000, 12.000),
+                                                        new Pose(45.000, 17.000)))
+                                        .setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(180))
                                         .build();
 
                         // Park
                         Path9 = follower.pathBuilder().addPath(
                                         new BezierLine(
-                                                        new Pose(54.000, 17.000),
+                                                        new Pose(45.000, 17.000),
                                                         new Pose(32.000, 12.000)))
                                         .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
                                         .build();
@@ -214,12 +242,20 @@ public class AL11CazBun extends OpMode {
                 switch (pathState) {
                         case 0:
                                 // Primary case: Sit for 1 second reading tag with Pipeline 0
-                                follower.setMaxPower(0.6);
+                                follower.setMaxPower(0.45);
                                 limeLight.getLimelight().pipelineSwitch(0);
-                                if (pathTimer.getElapsedTimeSeconds() > 1.0) {
+
+                                // If we see any artifact tag (21-23) OR we hit the 1s timeout
+                                if (limeLight.GetID() != 0 || pathTimer.getElapsedTimeSeconds() > 1.0) {
+                                        // Force skip if we didn't see it (for timeout)
+                                        if (limeLight.GetID() == 0) {
+                                                limeLight.SkipArtifactDetection();
+                                        }
+
                                         // Switch to Pipeline 2 (Blue) and start moving
                                         limeLight.RelocalizationBlue();
-                                        turret.setTrackingTag(true); // Fixed on tag logic
+                                        turret.setTrackingTag(true);
+                                        follower.setMaxPower(0.40); // SLOW ARRIVAL TO BREAK BETTER
                                         follower.followPath(paths.Path1, true);
                                         setPathState(1);
                                 }
@@ -227,8 +263,10 @@ public class AL11CazBun extends OpMode {
 
                         case 1:
                                 // Move to first shooting position + 0.5s stabilizer
-                                if (!follower.isBusy()) {
+                                mixer.Run();
+                                if (!follower.isBusy() || pathTimer.getElapsedTimeSeconds() > 2.5) {
                                         if (pathTimer.getElapsedTimeSeconds() > 1.3) {
+                                            follower.setMaxPower(0.7);
                                                 shooter.StartAutoShoot();
                                                 setPathState(2);
                                         }
@@ -251,7 +289,7 @@ public class AL11CazBun extends OpMode {
                                 if (!follower.isBusy()) {
                                         intake.SetPowerMax();
                                         follower.followPath(paths.Path3, true);
-                                        follower.setMaxPower(0.5);
+                                       // follower.setMaxPower(0.5);
                                         setPathState(4);
                                 }
                                 break;
@@ -261,8 +299,8 @@ public class AL11CazBun extends OpMode {
                                 mixer.Run();
                                 if (!follower.isBusy()) {
                                         if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
+                                                follower.setMaxPower(0.5); // SLOW ARRIVAL TO BREAK BETTER
                                                 follower.followPath(paths.Path4, true);
-                                                follower.setMaxPower(0.8);
                                                 setPathState(5);
                                         }
                                 } else {
@@ -289,7 +327,7 @@ public class AL11CazBun extends OpMode {
                                 if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > maxShootingTime) {
                                         follower.followPath(paths.Path5, true);
                                         pathTimer.resetTimer();
-                                        follower.setMaxPower(0.6);
+                                        follower.setMaxPower(0.7);
                                         setPathState(7);
                                 }
                                 break;
@@ -300,7 +338,7 @@ public class AL11CazBun extends OpMode {
                                 if (!follower.isBusy()) {
                                         intake.SetPowerMax();
                                         if (pathTimer.getElapsedTimeSeconds() > 1.0) { // HP Wait time
-                                                follower.setMaxPower(0.4); // Slow nudge forward
+                                                //follower.setMaxPower(0.4); // Slow nudge forward
                                                 follower.followPath(paths.Path5Extra, true);
                                                 setPathState(8);
                                         }
@@ -313,9 +351,8 @@ public class AL11CazBun extends OpMode {
                                 // Finish nudge, then go to shooting position
                                 mixer.Run();
                                 if (!follower.isBusy()) {
-                                        follower.setMaxPower(0.8);
+                                        follower.setMaxPower(0.4); // SLOW ARRIVAL TO BREAK BETTER
                                         follower.followPath(paths.Path6, true);
-                                        follower.setMaxPower(0.7);
                                         setPathState(9);
                                 }
                                 break;
@@ -350,7 +387,7 @@ public class AL11CazBun extends OpMode {
                                 if (!follower.isBusy()) {
                                         intake.SetPowerMax();
                                         if (pathTimer.getElapsedTimeSeconds() > 1.0) { // HP Wait time (1s)
-                                                follower.setMaxPower(0.4); // Slow nudge forward
+                                              //  follower.setMaxPower(0.4); // Slow nudge forward
                                                 follower.followPath(paths.Path7Extra, true);
                                                 setPathState(12);
                                         }
@@ -363,7 +400,7 @@ public class AL11CazBun extends OpMode {
                                 // Finish nudge, then go to shooting position
                                 mixer.Run();
                                 if (!follower.isBusy()) {
-                                        follower.setMaxPower(0.7);
+                                        follower.setMaxPower(0.5); // SLOW ARRIVAL TO BREAK BETTER
                                         follower.followPath(paths.Path8, true);
                                         setPathState(13);
                                 }
@@ -384,16 +421,16 @@ public class AL11CazBun extends OpMode {
                                 break;
 
                         case 14:
-                                // Finish Shooting, then Park
+                                // Finish Shooting, then go to 3rd HP cycle
                                 if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > maxShootingTime) {
-                                        follower.followPath(paths.Path9, true);
-                                        follower.setMaxPower(0.8);
-                                        setPathState(15);
+                                        follower.followPath(paths.Path10, true);
+                                        follower.setMaxPower(0.6);
+                                        setPathState(16);
                                 }
                                 break;
 
                         case 15:
-                                // Parking
+                                // Final Parking
                                 mixer.Run();
                                 if (!follower.isBusy()) {
                                         intake.SetMotorPower(0.0);

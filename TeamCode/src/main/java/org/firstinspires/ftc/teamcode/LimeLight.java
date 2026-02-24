@@ -203,6 +203,14 @@ public class LimeLight implements Subsystem {
         artifactOrder[2] = Color.None;
     }
 
+    /**
+     * Forces the LimeLight to stop searching for artifact tags (Pipeline 0)
+     * and proceed to basket relocalization. Use this for timeouts.
+     */
+    public void SkipArtifactDetection() {
+        artifactOrderDetected = true;
+    }
+
     private void SetOrder(int id) {
         if (id == 21) {
             artifactOrder[0] = Color.Green;
@@ -588,6 +596,23 @@ public class LimeLight implements Subsystem {
         distanceToTargetMeters = distanceInches * 0.0254;
     }
 
+    /*
+    public double GetDistanceToTrgetPython()
+    {
+        LLResult result = limelight.getLatestResult();
+        if (result != null && result.isValid()) {
+            double[] pythonOutputs = result.getPythonOutput();
+
+            if (pythonOutputs != null && pythonOutputs.length > 1)
+            {
+                double hasTarget = pythonOutputs[0];      // 1 if target found, 0 otherwise
+                double tagDistance = pythonOutputs[2];    // Distance to tag in meters
+                if (hasTarget == 1) return tagDistance;
+            }
+        }
+        return 3; // No target found
+    }
+*/
     public double GetDistanceToTarget() {
         return distanceToTargetMeters;
     }

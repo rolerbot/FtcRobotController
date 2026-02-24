@@ -51,7 +51,15 @@ public class Mixer implements Subsystem {
         ServoMixer2.setPosition(initialPosition);
         MotorMixer.setDirection(DcMotorEx.Direction.FORWARD);
         MotorMixer.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        Reset();
+    }
 
+    public void Reset() {
+        ServoMixer1.setPosition(initialPosition);
+        ServoMixer2.setPosition(initialPosition);
+        MotorMixer.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        MotorMixer.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        currentPosition = initialPosition;
     }
 
     public double GetServoPosConstant() {

@@ -62,8 +62,10 @@ public class AS12Gate extends OpMode {
 
                 turret = new TurretPositionControl(limeLight, shooter);
                 turret.Initialize(hardwareMap, true); // Reset encoder at start (Right barrier = 0)
-                turret.setUsePinpointFallback(false); // Disable odometry fallback
+                turret.setUsePinpointFallback(false); // Disable odometry fallback in Auto
                 turret.setTargetTicks(0); // Set turret to encoder position 0 (physical start) in init
+
+                mixer.Reset(); // Ensure mixer is at home and encoder is zero
 
                 follower = Constants.createFollower(hardwareMap);
                 follower.setStartingPose(new Pose(19.5, 121.6, Math.toRadians(234)));

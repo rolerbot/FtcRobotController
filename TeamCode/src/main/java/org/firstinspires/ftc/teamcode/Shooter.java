@@ -51,7 +51,7 @@ public class Shooter implements Subsystem {
     private boolean isLong = false;
     private boolean autoShooting = false;
     private boolean isAutoShooting = false;
-    private double breakMultiplier = 3.2;
+    private double breakMultiplier = 4.2;
     private double velocityConstant = 650;
     private ShootingState shootType = ShootingState.None;
 
@@ -144,7 +144,7 @@ public class Shooter implements Subsystem {
     public void Run() {
         UpdateVoltageCompensation();
 
-        if (autoSpinUpBoost && autoBoostTimer.milliseconds() > 1800) {
+        if (autoSpinUpBoost && autoBoostTimer.milliseconds() > 900) {
             autoSpinUpBoost = false;
 
             MotorAruncare1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -154,6 +154,8 @@ public class Shooter implements Subsystem {
             MotorAruncare1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
             MotorAruncare2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
 
+            // Force braking logic to trigger by setting lastMotorPower very high
+            lastMotorPower = 2800;
             SetShooterVelocity(IDLE_VELOCITY_MAX);
         }
 
@@ -219,7 +221,7 @@ public class Shooter implements Subsystem {
             return;
 
         // Pure proportional braking - no cap, just velocity error * multiplier
-        if (shootingAllowed && velocityDrop > 7 && velocityError > 7) {
+        if (velocityDrop > 7 && velocityError > 7) {
             if (!isBraking) {
                 brakingTimer.reset();
                 isBraking = true;
@@ -228,8 +230,8 @@ public class Shooter implements Subsystem {
             if (brakingTimer.milliseconds() < 250) {
                 double effectiveMultiplier = breakMultiplier;
                 if (constDist > 2.7) {
-                    // Reduce braking by 40% for long distances (3.5x → 2.1x default)
-                    effectiveMultiplier = breakMultiplier * 0.29;
+                    // Increased from 0.29 to 0.65 to ensure braking still works at match distances
+                    effectiveMultiplier = breakMultiplier * 0.2;
                 }
 
                 double brakePower = -velocityError * effectiveMultiplier;
@@ -526,6 +528,7 @@ public class Shooter implements Subsystem {
 
     private void UpdateDistanceAndHood() {
         if (!isAutoShooting || useDynamicDistance) {
+           // double limeDist = limelight.GetDistanceToTrgetPython();
             double limeDist = limelight.GetDistanceToTarget();
             if (limeDist > 0) {
                 constDist = limeDist;
@@ -668,8 +671,8 @@ public class Shooter implements Subsystem {
             MotorAruncare1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             MotorAruncare2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-            MotorAruncare1.setPower(1.0);
-            MotorAruncare2.setPower(1.0);
+            MotorAruncare1.setPower(0.85); // Reduced from 1.0 to avoid excessive over-speed
+            MotorAruncare2.setPower(0.85);
 
             telemetry.Log("⚡ RAW POWER", "100% voltage boost!");
         }

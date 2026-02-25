@@ -16,9 +16,8 @@ public class TeleOpRosu extends LinearOpMode {
     LimeLight limelight;
     TurretPositionControl turretMechanism;
     RobotPinpoint robotPinpoint;
-    ButtonReader left;
-    ButtonReader right;
     private GamepadEx ct1, ct2;
+    ButtonReader resetMixer;
 
     private void MapControlerButtons() {
         ct1 = new GamepadEx(gamepad1);
@@ -56,8 +55,7 @@ public class TeleOpRosu extends LinearOpMode {
         turretMechanism = new TurretPositionControl(limelight, shooter);
         turretMechanism.Initialize(hardwareMap);
 
-        left = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
-        right = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
+        resetMixer = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_STICK_BUTTON);
 
     }
 
@@ -73,6 +71,10 @@ public class TeleOpRosu extends LinearOpMode {
             turretMechanism.Run();
             intake.Run();
             drivetrain.Run();
+            resetMixer.readValue();
+            if (resetMixer.wasJustPressed()) {
+                mixer.RequestManualReset();
+            }
             if (!shooter.GetShootingAllow())
                 mixer.Run();
             shooter.Run();

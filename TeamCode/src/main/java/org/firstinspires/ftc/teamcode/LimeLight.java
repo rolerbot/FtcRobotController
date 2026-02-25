@@ -16,6 +16,7 @@ public class LimeLight implements Subsystem {
     private boolean isBlue = true;
     private boolean IsAuto = true;
     private GoBildaPinpointDriver pinpoint;
+    private int currentPipeline = -1; // Track current pipeline to avoid spamming resets
 
     // Constante pentru conversie
     private static final double METERS_TO_INCHES = 39.3701;
@@ -144,53 +145,61 @@ public class LimeLight implements Subsystem {
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
     }
 
+    public void ForceShootingPipeline() {
+        this.artifactOrderDetected = true;
+        if (isBlue)
+            RelocalizationBlue();
+        else
+            RelocalizationRed();
+    }
+
     public void Initialize(HardwareMap hardwareMap) {
         LinkComponents(hardwareMap);
         pinpoint.setOffsets(2.11, -3.31);
 
         // HIGH SPEED TRACKING SETUP
-        limelight.pipelineSwitch(0);
         limelight.setPollRateHz(100); // Max possible update rate
         limelight.start();
 
-        // NOTE: For fast rotation, go to http://limelight.local:5801
-        // Set "Exposure" < 2ms and "Gain" High!
+        // Always start on Pipeline 0 to search for artifacts (21, 22, 23)
+        switchPipeline(0);
     }
 
     // Update the Run() method:
     public void Run() {
-
-        // Read current Pinpoint position (continuously updated by RobotPinpoint.Run())
         UpdatePinpointPosition();
 
-        UpdateRobotPositionFromLimelight();
-        CalculateDistanceToTarget();
-        UpdateDistanceToAprilTag();
+        if (artifactOrderDetected) {
+            UpdateRobotPositionFromLimelight();
+            CalculateDistanceToTarget();
+            UpdateDistanceToAprilTag();
 
-        // If we haven't detected artifact order yet, use pipeline 0
-        if (!artifactOrderDetected) {
-            limelight.pipelineSwitch(0); // Detection pipeline for tags 21-23
+            if (isBlue)
+                switchPipeline(2);
+            else
+                switchPipeline(1);
+        } else {
+            switchPipeline(0);
 
-            // Check if we detected an artifact tag
-            if (limelight.getLatestResult() != null && limelight.getLatestResult().isValid()) {
-                LLResult llResult = limelight.getLatestResult();
-                if (llResult.getFiducialResults() != null && !llResult.getFiducialResults().isEmpty()) {
-                    int detectedId = llResult.getFiducialResults().get(0).getFiducialId();
-
-                    // If we detect a tag in range 21-23, save order and switch mode
-                    if (detectedId >= 21 && detectedId <= 23) {
-                        IdTag = detectedId;
-                        SetOrder(IdTag);
-                        artifactOrderDetected = true; // Mark as detected, switch pipelines next frame
+            LLResult result = limelight.getLatestResult();
+            if (result != null) {
+                double[] pythonOut = result.getPythonOutput();
+                if (pythonOut != null && pythonOut.length >= 2 && pythonOut[0] > 0.5) {
+                    int id = (int) pythonOut[1];
+                    if (id == 21 || id == 22 || id == 23) {
+                        this.IdTag = id;
+                        SetOrder(id);
+                        this.artifactOrderDetected = true;
                     }
                 }
             }
-        } else {
-            // Artifact order detected, now track alliance basket
-            if (isBlue)
-                RelocalizationBlue(); // Pipeline 2 for blue basket
-            else
-                RelocalizationRed(); // Pipeline 1 for red basket
+        }
+    }
+
+    private void switchPipeline(int p) {
+        if (currentPipeline != p) {
+            limelight.pipelineSwitch(p);
+            currentPipeline = p;
         }
     }
 
@@ -575,13 +584,11 @@ public class LimeLight implements Subsystem {
     }
 
     public void RelocalizationRed() {
-        // Switch to pipeline for red tag
-        limelight.pipelineSwitch(1); // Set to the number you assign Red Tag in the Limelight UI
+        switchPipeline(1);
     }
 
     public void RelocalizationBlue() {
-        // Set to the number you assign Blue Tag in the Limelight UI
-        limelight.pipelineSwitch(2);
+        switchPipeline(2);
     }
 
     private void CalculateDistanceToTarget() {
@@ -596,23 +603,20 @@ public class LimeLight implements Subsystem {
         distanceToTargetMeters = distanceInches * 0.0254;
     }
 
-    /*
-    public double GetDistanceToTrgetPython()
-    {
+    public double GetDistanceToTargetPython() {
         LLResult result = limelight.getLatestResult();
-        if (result != null && result.isValid()) {
+        if (result != null) {
             double[] pythonOutputs = result.getPythonOutput();
 
-            if (pythonOutputs != null && pythonOutputs.length > 1)
-            {
-                double hasTarget = pythonOutputs[0];      // 1 if target found, 0 otherwise
-                double tagDistance = pythonOutputs[2];    // Distance to tag in meters
-                if (hasTarget == 1) return tagDistance;
+            if (pythonOutputs != null && pythonOutputs.length >= 3) {
+                if (pythonOutputs[0] > 0.5) {
+                    return pythonOutputs[2];
+                }
             }
         }
-        return 3; // No target found
+        return -1.0; // Return -1.0 to signal "no target" so Shooter can keep last valid distance
     }
-*/
+
     public double GetDistanceToTarget() {
         return distanceToTargetMeters;
     }

@@ -19,9 +19,10 @@ public class Mixer implements Subsystem {
     private boolean waitForBall = false;
     private boolean startedReset = false;
     private boolean needsInitialReset = true;
-    private final double initialPosition = 0.0607;
+    private double offsetPosition = 0.09028;
+    private final double initialPosition = 0.0827 + 2 * offsetPosition;
+    //0.0257
     private double currentPosition = initialPosition;
-    private double offsetPosition = 0.1707 - 0.05;
     boolean waitForReset = false;
     public boolean stopDetection = false;
     private int countPurple = 0;
@@ -45,8 +46,8 @@ public class Mixer implements Subsystem {
 
     public void Initialize(HardwareMap hwMap) {
         LinkComponents(hwMap);
-        ServoMixer1.setDirection(Servo.Direction.REVERSE);
-        ServoMixer2.setDirection(Servo.Direction.REVERSE);
+        ServoMixer1.setDirection(Servo.Direction.FORWARD);
+        ServoMixer2.setDirection(Servo.Direction.FORWARD);
         ServoMixer1.setPosition(initialPosition);
         ServoMixer2.setPosition(initialPosition);
         MotorMixer.setDirection(DcMotorEx.Direction.FORWARD);
@@ -66,7 +67,7 @@ public class Mixer implements Subsystem {
         return MotorMixer.getCurrentPosition();
     }
 
-    private void PerformReset() {
+    public void PerformReset() {
         if (!startedReset) {
             logger.Log("Auto Reset", "Step 1: Servo Home...");
             ServoMixer1.setPosition(initialPosition);
@@ -118,6 +119,11 @@ public class Mixer implements Subsystem {
         runtime.startTime();
     }
 
+    public double GetPosMax()
+    {
+        return initialPosition - 2 * offsetPosition;
+    }
+
     public int GetColorBlue() {
         return cSensor.blue();
     }
@@ -136,6 +142,16 @@ public class Mixer implements Subsystem {
 
     public void ReverseIncrement() {
         offsetPosition *= (-1);
+    }
+
+    public void RequestManualReset() {
+        needsInitialReset = true;
+        startedReset = false;
+        waitForReset = false;
+    }
+
+    public boolean IsMoving() {
+        return isRunning || needsInitialReset || startedReset || waitForReset;
     }
 
     private void IncrementPosition() {

@@ -12,7 +12,7 @@ public class ServoMixerTuner extends LinearOpMode {
     @Override
     public void runOpMode() {
         ServoHood = hardwareMap.get(Servo.class, "ServoMixer1");
-        ServoHood.setDirection(Servo.Direction.REVERSE);
+        ServoHood.setDirection(Servo.Direction.FORWARD);
 
         telemetry.addLine("═══════════════════════════════");
         telemetry.addLine();

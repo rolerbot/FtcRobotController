@@ -11,9 +11,8 @@ public class Shooter implements Subsystem {
     private ButtonReader Aruncare;
     private ButtonReader ThrowGreen, ThrowPurple, ToggleFast;
     private final GamepadEx ct1, ct2;
-
-    private final double initialPosition = 0.05;
-    private final double finalPosition = 0.23; // Recovery from user typo -1.2
+    private final double initialPosition = 0.088;
+    private final double finalPosition = 0.16; // Recovery from user typo -1.2
     private final double hoodInitialPosition = 0.5;
     private ElapsedTime runtime = new ElapsedTime();
     private boolean isShooting = false;
@@ -65,7 +64,7 @@ public class Shooter implements Subsystem {
     private final double initialPosMixer = 0.0827 + 2 * offsetPositionMixer;
     // testing
 
-    private final double mixerOffsetEncoder = 1355;
+    private final int mixerOffsetEncoder = 1355;
 
     private final double[] artPoz = {
             initialPosMixer + 3 * offsetPositionMixer, // Slot 0
@@ -79,6 +78,16 @@ public class Shooter implements Subsystem {
             mixerOffsetEncoder // Target for Slot 2
     };
 
+    private final int[] fastSlotPositions = {
+            (int)(6682 - mixerOffsetEncoder),  // Slot 0 - was too soon, shifted later
+            (int)(4027 - mixerOffsetEncoder),         // Slot 1 - was good, unchanged
+            (int)(1273 - mixerOffsetEncoder)     // Slot 2 - went down too fast, shifted earlier
+    };
+
+    private final boolean[] fastSlotFired = new boolean[3];
+    private final boolean[] fastSlotLeverUp = new boolean[3];
+    private boolean fastSweepStarted = false;
+    private int fastStartEnc = 0;
     /*
     4074, // Slot 0
             -1406, // Slot 1
@@ -366,141 +375,61 @@ public class Shooter implements Subsystem {
         ShootColor();
     }
 
-    private void ShootFastColor() {
-        if (!isShooting && !mixer.IsEmpty()) {
-            isShooting = true;
-            fastSequenceIdx = 0; // State Machine Step
-            fastLeverPulled = false;
-            shootingAllowed = true;
-            ResetTimer();
-        }
-
-        if (isShooting) {
-            int enc = mixer.MotorMixer.getCurrentPosition();
-
-            // PULL-THROUGH STEP SYSTEM (Guaranteed motion, no deadlocks)
-            switch (fastSequenceIdx) {
-                case 0: // 1. SAFE PREP: Go to Start (Max safe pos)
-                    mixer.SetPozition(0.99);
-                    if (enc > 5500 || runtime.seconds() > 0.8) {
-                        fastSequenceIdx = 1;
-                    }
-                    break;
-
-                // --- BALL 1 (Slot 1 ~6785) ---
-                case 1: // Approach S1 (Offset UP)
-                    mixer.SetPozition(artPoz[1] + 0.04);
-                    if (enc <= (int) pozEncoder[1] + 250)
-                        fastSequenceIdx = 2;
-                    break;
-                case 2: // Hit S1 & PULL THROUGH (Target drastically DOWN)
-                    mixer.SetPozition(artPoz[0] + 0.12); // Targeting next zone
-                    SetPositionLever(finalPosition); // FLICK UP
-                    if (enc <= (int) pozEncoder[1] - 50) {
-                        SetPositionLever(initialPosition); // DOWN
-                        fastSequenceIdx = 3;
-                    }
-                    break;
-                case 3: // Transition Zone
-                    if (enc <= 5500)
-                        fastSequenceIdx = 4;
-                    break;
-
-                // --- BALL 0 (Slot 0 ~4071) ---
-                case 4: // Approach S0 (Offset UP)
-                    mixer.SetPozition(artPoz[0] + 0.08);
-                    if (enc <= (int) pozEncoder[0] + 250)
-                        fastSequenceIdx = 5;
-                    break;
-                case 5: // Hit S0 & PULL THROUGH (Target drastically DOWN)
-                    mixer.SetPozition(artPoz[2] + 0.12); // Targeting next zone
-                    SetPositionLever(finalPosition); // FLICK UP
-                    if (enc <= (int) pozEncoder[0] - 50) {
-                        SetPositionLever(initialPosition); // DOWN
-                        fastSequenceIdx = 6;
-                    }
-                    break;
-                case 6: // Transition Zone
-                    if (enc <= 2500)
-                        fastSequenceIdx = 7;
-                    break;
-
-                // --- BALL 2 (Slot 2 ~1357) ---
-                case 7: // Approach S2 (Offset UP)
-                    mixer.SetPozition(artPoz[2] + 0.08);
-                    if (enc <= (int) pozEncoder[2] + 250)
-                        fastSequenceIdx = 8;
-                    break;
-                case 8: // Hit S2 & PULL THROUGH (Target HOME)
-                    mixer.SetPozition(mixer.GetPosMax());
-                    SetPositionLever(finalPosition); // FLICK UP
-                    if (enc <= (int) pozEncoder[2] - 50) {
-                        SetPositionLever(initialPosition); // DOWN
-                        fastSequenceIdx = 9;
-                    }
-                    break;
-                case 9: // Final Clearance
-                    if (enc <= 150)
-                        fastSequenceIdx = 10;
-                    break;
-
-                case 10: // TERMINATE
-                    isShooting = false;
-                    shootingAllowed = false;
-                    ResetShooter();
-                    break;
-            }
-        }
-    }
-
     private void ShootFastColor2() {
         if (!isShooting && !mixer.IsEmpty()) {
             isShooting = true;
-            fastSequenceIdx = 0;
-            fastLeverPulled = false;
             shootingAllowed = true;
+            fastSweepStarted = false;
+            fastStartEnc = mixer.MotorMixer.getCurrentPosition();
+
+            for (int i = 0; i < fastSlotFired.length; i++) {
+                fastSlotFired[i] = false;
+                fastSlotLeverUp[i] = false;
+            }
+
             ResetTimer();
+            mixer.SetPozition(mixer.GetPosMax());
         }
 
         if (!isShooting) return;
 
-        int enc = (int) mixer.MotorMixer.getCurrentPosition();
-        // Sweep order: Slot 0 (4074) -> Slot 2 (1228) -> Slot 1 (-1406)
-        int[] sequence = { 0, 2, 1};
+        int enc = mixer.MotorMixer.getCurrentPosition();
+        telemetry.Log("FastEnc", enc);
+        telemetry.Log("StartEnc", fastStartEnc);
+        telemetry.Log("SweepStarted", fastSweepStarted);
+        telemetry.Log("Fired", fastSlotFired[0] + " " + fastSlotFired[1] + " " + fastSlotFired[2]);
 
-        if (fastSequenceIdx < sequence.length) {
-            // Drive mixer toward home continuously
-            mixer.SetPozition(mixer.GetPosMax());
-
-            int targetEnc = (int) pozEncoder[sequence[fastSequenceIdx]];
-
-            if (!fastLeverPulled) {
-                // Approaching slot — trigger lever UP
-                if (enc <= targetEnc + 200) {
-                    if (enc < targetEnc - 100) {
-                        // Already blew past it, skip
-                        fastSequenceIdx++;
-                    } else {
-                        fastLeverPulled = true;
-                        SetPositionLever(finalPosition); // UP
-                    }
-                }
+        if (!fastSweepStarted) {
+            if (Math.abs(enc - fastStartEnc) > 100) {
+                fastSweepStarted = true;
             } else {
-                // Lever is UP — pull it back DOWN once we've passed the slot
-                if (enc < targetEnc - 200) {
-                    fastLeverPulled = false;
-                    SetPositionLever(initialPosition); // DOWN
-                    fastSequenceIdx++;
-                }
+                return;
+            }
+        }
+
+        for (int i = 0; i < fastSlotPositions.length; i++) {
+            if (fastSlotFired[i]) continue;
+
+            int target = fastSlotPositions[i];
+
+            if (!fastSlotLeverUp[i] && enc <= target - 200) {
+                SetPositionLever(finalPosition);
+                fastSlotLeverUp[i] = true;
+                telemetry.Log("Lever UP slot", i);
             }
 
-        } else {
-            // All slots done — wait 0.6s for mixer to settle, then reset
-            if (runtime.milliseconds() > 1500) {
-                isShooting = false;
-                shootingAllowed = false;
-                ResetShooter();
-            }
+                int postOffset = 800;
+                if (fastSlotLeverUp[i] && enc <= target - postOffset) {
+                    SetPositionLever(initialPosition);
+                    fastSlotFired[i] = true;
+                    telemetry.Log("Lever DOWN slot", i);
+                }
+        }
+
+        if (runtime.milliseconds() > 1000) {
+            isShooting = false;
+            shootingAllowed = false;
+            ResetShooter();
         }
     }
 
@@ -637,7 +566,7 @@ public class Shooter implements Subsystem {
         switch (caseSwitch) {
             case 0:
                 // Wait for encoder to arrive at slot
-                if (Math.abs(enc - target) < 70 || time > 0.32) {
+                if (Math.abs(enc - target) < 50 || time > 0.32) {
                     caseSwitch = 1;
                     ResetTimer();
                 }
@@ -723,8 +652,8 @@ public class Shooter implements Subsystem {
 
     private void UpdateDistanceAndHood() {
         if (!isAutoShooting || useDynamicDistance) {
-           // double limeDist = limelight.GetDistanceToTrgetPython();
-            double limeDist = limelight.GetDistanceToTarget();
+            double limeDist = limelight.GetDistanceToTargetPython();
+            // double limeDist = limelight.GetDistanceToTarget();
             if (limeDist > 0) {
                 constDist = limeDist;
                 telemetry.Log("Distance to Target nou", String.format("%.2f meters", constDist));

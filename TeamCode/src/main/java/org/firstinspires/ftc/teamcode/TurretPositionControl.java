@@ -66,7 +66,7 @@ public class TurretPositionControl implements Subsystem {
         MotorTurela.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         MotorTurela.setDirection(DcMotorEx.Direction.REVERSE);
         MotorTurela.setTargetPositionTolerance(TICK_TOLERANCE);
-        MotorTurela.setPositionPIDFCoefficients(8.0); // P de 8 este mult mai safe pentru 30FPS
+        MotorTurela.setPositionPIDFCoefficients(10.0); // P de 8 este mult mai safe pentru 30FPS
         MotorTurela.setPower(maxTurretSpeed);
 
         currentTicks = MotorTurela.getCurrentPosition();
@@ -109,7 +109,7 @@ public class TurretPositionControl implements Subsystem {
                     avgDistance = (0.70 * avgDistance) + (0.30 * distInches);
 
                     if (shooter != null) {
-                        shooter.SetCustomDistanceMeters(avgDistance * 0.0254);
+                        //shooter.SetCustomDistanceMeters(avgDistance * 0.0254);
                     }
                 } else {
                     if (hasTrackingLock && usePinpointFallback &&

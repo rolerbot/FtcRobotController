@@ -52,7 +52,6 @@ public class Mixer implements Subsystem {
         ServoMixer2.setPosition(initialPosition);
         MotorMixer.setDirection(DcMotorEx.Direction.FORWARD);
         MotorMixer.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        Reset();
     }
 
     public void Reset() {
@@ -78,7 +77,7 @@ public class Mixer implements Subsystem {
         }
 
         // Wait precisely 0.4 seconds for servos to settle
-        if (timerReset.seconds() < 0.43) {
+        if (timerReset.seconds() < 1.0) {
             return;
         }
 

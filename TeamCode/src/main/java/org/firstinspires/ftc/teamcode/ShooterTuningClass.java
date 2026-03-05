@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class ShooterTuneClass {
+public class ShooterTuningClass {
 
     // ── Data ────────────────────────────────────────────────
     public static class ShotParameters {
@@ -44,16 +44,16 @@ public class ShooterTuneClass {
 
     private void LoadDefaultTable() {
         table.clear();
-        table.add(new ShotParameters(112, 1100, 0.44));
-        table.add(new ShotParameters(130, 1150, 0.45));
-        table.add(new ShotParameters(150, 1200, 0.46));
-        table.add(new ShotParameters(175, 1260, 0.47));
-        table.add(new ShotParameters(200, 1310, 0.49));
-        table.add(new ShotParameters(230, 1350, 0.51));
-        table.add(new ShotParameters(260, 1370, 0.53));
-        table.add(new ShotParameters(300, 1400, 0.55));
-        table.add(new ShotParameters(340, 1430, 0.57));
-        table.add(new ShotParameters(370, 1460, 0.58));
+        table.add(new ShotParameters(120, 1110, 0.550));
+        table.add(new ShotParameters(130, 1130, 0.555));
+        table.add(new ShotParameters(150, 1160, 0.55));
+        table.add(new ShotParameters(175, 1200, 0.565));
+        table.add(new ShotParameters(200, 1230, 0.540));
+        table.add(new ShotParameters(230, 1280, 0.556));
+        table.add(new ShotParameters(260, 1300, 0.545));
+        table.add(new ShotParameters(300, 1450, 0.565));
+        table.add(new ShotParameters(340, 1550, 0.57));
+        table.add(new ShotParameters(370, 1550, 0.59));
         SortTable();
     }
 
@@ -116,7 +116,7 @@ public class ShooterTuneClass {
     private boolean testShootActive = false;
 
     // ── Constructor ──────────────────────────────────────────
-    public ShooterTuneClass(GamepadEx ct2, TelemetryCustom telemetry, LimeLight limelight) {
+    public ShooterTuningClass(GamepadEx ct2, TelemetryCustom telemetry, LimeLight limelight) {
         this.ct2 = ct2;
         this.telemetry = telemetry;
         this.limelight = limelight;

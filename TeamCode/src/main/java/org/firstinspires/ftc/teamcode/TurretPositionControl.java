@@ -18,7 +18,7 @@ public class TurretPositionControl implements Subsystem {
     private final int MIN_TICKS = 0;
     private final int MAX_TICKS = 915;
 
-    private double maxTurretSpeed = 0.4; // Scazut pentru a opri oscilatiile din cauza latentei Python
+    private double maxTurretSpeed = 0.5; // 0.4
     private double avgDistance = 0;
     private double persistentTargetAngle = 0;
     private int targetTicks = TICKS_AT_CENTER;
@@ -66,7 +66,7 @@ public class TurretPositionControl implements Subsystem {
         MotorTurela.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         MotorTurela.setDirection(DcMotorEx.Direction.REVERSE);
         MotorTurela.setTargetPositionTolerance(TICK_TOLERANCE);
-        MotorTurela.setPositionPIDFCoefficients(10.0); // P de 8 este mult mai safe pentru 30FPS
+        MotorTurela.setPositionPIDFCoefficients(11.0); // P de 8 este mult mai safe pentru 30FPS
         MotorTurela.setPower(maxTurretSpeed);
 
         currentTicks = MotorTurela.getCurrentPosition();
@@ -106,10 +106,10 @@ public class TurretPositionControl implements Subsystem {
                     if (avgDistance == 0) {
                         avgDistance = distInches;
                     }
-                    avgDistance = (0.70 * avgDistance) + (0.30 * distInches);
+                    avgDistance = (0.80 * avgDistance) + (0.20 * distInches); // 70, 30
 
                     if (shooter != null) {
-                        //shooter.SetCustomDistanceMeters(avgDistance * 0.0254);
+                        // shooter.SetCustomDistanceMeters(avgDistance * 0.0254);
                     }
                 } else {
                     if (hasTrackingLock && usePinpointFallback &&

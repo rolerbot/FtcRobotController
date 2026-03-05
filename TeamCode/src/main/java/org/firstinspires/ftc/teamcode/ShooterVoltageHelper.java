@@ -7,9 +7,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class ShooterVoltageHelper {
 
     // ================= CONFIG =================
-    private static final double V_REF = 12.5; // Tuned for 12.5V stability
-    private static final double COMPENSATION_GAIN = 1.6; // Puterea de compensare (>1.0 = mai agresiv)
-    private static final double ALPHA = 0.1; // Filtrare voltaj (mai mare = mai rapid)
+    private static final double V_REF = 12.5; // Reference point at 12.5V where it works best
+    private static final double COMPENSATION_GAIN = 1.1; // Lowered to prevent aggressive overshooting
+    private static final double ALPHA = 0.15; // Slightly faster filtering
     private static final double MIN_SCALE = 0.85; // Limita de siguranta minimă
     private static final double MAX_SCALE = 1.15; // Limita de siguranta maximă
 

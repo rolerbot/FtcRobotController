@@ -72,9 +72,6 @@ public class TeleOpRosu extends LinearOpMode {
             intake.Run();
             drivetrain.Run();
             resetMixer.readValue();
-            if (resetMixer.wasJustPressed()) {
-                mixer.RequestManualReset();
-            }
             if (!shooter.GetShootingAllow())
                 mixer.Run();
             shooter.Run();

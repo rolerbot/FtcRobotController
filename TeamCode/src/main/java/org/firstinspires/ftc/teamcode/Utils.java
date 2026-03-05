@@ -19,7 +19,6 @@ enum ShootingState
     Green,
     Purple,
     Unarranged,
-    UnarrangedFast,
     None
 };
 

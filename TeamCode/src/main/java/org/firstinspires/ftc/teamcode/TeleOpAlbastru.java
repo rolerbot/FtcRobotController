@@ -33,8 +33,6 @@ public class TeleOpAlbastru extends LinearOpMode {
         drivetrain.Initialize(hardwareMap);
         drivetrain.schimbator = 1.4 - drivetrain.schimbator;
 
-        // Initialize RobotPinpoint (with both controllers for rumble and ct2 for reset
-        // button)
         robotPinpoint = new RobotPinpoint(myLogger, ct1, ct2);
         robotPinpoint.SetInitialPosition(135, 9, 90); // Blue alliance starting position
         robotPinpoint.Initialize(hardwareMap);
@@ -70,15 +68,11 @@ public class TeleOpAlbastru extends LinearOpMode {
             intake.Run();
             drivetrain.Run();
             resetMixer.readValue();
-            if (resetMixer.wasJustPressed()) {
-                mixer.RequestManualReset();
-            }
             if (!shooter.GetShootingAllow())
                 mixer.Run();
             shooter.Run();
             shooter.CalculateShootingVelocityTelemetry();
             telemetry.addData("Limelightdist:", limelight.GetDistanceToTargetPython());
-            mixer.TelemetryColor();
             telemetry.update();
         }
         telemetry.update();

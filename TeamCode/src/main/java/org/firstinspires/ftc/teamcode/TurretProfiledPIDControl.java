@@ -1,53 +1,66 @@
 package org.firstinspires.ftc.teamcode;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
+import com.arcrobotics.ftclib.controller.wpilibcontroller.ProfiledPIDController;
+import com.arcrobotics.ftclib.trajectory.TrapezoidProfile;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.hardware.limelightvision.LLResult;
 
-import org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion;
-
-public class TurretPositionControl implements Subsystem {
+public class TurretProfiledPIDControl implements Subsystem {
     private DcMotorEx MotorTurela = null;
-    private LimeLight limeLight;
-    private Shooter shooter;
+    private final LimeLight limeLight;
+    private final Shooter shooter;
 
     private final double TICKS_PER_DEGREE = 5.25;
     private final int TICKS_AT_CENTER = 472;
     private final int MIN_TICKS = 0;
     private final int MAX_TICKS = 915;
 
-    private double maxTurretSpeed = 0.7; // 0.4
+    // Profiled PID Constants - These will need tuning
+    public static double Kp = 0.05;
+    public static double Ki = 0.003;
+    public static double Kd = 0.0045;
+    public static double maxVelocity = 300.0; // degrees per second
+    public static double maxAcceleration = 600.0; // degrees per second^2
+
+    private ProfiledPIDController controller;
+
+    private double maxTurretSpeed = 0.75;
     private double avgDistance = 0;
     private double persistentTargetAngle = 0;
-    private int targetTicks = TICKS_AT_CENTER;
 
     private final ElapsedTime lastTargetTimer = new ElapsedTime();
     private boolean isTrackingTag = true;
     private boolean hasTrackingLock = false;
 
-    private final double VISION_TIMEOUT_SEC = 1.0;
+    private final double VISION_TIMEOUT_SEC = .67;
     private final double ANGLE_TOLERANCE_DEG = 0.9;
-    private final int TICK_TOLERANCE = (int) (ANGLE_TOLERANCE_DEG * TICKS_PER_DEGREE);
 
     private double currentAngle = 0;
     private double targetAngle = 0;
     private int currentTicks = 0;
-    private boolean usePinpointFallback = true; // Disabled for now to ensure smooth vision tracking
+    private boolean usePinpointFallback = true;
 
-    public TurretPositionControl(LimeLight limeLight, Shooter shooter) {
+    private double lastKp = Kp, lastKi = Ki, lastKd = Kd;
+
+    public TurretProfiledPIDControl(LimeLight limeLight, Shooter shooter) {
         this.limeLight = limeLight;
         this.shooter = shooter;
+        setupController();
     }
 
-    public TurretPositionControl(LimeLight limeLight) {
+    public TurretProfiledPIDControl(LimeLight limeLight) {
         this.limeLight = limeLight;
         this.shooter = null;
+        setupController();
+    }
+
+    private void setupController() {
+        TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(maxVelocity, maxAcceleration);
+        controller = new ProfiledPIDController(Kp, Ki, Kd, constraints);
+        controller.setTolerance(ANGLE_TOLERANCE_DEG);
     }
 
     public void LinkComponents(HardwareMap hwMap) {
@@ -65,23 +78,27 @@ public class TurretPositionControl implements Subsystem {
             MotorTurela.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         }
 
-        MotorTurela.setTargetPosition(MotorTurela.getCurrentPosition());
-        MotorTurela.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        MotorTurela.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         MotorTurela.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         MotorTurela.setDirection(DcMotorEx.Direction.REVERSE);
-        MotorTurela.setTargetPositionTolerance(TICK_TOLERANCE);
-        MotorTurela.setPositionPIDFCoefficients(8.0); // P de 8 este mult mai safe pentru 30FPS
-        MotorTurela.setPower(maxTurretSpeed);
 
         currentTicks = MotorTurela.getCurrentPosition();
-        targetTicks = currentTicks;
         currentAngle = (currentTicks - TICKS_AT_CENTER) / TICKS_PER_DEGREE;
         persistentTargetAngle = currentAngle;
+        
+        // Reset controller to current state
+        controller.reset(currentAngle);
+        targetAngle = currentAngle;
 
         lastTargetTimer.reset();
     }
 
     public void Update() {
+        if (Kp != lastKp || Ki != lastKi || Kd != lastKd) {
+            controller.setPID(Kp, Ki, Kd);
+            lastKp = Kp; lastKi = Ki; lastKd = Kd;
+        }
+
         currentTicks = MotorTurela.getCurrentPosition();
         currentAngle = (currentTicks - TICKS_AT_CENTER) / TICKS_PER_DEGREE;
 
@@ -95,13 +112,9 @@ public class TurretPositionControl implements Subsystem {
                     lastTargetTimer.reset();
                     hasTrackingLock = true;
 
-                    // USE pythonOut[1] (calculated horizontal angle from your script)
-                    // Change to MINUS because if tag is at -10 deg (left),
-                    // we need to INCREASE the turret angle to move left.
                     double horizontalAngleDeg = pythonOut[1];
                     double offsetDistance = pythonOut[2];
 
-                    // DEADZONE marit la 1 grad pentru a opri oscilatiile fine
                     if (Math.abs(horizontalAngleDeg) > .3) {
                         persistentTargetAngle = currentAngle - horizontalAngleDeg;
                     }
@@ -110,11 +123,7 @@ public class TurretPositionControl implements Subsystem {
                     if (avgDistance == 0) {
                         avgDistance = distInches;
                     }
-                    avgDistance = (0.85 * avgDistance) + (0.25 * distInches); // 70, 30
-
-                    if (shooter != null) {
-                        // shooter.SetCustomDistanceMeters(avgDistance * 0.0254);
-                    }
+                    avgDistance = (0.85 * avgDistance) + (0.25 * distInches);
                 } else {
                     if (hasTrackingLock && usePinpointFallback &&
                             lastTargetTimer.seconds() >= VISION_TIMEOUT_SEC) {
@@ -127,29 +136,26 @@ public class TurretPositionControl implements Subsystem {
                 persistentTargetAngle = getClosestAngleByPinpoint();
             }
         }
-        //persistentTargetAngle = getClosestAngleByPinpoint();
 
         final double MAX_ANGLE_RANGE = 90.0;
         persistentTargetAngle = Range.clip(persistentTargetAngle, -MAX_ANGLE_RANGE, MAX_ANGLE_RANGE);
-
-        int newTargetTicks = (int) (persistentTargetAngle * TICKS_PER_DEGREE + TICKS_AT_CENTER);
-        newTargetTicks = Range.clip(newTargetTicks, MIN_TICKS, MAX_TICKS);
-
-        // Only update motor if target shifted significantly to avoid jitter/stalling
-        if (Math.abs(newTargetTicks - targetTicks) >= 1) {
-            targetTicks = newTargetTicks;
-            MotorTurela.setTargetPosition(targetTicks);
-        }
-        targetTicks = newTargetTicks;
-        //MotorTurela.setTargetPosition(targetTicks);
-        // Ensure motor always has power to reach target
-        MotorTurela.setPower(maxTurretSpeed);
         targetAngle = persistentTargetAngle;
+
+        // Calculate PID output using the profiled controller
+        double power = controller.calculate(currentAngle, targetAngle);
+        
+        // Clip power to max speed
+        power = Range.clip(power, -maxTurretSpeed, maxTurretSpeed);
+        
+        // Safety bounds
+        if (currentTicks >= MAX_TICKS && power > 0) power = 0;
+        if (currentTicks <= MIN_TICKS && power < 0) power = 0;
+
+        MotorTurela.setPower(power);
     }
 
     public boolean isOnTarget() {
-        int error = Math.abs(targetTicks - currentTicks);
-        return error <= TICK_TOLERANCE;
+        return controller.atGoal();
     }
 
     private double getClosestAngleByPinpoint() {
@@ -190,7 +196,7 @@ public class TurretPositionControl implements Subsystem {
     }
 
     public int getErrorTicks() {
-        return targetTicks - currentTicks;
+        return (int) (targetAngle * TICKS_PER_DEGREE + TICKS_AT_CENTER) - currentTicks;
     }
 
     public void setTrackingTag(boolean track) {
@@ -215,28 +221,15 @@ public class TurretPositionControl implements Subsystem {
 
     public void setTargetAngle(double angleDegrees) {
         persistentTargetAngle = Range.clip(angleDegrees, -90.0, 90.0);
-        targetTicks = (int) (persistentTargetAngle * TICKS_PER_DEGREE + TICKS_AT_CENTER);
-        MotorTurela.setTargetPosition(targetTicks);
     }
 
     public void setTargetTicks(int ticks) {
-        targetTicks = ticks;
-        persistentTargetAngle = (targetTicks - TICKS_AT_CENTER) / TICKS_PER_DEGREE;
-
-        if (persistentTargetAngle > 90.0) {
-            persistentTargetAngle = 90.0;
-            targetTicks = (int) (90.0 * TICKS_PER_DEGREE + TICKS_AT_CENTER);
-        } else if (persistentTargetAngle < -90.0) {
-            persistentTargetAngle = -90.0;
-            targetTicks = (int) (-90.0 * TICKS_PER_DEGREE + TICKS_AT_CENTER);
-        }
-
-        MotorTurela.setTargetPosition(targetTicks);
+        persistentTargetAngle = (ticks - TICKS_AT_CENTER) / TICKS_PER_DEGREE;
+        persistentTargetAngle = Range.clip(persistentTargetAngle, -90.0, 90.0);
     }
 
     public void setMaxSpeed(double speed) {
         maxTurretSpeed = Range.clip(speed, 0.0, 1.0);
-        MotorTurela.setPower(maxTurretSpeed);
     }
 
     public double getMaxSpeed() {
@@ -248,7 +241,6 @@ public class TurretPositionControl implements Subsystem {
     }
 
     public int getCurrentTicks() {
-        //return currentTicks;
         return MotorTurela.getCurrentPosition();
     }
 
@@ -257,7 +249,7 @@ public class TurretPositionControl implements Subsystem {
     }
 
     public int getTargetTicks() {
-        return targetTicks;
+        return (int) (targetAngle * TICKS_PER_DEGREE + TICKS_AT_CENTER);
     }
 
     public boolean hasTrackingLock() {
@@ -275,6 +267,16 @@ public class TurretPositionControl implements Subsystem {
     public void resetTrackingLock() {
         hasTrackingLock = false;
         lastTargetTimer.reset();
+    }
+
+    public void updatePID(double p, double i, double d) {
+        Kp = p; Ki = i; Kd = d;
+        controller.setPID(p, i, d);
+    }
+
+    public void updateConstraints(double maxVel, double maxAccel) {
+        maxVelocity = maxVel; maxAcceleration = maxAccel;
+        controller.setConstraints(new TrapezoidProfile.Constraints(maxVel, maxAccel));
     }
 
     public void Run() {

@@ -158,7 +158,7 @@ public class LimeLight implements Subsystem {
         pinpoint.setOffsets(2.11, -3.31);
 
         // HIGH SPEED TRACKING SETUP
-        limelight.setPollRateHz(100); // Max possible update rate
+        limelight.setPollRateHz(125); // Max possible update rate
         limelight.start();
 
         // Always start on Pipeline 0 to search for artifacts (21, 22, 23)

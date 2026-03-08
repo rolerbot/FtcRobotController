@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Shooter implements Subsystem {
     private ButtonReader Aruncare;
     private ButtonReader ThrowGreen, ThrowPurple, ToggleFast;
+    private ButtonReader btnKpUp, btnKpDown, btnKiUp, btnKiDown, btnKdUp, btnKdDown, btnStep;
     private DcMotorEx MotorRidicareBila = null;
     private final GamepadEx ct1, ct2;
     private final double hoodInitialPosition = 0.51;
@@ -30,12 +31,14 @@ public class Shooter implements Subsystem {
     private final double BASE_SHOOTER_F = 14.5;
     private double shooterF = BASE_SHOOTER_F;
     private double shooterP = 7;
-    private final double shooterI = 0.0;
+    private final double shooterI = 0.2;
     private final double shooterD = 8.0;
 
     // ── Tuning system ────────────────────────────────────────
     private ShooterTuningClass tuning;
-    private boolean tuningActive = false;
+    private boolean tuningActive = false    ;
+    private final double[] stepSizes = {0.1, 0.01, 0.001, 0.0001};
+    private int stepIndex = 1;
 
     private final double IDLE_VELOCITY_MAX = 1580;
     private double targetShootingVelocity = 1580;
@@ -113,6 +116,14 @@ public class Shooter implements Subsystem {
             ThrowGreen  = new ButtonReader(ct1, GamepadKeys.Button.Y);
             ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.X);
             ToggleFast  = new ButtonReader(ct2, GamepadKeys.Button.Y);
+
+            btnKpUp = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
+            btnKpDown = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
+            btnKiUp = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
+            btnKiDown = new ButtonReader(ct2, GamepadKeys.Button.DPAD_LEFT);
+            btnKdUp = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_BUMPER);
+            btnKdDown = new ButtonReader(ct2, GamepadKeys.Button.LEFT_BUMPER);
+            btnStep = new ButtonReader(ct2, GamepadKeys.Button.B);
         }
 
         ServoHood         = hardwareMap.get(Servo.class,     "ServoHood");
@@ -206,6 +217,20 @@ public class Shooter implements Subsystem {
             return;
         }
 
+        // NEW: Live Turret Tuning when not in shooter tuning mode
+        if (btnStep != null) {
+            if (btnStep.wasJustPressed()) {
+                stepIndex = (stepIndex + 1) % stepSizes.length;
+            }
+            double step = stepSizes[stepIndex];
+            if (btnKpUp.wasJustPressed()) TurretProfiledPIDControl.Kp += step;
+            if (btnKpDown.wasJustPressed()) TurretProfiledPIDControl.Kp -= step;
+            if (btnKiUp.wasJustPressed()) TurretProfiledPIDControl.Ki += step;
+            if (btnKiDown.wasJustPressed()) TurretProfiledPIDControl.Ki -= step;
+            if (btnKdUp.wasJustPressed()) TurretProfiledPIDControl.Kd += step;
+            if (btnKdDown.wasJustPressed()) TurretProfiledPIDControl.Kd -= step;
+        }
+
         // ── Match mode ───────────────────────────────────────
         if (Aruncare != null && Aruncare.wasJustPressed() && !mixer.IsEmpty()) {
             UpdateDistanceAndHood();
@@ -273,6 +298,16 @@ public class Shooter implements Subsystem {
         }
         if (ToggleFast != null)
             ToggleFast.readValue();
+
+        if (btnKpUp != null) {
+            btnKpUp.readValue();
+            btnKpDown.readValue();
+            btnKiUp.readValue();
+            btnKiDown.readValue();
+            btnKdUp.readValue();
+            btnKdDown.readValue();
+            btnStep.readValue();
+        }
     }
 
     private void ResetTimer() {
@@ -627,4 +662,8 @@ public class Shooter implements Subsystem {
     }
 
     public boolean IsShootingStateNone() { return shootType == ShootingState.None; }
+
+    public double getTuningStep() {
+        return stepSizes[stepIndex];
+    }
 }

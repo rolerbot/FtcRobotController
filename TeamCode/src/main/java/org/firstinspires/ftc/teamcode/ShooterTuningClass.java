@@ -99,7 +99,7 @@ public class ShooterTuningClass {
 
     // ── Tuning State ─────────────────────────────────────────
     private int selectedRow = 0;
-    private final double[] stepSizes = { 50, 10, 1, 0.1, 0.001 };
+    private final double[] stepSizes = { 50, 10, 1, 0.1, 0.01, 0.001, 0.0001 };
     private int stepIndex = 1; // default step = 10
 
     private final GamepadEx ct2;
@@ -220,6 +220,27 @@ public class ShooterTuningClass {
         LogTuning(row, currentMotorVelocity);
 
         return testShootRequested;
+    }
+
+    public void UpdateTurretTuningLive() {
+        ReadAllButtons();
+
+        if (BButton.wasJustPressed()) {
+            stepIndex = (stepIndex + 1) % stepSizes.length;
+        }
+
+        double step = stepSizes[stepIndex];
+        
+        if (DpadUp.wasJustPressed())    TurretProfiledPIDControl.Kp += step;
+        if (DpadDown.wasJustPressed())  TurretProfiledPIDControl.Kp -= step;
+        if (DpadRight.wasJustPressed()) TurretProfiledPIDControl.Ki += step;
+        if (DpadLeft.wasJustPressed())  TurretProfiledPIDControl.Ki -= step;
+        if (BumpRight.wasJustPressed()) TurretProfiledPIDControl.Kd += step;
+        if (BumpLeft.wasJustPressed())  TurretProfiledPIDControl.Kd -= step;
+    }
+
+    public double getStepSize() {
+        return stepSizes[stepIndex];
     }
 
     // ── Returns the currently selected row's values (for motor/hood control) ─

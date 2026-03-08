@@ -13,7 +13,7 @@ public class TeleOpAlbastru extends LinearOpMode {
     Mixer mixer;
     Shooter shooter;
     LimeLight limelight;
-    TurretPositionControl turretMechanism;
+    TurretProfiledPIDControl turretMechanism;
     RobotPinpoint robotPinpoint;
     private GamepadEx ct1, ct2;
     ButtonReader resetMixer;
@@ -49,7 +49,7 @@ public class TeleOpAlbastru extends LinearOpMode {
         shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight);
         shooter.Initialize(hardwareMap);
 
-        turretMechanism = new TurretPositionControl(limelight, shooter);
+        turretMechanism = new TurretProfiledPIDControl(limelight, shooter);
         turretMechanism.Initialize(hardwareMap);
 
         resetMixer = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_STICK_BUTTON);
@@ -72,7 +72,17 @@ public class TeleOpAlbastru extends LinearOpMode {
                 mixer.Run();
             shooter.Run();
             shooter.CalculateShootingVelocityTelemetry();
+            
             telemetry.addData("Limelightdist:", limelight.GetDistanceToTargetPython());
+            telemetry.addData("Turret Angle", turretMechanism.getCurrentAngle());
+            telemetry.addData("Turret Error", turretMechanism.getErrorDegrees());
+            
+            telemetry.addLine("\n--- Turret PID Tuning (CT2) ---");
+            telemetry.addData("Kp (Dpad U/D)", TurretProfiledPIDControl.Kp);
+            telemetry.addData("Ki (Dpad R/L)", TurretProfiledPIDControl.Ki);
+            telemetry.addData("Kd (Bumpers)", TurretProfiledPIDControl.Kd);
+            telemetry.addData("Step (B)", shooter.getTuningStep());
+
             telemetry.update();
         }
         telemetry.update();

@@ -53,7 +53,7 @@ public class Mixer implements Subsystem {
 
         MotorMixer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorMixer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorMixer.setDirection(DcMotorSimple.Direction.REVERSE);
+        MotorMixer.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
     public void Reset() {
@@ -90,7 +90,7 @@ public class Mixer implements Subsystem {
         if (startTimer && timerResetEnc.seconds() > 0.35) {
             MotorMixer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             MotorMixer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            MotorMixer.setDirection(DcMotorSimple.Direction.REVERSE);
+            MotorMixer.setDirection(DcMotorSimple.Direction.FORWARD);
 
             needsInitialReset = false;
             startTimer = false;

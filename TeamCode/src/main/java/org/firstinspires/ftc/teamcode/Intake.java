@@ -40,7 +40,7 @@ public class Intake implements Subsystem {
 
         MotorIN.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorIN.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        MotorIN.setDirection(DcMotorSimple.Direction.REVERSE);
+        MotorIN.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
     private void ReadButtons() {

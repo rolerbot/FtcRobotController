@@ -16,8 +16,7 @@ public class RobotPinpoint implements Subsystem {
     private GamepadEx gamepad1;
     private GamepadEx gamepad2;
 
-    // Button reader for reset
-    private ButtonReader resetButton;
+    private boolean lastTriggerState = false;
 
     // Current position
     private double x = 0;
@@ -33,11 +32,6 @@ public class RobotPinpoint implements Subsystem {
         this.telemetry = telemetry;
         this.gamepad1 = ct1;
         this.gamepad2 = ct2;
-
-        // Button for reset (DPAD_DOWN on gamepad 2)
-        if (gamepad2 != null) {
-            resetButton = new ButtonReader(gamepad2, GamepadKeys.Button.DPAD_DOWN);
-        }
     }
 
     public void LinkComponents(HardwareMap hardwareMap) {
@@ -71,13 +65,13 @@ public class RobotPinpoint implements Subsystem {
         // Update pinpoint position
         UpdatePosition();
 
-        // Check for reset button press
-        if (resetButton != null) {
-            resetButton.readValue();
-
-            if (resetButton.wasJustPressed()) {
+        // Check for reset (Right Trigger on gamepad 2)
+        if (gamepad2 != null) {
+            boolean currentTriggerState = gamepad2.gamepad.right_trigger > 0.5;
+            if (currentTriggerState && !lastTriggerState) {
                 ResetPosition();
             }
+            lastTriggerState = currentTriggerState;
         }
     }
 

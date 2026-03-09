@@ -81,7 +81,7 @@ public class TeleOpAlbastru extends LinearOpMode {
             telemetry.addData("Kp (Dpad U/D)", TurretProfiledPIDControl.Kp);
             telemetry.addData("Ki (Dpad R/L)", TurretProfiledPIDControl.Ki);
             telemetry.addData("Kd (Bumpers)", TurretProfiledPIDControl.Kd);
-            telemetry.addData("Step (B)", shooter.getTuningStep());
+            telemetry.addData("Step (Y)", shooter.getTuningStep());
 
             telemetry.update();
         }

@@ -19,11 +19,11 @@ public class TurretProfiledPIDControl implements Subsystem {
     private final int MAX_TICKS = 915;
 
     // Profiled PID Constants - These will need tuning
-    public static double Kp = 0.043; // (0.051 * 0.8)
+    public static double Kp = 0.042; // (0.051 * 0.8)
     public static double Ki = 0.00;
     public static double Kd = 0.005; // (0.0045 * 1.4)
     public static double maxVelocity = 300.0; // degrees per second
-    public static double maxAcceleration = 420.0; // (600.0 * 0.6) // 360
+    public static double maxAcceleration = 400.0; // (600.0 * 0.6) // 360
 
     private ProfiledPIDController controller;
 
@@ -35,7 +35,7 @@ public class TurretProfiledPIDControl implements Subsystem {
     private boolean isTrackingTag = true;
     private boolean hasTrackingLock = false;
 
-    private final double VISION_TIMEOUT_SEC = .3;
+    private final double VISION_TIMEOUT_SEC = .35;
     private final double ANGLE_TOLERANCE_DEG = .9;
 
     private double currentAngle = 0;
@@ -107,11 +107,11 @@ public class TurretProfiledPIDControl implements Subsystem {
         // Dynamic Thresholds to stop oscillation at closer distances
         if (avgDistance > 0) {
             if (avgDistance < 90.55) { // < 2.3m (Very Close)
-                currentDeadzone = 1.3;
-                currentTolerance = 1.5;
+                currentDeadzone = 1.8; // Wider deadzone for stability
+                currentTolerance = 2.0; // Higher tolerance to stop hunting
             } else if (avgDistance < 130.0) { // < 3.3m (Mid-Range)
-                currentDeadzone = 0.8;
-                currentTolerance = 1.0;
+                currentDeadzone = 1.1;
+                currentTolerance = 1.3;
             }
         }
 

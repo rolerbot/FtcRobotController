@@ -148,12 +148,12 @@ public class Mixer implements Subsystem {
                 logger.Log("Detected Color", Utils.ColorToString(detectedColor));
                 logger.Log("Nr. Bile in mixer", artifactCount);
             }
-        } else if (isRunning && !waitForBall && GetTimerElapsed() < 0.15) {
+        } else if (isRunning && !waitForBall && GetTimerElapsed() < 0.2) {
             waitForBall = true;
             if (artifactCount < 3) {
                 NextPosition();
             }
-        } else if (isRunning && waitForBall && GetTimerElapsed() >= 0.5) {
+        } else if (isRunning && waitForBall && GetTimerElapsed() >= 0.6) {
             isRunning = false;
             waitForBall = false;
             CalculateFrequency();

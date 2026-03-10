@@ -72,16 +72,21 @@ public class TeleOpAlbastru extends LinearOpMode {
                 mixer.Run();
             shooter.Run();
             shooter.CalculateShootingVelocityTelemetry();
-            
+
             telemetry.addData("Limelightdist:", limelight.GetDistanceToTargetPython());
             telemetry.addData("Turret Angle", turretMechanism.getCurrentAngle());
             telemetry.addData("Turret Error", turretMechanism.getErrorDegrees());
-            
+
+            telemetry.addLine("\n--- Arranged Shooting Debug ---");
+            telemetry.addData("LimeLight ID", limelight.GetID());
+            telemetry.addData("CanShootArranged", shooter.CanShootArranged());
+            telemetry.addData("ArtifactOrder", limelight.artifactOrder[0] + "," +
+                    limelight.artifactOrder[1] + "," + limelight.artifactOrder[2]);
+
             telemetry.addLine("\n--- Turret PID Tuning (CT2) ---");
             telemetry.addData("Kp (Dpad U/D)", TurretProfiledPIDControl.Kp);
             telemetry.addData("Ki (Dpad R/L)", TurretProfiledPIDControl.Ki);
             telemetry.addData("Kd (Bumpers)", TurretProfiledPIDControl.Kd);
-            telemetry.addData("Step (Y)", shooter.getTuningStep());
 
             telemetry.update();
         }

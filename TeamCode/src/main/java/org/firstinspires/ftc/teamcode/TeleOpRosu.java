@@ -78,6 +78,12 @@ public class TeleOpRosu extends LinearOpMode {
 
             shooter.CalculateShootingVelocityTelemetry();
 
+            telemetry.addLine("\n--- Arranged Shooting Debug ---");
+            telemetry.addData("LimeLight ID", limelight.GetID());
+            telemetry.addData("CanShootArranged", shooter.CanShootArranged());
+            telemetry.addData("ArtifactOrder", limelight.artifactOrder[0] + "," +
+                    limelight.artifactOrder[1] + "," + limelight.artifactOrder[2]);
+
             telemetry.update();
         }
         telemetry.update();

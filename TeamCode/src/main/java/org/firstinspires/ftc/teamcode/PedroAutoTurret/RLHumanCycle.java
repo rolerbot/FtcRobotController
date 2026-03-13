@@ -1,5 +1,6 @@
 
 package org.firstinspires.ftc.teamcode.PedroAutoTurret;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.bylazar.configurables.annotations.Configurable;
@@ -15,10 +16,9 @@ import com.pedropathing.geometry.Pose;
 import org.firstinspires.ftc.teamcode.TurretPositionControl;
 import org.firstinspires.ftc.teamcode.*;
 
-
-@Autonomous(name = "AL15CazBun", group = "Autonomous")
+@Autonomous(name = "RLHumanCycle", group = "Autonomous")
 @Configurable // Panels
-public class AL15CazBun extends OpMode {
+public class RLHumanCycle extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private Timer pathTimer, opmodeTimer;
@@ -49,8 +49,8 @@ public class AL15CazBun extends OpMode {
         intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
-        // Initialize LimeLight for Blue alliance
-        limeLight = new LimeLight(true, true);
+        // Initialize LimeLight for Red alliance
+        limeLight = new LimeLight(false, true);
         limeLight.Initialize(hardwareMap);
 
         mixer = new Mixer(telemetryCustom, intake);
@@ -64,12 +64,12 @@ public class AL15CazBun extends OpMode {
         turret = new TurretPositionControl(limeLight, shooter, null);
         turret.Initialize(hardwareMap, true);
         turret.setUsePinpointFallback(false);
-        turret.setTargetTicks(0);
+        turret.setTargetAngle(90);
 
         mixer.MoveToThreeBalls();
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(57, 9, Math.toRadians(180)));
+        follower.setStartingPose(new Pose(144 - 57, 9, Math.toRadians(0)));
 
         paths = new Paths(follower);
 
@@ -81,7 +81,6 @@ public class AL15CazBun extends OpMode {
     public void start() {
         opmodeTimer.resetTimer();
         intake.SetMotorPower(1);
-        //shooter.StartBackMotorAuto();
         shooter.StartAutoBoost(); // Optimized spin-up
         setPathState(0);
     }
@@ -107,11 +106,8 @@ public class AL15CazBun extends OpMode {
         panelsTelemetry.update(telemetry);
     }
 
-
     public static class Paths {
         public PathChain ShootingPos;
-        public PathChain FirstStackPos;
-        public PathChain PickUpStack;
         public PathChain PickUpHumanBalls1;
         public PathChain GoBackHuman;
         public PathChain PickUpHumanBalls2;
@@ -119,73 +115,40 @@ public class AL15CazBun extends OpMode {
 
         public Paths(Follower follower) {
             ShootingPos = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(57.000, 9.000),
-
-                                    new Pose(48.000, 11.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            FirstStackPos = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(48.000, 11.000),
-
-                                    new Pose(41.745, 36.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
-                    .build();
-
-            PickUpStack = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(41.745, 36.000),
-
-                                    new Pose(11.211, 36.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
+                    new BezierLine(
+                            new Pose(144 - 57.000, 9.000),
+                            new Pose(144 - 48.000, 11.000)))
+                    .setLinearHeadingInterpolation(0, 0)
                     .build();
 
             PickUpHumanBalls1 = follower.pathBuilder().addPath(
-                            new BezierCurve(
-                                    new Pose(48.000, 11.000),
-                                    new Pose(28.341, 9.247),
-                                    new Pose(11.500, 12.000)
-                            )
-                    ).setTangentHeadingInterpolation()
-
+                    new BezierCurve(
+                            new Pose(144 - 48.000, 11.000),
+                            new Pose(144 - 28.341, 9.247),
+                            new Pose(144 - 11.500, 12.000)))
+                    .setLinearHeadingInterpolation(0, 0)
                     .build();
 
             GoBackHuman = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(11.500, 12.000),
-
-                                    new Pose(28.500, 11.000)
-                            )
-                    ).setTangentHeadingInterpolation()
-                    .setReversed()
+                    new BezierLine(
+                            new Pose(144 - 11.500, 12.000),
+                            new Pose(144 - 28.500, 11.000)))
+                    .setLinearHeadingInterpolation(0, 0)
                     .build();
 
             PickUpHumanBalls2 = follower.pathBuilder().addPath(
-                            new BezierCurve(
-                                    new Pose(28.500, 11.000),
-                                    new Pose(15.800, 9.000),
-                                    new Pose(10.000, 9.000)
-                            )
-                    ).setTangentHeadingInterpolation()
-
+                    new BezierCurve(
+                            new Pose(144 - 28.500, 11.000),
+                            new Pose(144 - 15.800, 9.000),
+                            new Pose(144 - 10.000, 9.000)))
+                    .setLinearHeadingInterpolation(0, 0)
                     .build();
 
             Park = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(48.000, 11.000),
-
-                                    new Pose(35.000, 12.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-
+                    new BezierLine(
+                            new Pose(144 - 48.000, 11.000),
+                            new Pose(115, 12.000)))
+                    .setLinearHeadingInterpolation(0, 0)
                     .build();
         }
     }
@@ -219,13 +182,15 @@ public class AL15CazBun extends OpMode {
                 break;
 
             case 2: // Wait Tag
-                if (limeLight.GetID() != 0 || pathTimer.getElapsedTimeSeconds() > 0.8)
+                if ((limeLight.GetID() != 0 && pathTimer.getElapsedTimeSeconds() > 1.5) || pathTimer.getElapsedTimeSeconds() > 2) {
+                    if (limeLight.GetID() == 0) limeLight.SkipArtifactDetection();
                     setPathState(3);
+                }
                 break;
 
-            case 3: // Turret Pre-position
+            case 3: // Turret Fixed Position (Stuck at 60)
                 turret.setTrackingTag(true);
-                //turret.setTargetAngle(-60);
+                //turret.setTargetAngle(59);
                 setPathState(4);
                 break;
 
@@ -233,8 +198,7 @@ public class AL15CazBun extends OpMode {
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 1.5
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 2)) {
-                    limeLight.RelocalizationBlue();
-                    //turret.setTrackingTag(true);
+                    limeLight.RelocalizationRed();
                     setPathState(5);
                 }
                 break;
@@ -242,54 +206,30 @@ public class AL15CazBun extends OpMode {
             case 5: // Settle and Start Shoot
                 if (pathTimer.getElapsedTimeSeconds() > 0.2) {
                     shooter.StartAutoShoot();
+                    pathTimer.getElapsedTimeSeconds();
                     setPathState(6);
                 }
                 break;
 
-            case 6: // Monitor Shot 1
-                if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > maxShootingTime) {
-                    follower.followPath(paths.FirstStackPos, true);
-                    setPathState(7);
-                }
-                break;
-
-            case 7: // Move to FirstStackPos
-                if (!follower.isBusy()) {
-                    follower.followPath(paths.PickUpStack, true);
-                    intake.SetPowerMax();
-                    setPathState(8);
-                }
-                break;
-
-            case 8: // Picking up Stack
-                if (!follower.isBusy()) {
-                    if (pathTimer.getElapsedTimeSeconds() > pickupWaitTime) {
-                        follower.followPath(paths.ShootingPos, true);
-                        setPathState(9);
-                    }
-                } else {
-                    pathTimer.resetTimer();
+            case 6: // Monitor Shot 1 (Preload)
+                if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > 2.5) {
+                    follower.followPath(paths.PickUpHumanBalls1, true);
+                    setPathState(15);
                 }
                 break;
 
             case 9: // Arrive ShootingPos for Shot 2
                 if (!follower.isBusy()) {
                     limeLight.getLimelight().pipelineSwitch(0);
-                    setPathState(11);
+                    setPathState(12);
                 }
-                break;
-
-            case 11: // Turret Pre-position 2
-                turret.setTrackingTag(false);
-                turret.setTargetAngle(-45);
-                setPathState(12);
                 break;
 
             case 12: // Wait Turret 2
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 0.7
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.0)) {
-                    limeLight.RelocalizationBlue();
+                    limeLight.RelocalizationRed();
                     setPathState(13);
                 }
                 break;
@@ -297,6 +237,7 @@ public class AL15CazBun extends OpMode {
             case 13: // Shoot 2
                 if (pathTimer.getElapsedTimeSeconds() > 0.2) {
                     shooter.StartAutoShoot();
+                    pathTimer.resetTimer();
                     setPathState(14);
                 }
                 break;
@@ -337,21 +278,15 @@ public class AL15CazBun extends OpMode {
             case 18: // Arrive ShootingPos for Shot 3
                 if (!follower.isBusy()) {
                     limeLight.getLimelight().pipelineSwitch(0);
-                    setPathState(20);
+                    setPathState(21);
                 }
-                break;
-
-            case 20: // Turret 3
-                turret.setTrackingTag(false);
-                turret.setTargetAngle(-45);
-                setPathState(21);
                 break;
 
             case 21: // Wait Turret 3
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 0.7
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.0)) {
-                    limeLight.RelocalizationBlue();
+                    limeLight.RelocalizationRed();
                     setPathState(22);
                 }
                 break;
@@ -359,6 +294,7 @@ public class AL15CazBun extends OpMode {
             case 22: // Shoot 3
                 if (pathTimer.getElapsedTimeSeconds() > 0.2) {
                     shooter.StartAutoShoot();
+                    pathTimer.resetTimer();
                     setPathState(23);
                 }
                 break;

@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -173,9 +172,22 @@ public class Mixer implements Subsystem {
         logger.Log("Nr. bile verzi", countGreen);
     }
 
-    public int GetColorPosition(Color color) {
+    public int GetColorPositionClosest(Color color) {
         logger.Log("Searching for", Utils.ColorToString(color));
         for (int i = 0; i < 3; i++) {
+            logger.Log(String.format("Slot %d", i), Utils.ColorToString(artifacte[i]));
+            if (artifacte[i] != Color.None && artifacte[i] == color) {
+                logger.Log("Found at position", i);
+                return i;
+            }
+        }
+        logger.Log("Color not found", -1);
+        return -1;
+    }
+
+    public int GetColorPositionFurthest(Color color) {
+        logger.Log("Searching for", Utils.ColorToString(color));
+        for (int i = 2; i >= 0; i--) {
             logger.Log(String.format("Slot %d", i), Utils.ColorToString(artifacte[i]));
             if (artifacte[i] != Color.None && artifacte[i] == color) {
                 logger.Log("Found at position", i);
@@ -246,6 +258,12 @@ public class Mixer implements Subsystem {
             return;
         ServoMixer1.setPosition(pos);
         ServoMixer2.setPosition(pos);
+        currentPosition = pos;
+    }
+
+    public void MoveToThreeBalls() {
+        double targetPos = initialPosition + 4 * offsetPosition;
+        SetPosition(targetPos);
     }
 
     public double GetTimerElapsed() {

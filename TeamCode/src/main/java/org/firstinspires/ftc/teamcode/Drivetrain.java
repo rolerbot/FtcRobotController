@@ -20,15 +20,27 @@ public class Drivetrain implements Subsystem {
     private DcMotorEx MotorSD = null;
     private ButtonReader Viteza;
     private final GamepadEx ct1, ct2;
+    private RobotPinpoint robotPinpoint = null;
     double schimbator = 0.4;// Viteza 0.4
     double[] speeds = new double[4];
     double drive, strafe, twist;
     private double[] headingLockCorrection = { 0, 0, 0, 0 }; // Heading lock corrections
     private double[] positionLockCorrection = { 0, 0, 0, 0 }; // Position lock corrections (takes priority)
 
+    // Active Brake Variables
+    private double targetX, targetY, targetH;
+    private double currentX, currentY, currentH;
+    private boolean isLocked = false;
+
     public Drivetrain(GamepadEx ct1, GamepadEx ct2) {
         this.ct1 = ct1;
         this.ct2 = ct2;
+    }
+
+    public Drivetrain(GamepadEx ct1, GamepadEx ct2, RobotPinpoint robotPinpoint) {
+        this.ct1 = ct1;
+        this.ct2 = ct2;
+        this.robotPinpoint = robotPinpoint;
     }
 
     public void LinkComponents(HardwareMap hardwareMap) {
@@ -67,6 +79,20 @@ public class Drivetrain implements Subsystem {
         drive = -ct1.getLeftY() * schimbator;
         strafe = ct1.getLeftX() * schimbator;
         twist = schimbator * (ct1.gamepad.left_trigger - ct1.gamepad.right_trigger);
+
+        // --- ACTIVE BRAKE SECTION ---
+        // Calling it here makes it internal to Run(). 
+        // We check (ct1 != null) to ensure we are in TeleOp and not Auto.
+        /*
+        if (ct1 != null && robotPinpoint != null && Math.abs(drive) < 0.05 && Math.abs(strafe) < 0.05 && Math.abs(twist) < 0.05) {
+            updatePinpointData(robotPinpoint.GetX(), robotPinpoint.GetY(), robotPinpoint.GetHeading());
+            performActiveBrake();
+        } else {
+            isLocked = false;
+        }
+        */
+        // -----------------------------
+
         speeds[0] = (drive - strafe + twist); // FS
         speeds[1] = (drive + strafe - twist); // FD
         speeds[2] = (drive + strafe + twist); // SS
@@ -151,5 +177,49 @@ public class Drivetrain implements Subsystem {
         positionLockCorrection[1] = movementPowers[1]; // Right Front
         positionLockCorrection[2] = movementPowers[2]; // Left Back
         positionLockCorrection[3] = movementPowers[3]; // Right Back
+    }
+
+    /**
+     * Updates the drivetrain with current Pinpoint data for the Active Brake logic.
+     */
+    public void updatePinpointData(double x, double y, double h) {
+        this.currentX = x;
+        this.currentY = y;
+        this.currentH = h;
+    }
+
+    /**
+     * Actively resists movement by calculating power needed to return to the last stopped position.
+     * This makes the robot "fight" to stay in one place.
+     */
+    private void performActiveBrake() {
+        if (!isLocked) {
+            targetX = currentX;
+            targetY = currentY;
+            targetH = currentH;
+            isLocked = true;
+        }
+
+        double errorX = targetX - currentX;
+        double errorY = targetY - currentY;
+        double errorH = targetH - currentH;
+
+        // Angle normalization (ensure error is between -180 and 180)
+        while (errorH > 180) errorH -= 360;
+        while (errorH < -180) errorH += 360;
+
+        // Convert field errors to robot-centric errors based on current heading
+        double angleRad = -Math.toRadians(currentH);
+        double robotErrorX = errorX * Math.cos(angleRad) - errorY * Math.sin(angleRad);
+        double robotErrorY = errorX * Math.sin(angleRad) + errorY * Math.cos(angleRad);
+
+        // PID-like Gains (P only for simplicity)
+        // These control how hard the robot "fights" back.
+        double kP = 0.08;   // Resistance to movement
+        double kPH = 0.01;  // Resistance to turning
+
+        drive += robotErrorX * kP;
+        strafe += robotErrorY * kP;
+        twist += errorH * kPH;
     }
 }

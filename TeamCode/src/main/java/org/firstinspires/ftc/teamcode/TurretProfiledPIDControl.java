@@ -7,26 +7,30 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.arcrobotics.ftclib.gamepad.GamepadEx;
+import com.arcrobotics.ftclib.gamepad.ButtonReader;
+import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 
 public class TurretProfiledPIDControl implements Subsystem {
     private DcMotorEx MotorTurela = null;
     private final LimeLight limeLight;
     private final Shooter shooter;
+    private GamepadEx ct2;
+    private ButtonReader btnManual;
+    private boolean isManualMode = false;
 
     private final double TICKS_PER_DEGREE = 5.25;
     private final int TICKS_AT_CENTER = 472;
     private final int MIN_TICKS = 0;
     private final int MAX_TICKS = 915;
 
-    // Profiled PID Constants - These will need tuning
-    public static double Kp = 0.042; // (0.051 * 0.8)
+    public static double Kp = 0.042;
     public static double Ki = 0.00;
-    public static double Kd = 0.005; // (0.0045 * 1.4)
-    public static double maxVelocity = 300.0; // degrees per second
-    public static double maxAcceleration = 400.0; // (600.0 * 0.6) // 360
+    public static double Kd = 0.005;
+    public static double maxVelocity = 300.0;
+    public static double maxAcceleration = 400.0;
 
     private ProfiledPIDController controller;
-
     private double maxTurretSpeed = 0.8;
     private double avgDistance = 0;
     private double persistentTargetAngle = 0;
@@ -42,18 +46,15 @@ public class TurretProfiledPIDControl implements Subsystem {
     private double targetAngle = 0;
     private int currentTicks = 0;
     private boolean usePinpointFallback = true;
-
     private double lastKp = Kp, lastKi = Ki, lastKd = Kd;
 
-    public TurretProfiledPIDControl(LimeLight limeLight, Shooter shooter) {
+    public TurretProfiledPIDControl(LimeLight limeLight, Shooter shooter, GamepadEx ct2) {
         this.limeLight = limeLight;
         this.shooter = shooter;
-        setupController();
-    }
-
-    public TurretProfiledPIDControl(LimeLight limeLight) {
-        this.limeLight = limeLight;
-        this.shooter = null;
+        this.ct2 = ct2;
+        if (ct2 != null) {
+            this.btnManual = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
+        }
         setupController();
     }
 
@@ -86,245 +87,136 @@ public class TurretProfiledPIDControl implements Subsystem {
         currentAngle = (currentTicks - TICKS_AT_CENTER) / TICKS_PER_DEGREE;
         persistentTargetAngle = currentAngle;
 
-        // Reset controller to current state
         controller.reset(currentAngle);
         targetAngle = currentAngle;
-
         lastTargetTimer.reset();
     }
 
     public void Update() {
+        if (ct2 != null) {
+            btnManual.readValue();
+            if (btnManual.wasJustPressed()) {
+                isManualMode = !isManualMode;
+                if (!isManualMode) {
+                    MotorTurela.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+                    MotorTurela.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+                    persistentTargetAngle = 0;
+                    controller.reset(0);
+                }
+            }
+        }
+
         currentTicks = MotorTurela.getCurrentPosition();
         currentAngle = (currentTicks - TICKS_AT_CENTER) / TICKS_PER_DEGREE;
 
-        // --- 1. Calculate Dynamic Thresholds & PID ---
+        if (isManualMode) {
+            double stick = ct2.getLeftX();
+            if (Math.abs(stick) < 0.05) stick = 0;
+            double manualPower = -stick * 0.7; // Higher max speed for "sensibilitate"
+            // Bound checking in manual
+            if (currentTicks >= MAX_TICKS && manualPower > 0) manualPower = 0;
+            if (currentTicks <= MIN_TICKS && manualPower < 0) manualPower = 0;
+            MotorTurela.setPower(manualPower);
+            return;
+        }
+
         double actingKp = Kp;
         double actingKd = Kd;
         double actingMaxAccel = maxAcceleration;
         double currentDeadzone = 0.5;
         double currentTolerance = ANGLE_TOLERANCE_DEG;
 
-        // Dynamic Thresholds to stop oscillation at closer distances
         if (avgDistance > 0) {
             if (avgDistance < 90.55) { // < 2.3m (Very Close)
                 currentDeadzone = 1.8; // Wider deadzone for stability
                 currentTolerance = 2.0; // Higher tolerance to stop hunting
             } else if (avgDistance < 130.0) { // < 3.3m (Mid-Range)
-                currentDeadzone = 1.1;
-                currentTolerance = 1.3;
+                currentDeadzone = 2;
+                currentTolerance = 2.2;
             }
         }
 
-        // --- PINPOINT FALLBACK BOOST ---
-        // If we are NOT actively tracking a tag, we can be more aggressive to find it
-        // faster
         boolean isFallbackMode = !hasTrackingLock || lastTargetTimer.seconds() >= VISION_TIMEOUT_SEC || !isTrackingTag;
         double actingMaxSpeed = maxTurretSpeed;
         double actingMaxVel = maxVelocity;
 
         if (isFallbackMode) {
-            actingMaxSpeed = 0.8; // Full motor power for pinpoint moves
-            actingMaxVel = maxVelocity; // 25% faster velocity
-            actingMaxAccel = maxAcceleration; // 25% faster acceleration
+            actingMaxSpeed = 0.8;
+            actingMaxVel = maxVelocity;
+            actingMaxAccel = maxAcceleration;
         }
 
-        // Keep last values updated if they change from tuning
         if (Kp != lastKp || Ki != lastKi || Kd != lastKd) {
-            lastKp = Kp;
-            lastKi = Ki;
-            lastKd = Kd;
+            lastKp = Kp; lastKi = Ki; lastKd = Kd;
         }
 
         controller.setPID(actingKp, Ki, actingKd);
         controller.setConstraints(new TrapezoidProfile.Constraints(actingMaxVel, actingMaxAccel));
         controller.setTolerance(currentTolerance);
 
-        // --- 2. Process Vision Tracking ---
         if (isTrackingTag) {
             LLResult result = limeLight.getLimelight().getLatestResult();
-
             if (result != null) {
                 double[] pythonOut = result.getPythonOutput();
-
                 if (pythonOut != null && pythonOut.length >= 3 && pythonOut[0] > 0.5) {
                     lastTargetTimer.reset();
                     hasTrackingLock = true;
-
-                    double horizontalAngleDeg = pythonOut[1];
+                    double horizontalAngleDeg = limeLight.getLimelight().getLatestResult().getTx();//pythonOut[1];
                     double offsetDistance = pythonOut[2];
-
                     if (Math.abs(horizontalAngleDeg) > currentDeadzone) {
                         persistentTargetAngle = currentAngle - horizontalAngleDeg;
                     }
-
                     double distInches = offsetDistance * 39.3701;
-                    if (avgDistance == 0) {
-                        avgDistance = distInches;
-                    }
-                    // Fixed EMA weights (0.75 + 0.25 = 1.0)
+                    if (avgDistance == 0) avgDistance = distInches;
                     avgDistance = (0.75 * avgDistance) + (0.25 * distInches);
-                } else {
-                    if (hasTrackingLock && usePinpointFallback &&
-                            lastTargetTimer.seconds() >= VISION_TIMEOUT_SEC) {
-                        persistentTargetAngle = getClosestAngleByPinpoint();
-                    }
+                } else if (hasTrackingLock && usePinpointFallback && lastTargetTimer.seconds() >= VISION_TIMEOUT_SEC) {
+                    persistentTargetAngle = getClosestAngleByPinpoint();
                 }
             }
-        } else {
-            if (usePinpointFallback) {
-                persistentTargetAngle = getClosestAngleByPinpoint();
-            }
+        } else if (usePinpointFallback) {
+            persistentTargetAngle = getClosestAngleByPinpoint();
         }
 
-        // --- 3. Execute PID Control ---
         final double MAX_ANGLE_RANGE = 90.0;
         persistentTargetAngle = Range.clip(persistentTargetAngle, -MAX_ANGLE_RANGE, MAX_ANGLE_RANGE);
         targetAngle = persistentTargetAngle;
 
-        // Calculate PID output using the profiled controller
         double power = controller.calculate(currentAngle, targetAngle);
-
-        // Clip power to the active max speed
         power = Range.clip(power, -actingMaxSpeed, actingMaxSpeed);
 
-        // Safety bounds
-        if (currentTicks >= MAX_TICKS && power > 0)
-            power = 0;
-        if (currentTicks <= MIN_TICKS && power < 0)
-            power = 0;
+        if (currentTicks >= MAX_TICKS && power > 0) power = 0;
+        if (currentTicks <= MIN_TICKS && power < 0) power = 0;
 
         MotorTurela.setPower(power);
     }
 
-    public boolean isOnTarget() {
-        return controller.atGoal();
-    }
+    public boolean isOnTarget() { return controller.atGoal(); }
 
     private double getClosestAngleByPinpoint() {
-        double TARGET_X;
-        double TARGET_Y;
-
-        if (limeLight.IsBlue()) {
-            TARGET_X = 0.0;
-            TARGET_Y = 144.0;
-        } else {
-            TARGET_X = 144.0;
-            TARGET_Y = 144.0;
-        }
-
+        double TARGET_X = limeLight.IsBlue() ? 0.0 : 144.0;
+        double TARGET_Y = 144.0;
         double robotX = limeLight.GetRobotX() + 2.11;
         double robotY = limeLight.GetRobotY() - 3.31;
-        double robotHeadingRad = limeLight.GetRobotHeading();
-        double robotHeading = Math.toDegrees(robotHeadingRad);
+        double robotHeading = Math.toDegrees(limeLight.GetRobotHeading());
 
         double deltaX = TARGET_X - robotX;
         double deltaY = TARGET_Y - robotY;
-
-        double angleToTargetRadians = Math.atan2(deltaY, deltaX);
-        double angleToTargetDegrees = Math.toDegrees(angleToTargetRadians);
-
+        double angleToTargetDegrees = Math.toDegrees(Math.atan2(deltaY, deltaX));
         double relativeAngle = angleToTargetDegrees - robotHeading;
 
-        while (relativeAngle > 180)
-            relativeAngle -= 360;
-        while (relativeAngle < -180)
-            relativeAngle += 360;
-
+        while (relativeAngle > 180) relativeAngle -= 360;
+        while (relativeAngle < -180) relativeAngle += 360;
         return relativeAngle;
     }
 
-    public double getErrorDegrees() {
-        return targetAngle - currentAngle;
-    }
-
-    public int getErrorTicks() {
-        return (int) (targetAngle * TICKS_PER_DEGREE + TICKS_AT_CENTER) - currentTicks;
-    }
-
-    public void setTrackingTag(boolean track) {
-        isTrackingTag = track;
-    }
-
-    public boolean isTrackingTag() {
-        return isTrackingTag;
-    }
-
-    public void setUsePinpointFallback(boolean use) {
-        usePinpointFallback = use;
-    }
-
-    public boolean isUsingPinpointFallback() {
-        return usePinpointFallback;
-    }
-
-    public double getCurrentDistance() {
-        return avgDistance;
-    }
-
-    public void setTargetAngle(double angleDegrees) {
-        persistentTargetAngle = Range.clip(angleDegrees, -90.0, 90.0);
-    }
-
-    public void setTargetTicks(int ticks) {
-        persistentTargetAngle = (ticks - TICKS_AT_CENTER) / TICKS_PER_DEGREE;
-        persistentTargetAngle = Range.clip(persistentTargetAngle, -90.0, 90.0);
-    }
-
-    public void setMaxSpeed(double speed) {
-        maxTurretSpeed = Range.clip(speed, 0.0, 1.0);
-    }
-
-    public double getMaxSpeed() {
-        return maxTurretSpeed;
-    }
-
-    public double getCurrentAngle() {
-        return currentAngle;
-    }
-
-    public int getCurrentTicks() {
-        return MotorTurela.getCurrentPosition();
-    }
-
-    public double getTargetAngle() {
-        return targetAngle;
-    }
-
-    public int getTargetTicks() {
-        return (int) (targetAngle * TICKS_PER_DEGREE + TICKS_AT_CENTER);
-    }
-
-    public boolean hasTrackingLock() {
-        return hasTrackingLock;
-    }
-
-    public double getTimeSinceLastTag() {
-        return lastTargetTimer.seconds();
-    }
-
-    public boolean isActivelyTracking() {
-        return hasTrackingLock && lastTargetTimer.seconds() < VISION_TIMEOUT_SEC;
-    }
-
-    public void resetTrackingLock() {
-        hasTrackingLock = false;
-        lastTargetTimer.reset();
-    }
-
-    public void updatePID(double p, double i, double d) {
-        Kp = p;
-        Ki = i;
-        Kd = d;
-        controller.setPID(p, i, d);
-    }
-
-    public void updateConstraints(double maxVel, double maxAccel) {
-        maxVelocity = maxVel;
-        maxAcceleration = maxAccel;
-        controller.setConstraints(new TrapezoidProfile.Constraints(maxVel, maxAccel));
-    }
-
-    public void Run() {
-        Update();
-    }
+    public void setTrackingTag(boolean track) { isTrackingTag = track; }
+    public boolean isTrackingTag() { return isTrackingTag; }
+    public double getCurrentDistance() { return avgDistance; }
+    public void setTargetAngle(double angleDegrees) { persistentTargetAngle = Range.clip(angleDegrees, -90.0, 90.0); }
+    public void setMaxSpeed(double speed) { maxTurretSpeed = Range.clip(speed, 0.0, 1.0); }
+    public double getCurrentAngle() { return currentAngle; }
+    public int getCurrentTicks() { return MotorTurela.getCurrentPosition(); }
+    public double getTargetAngle() { return targetAngle; }
+    public void resetTrackingLock() { hasTrackingLock = false; lastTargetTimer.reset(); }
+    public void Run() { Update(); }
 }

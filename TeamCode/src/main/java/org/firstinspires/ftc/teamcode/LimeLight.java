@@ -9,6 +9,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.pedroPathing.PinpointBlocksDriver.GoBildaPinpointDriver;
 import com.pedropathing.ftc.FTCCoordinates;
 import com.pedropathing.geometry.PedroCoordinates;
+import com.arcrobotics.ftclib.gamepad.ButtonReader;
+import com.arcrobotics.ftclib.gamepad.GamepadEx;
+import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 
 public class LimeLight implements Subsystem {
     private Limelight3A limelight;
@@ -16,6 +19,8 @@ public class LimeLight implements Subsystem {
     private boolean isBlue = true;
     private boolean IsAuto = true;
     private GoBildaPinpointDriver pinpoint;
+    private GamepadEx ct2;
+    private ButtonReader btn21, btn22, btn23;
     private int currentPipeline = -1; // Track current pipeline to avoid spamming resets
 
     // Constante pentru conversie
@@ -136,6 +141,22 @@ public class LimeLight implements Subsystem {
         }
     }
 
+    public LimeLight(boolean IsBlue, boolean isAuto, GamepadEx ct2) {
+        this.isBlue = IsBlue;
+        this.IsAuto = isAuto;
+        this.ct2 = ct2;
+
+        // Set target position based on alliance
+        if (isBlue) {
+            targetX = 0;
+            targetY = 144;
+        } else {
+            // Red alliance basket position
+            targetX = 144;
+            targetY = 144;
+        }
+    }
+
     public boolean IsBlue() {
         return isBlue;
     }
@@ -161,6 +182,12 @@ public class LimeLight implements Subsystem {
         limelight.setPollRateHz(125); // Max possible update rate
         limelight.start();
 
+        if (ct2 != null) {
+            btn21 = new ButtonReader(ct2, GamepadKeys.Button.Y);
+            btn22 = new ButtonReader(ct2, GamepadKeys.Button.X);
+            btn23 = new ButtonReader(ct2, GamepadKeys.Button.A);
+        }
+
         // Always start on Pipeline 0 to search for artifacts (21, 22, 23)
         switchPipeline(0);
     }
@@ -168,6 +195,26 @@ public class LimeLight implements Subsystem {
     // Update the Run() method:
     public void Run() {
         UpdatePinpointPosition();
+
+        if (ct2 != null) {
+            btn21.readValue();
+            btn22.readValue();
+            btn23.readValue();
+
+            if (btn21.wasJustPressed()) {
+                this.IdTag = 21;
+                SetOrder(21);
+                this.artifactOrderDetected = true;
+            } else if (btn22.wasJustPressed()) {
+                this.IdTag = 22;
+                SetOrder(22);
+                this.artifactOrderDetected = true;
+            } else if (btn23.wasJustPressed()) {
+                this.IdTag = 23;
+                SetOrder(23);
+                this.artifactOrderDetected = true;
+            }
+        }
 
         if (artifactOrderDetected) {
             UpdateRobotPositionFromLimelight();

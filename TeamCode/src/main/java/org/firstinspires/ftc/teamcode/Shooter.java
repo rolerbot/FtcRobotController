@@ -5,10 +5,12 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 public class Shooter implements Subsystem {
     private ButtonReader Aruncare;
     private ButtonReader ThrowGreen, ThrowPurple;
+    private ButtonReader TransferUp, TransferDown;
     private DcMotorEx MotorRidicareBila = null;
     private final GamepadEx ct1, ct2;
     private final double hoodInitialPosition = 0.51;
@@ -22,7 +24,7 @@ public class Shooter implements Subsystem {
     private boolean shootingAllowed = false;
     public Servo ServoHood = null;
 
-    private double constDist = 0.0;
+    private double constDist = 3.6; // Default fallback for ShootingPos (~3.6m)
     private int caseSwitch = 0;
 
     // Prepare state machine (runs before button press when CanShootArranged)
@@ -47,7 +49,8 @@ public class Shooter implements Subsystem {
     private boolean isLong = false;
     private boolean autoShooting = false;
     private boolean isAutoShooting = false;
-    private double breakMultiplier = 6;
+    private double breakMultiplierNear = 6.3;
+    private double breakMultiplierFar = 3.0;
     private final double TRANSFER_P = 10.0;
     private final double TRANSFER_I = 3.0;
     private final double TRANSFER_D = 0.0;
@@ -63,41 +66,69 @@ public class Shooter implements Subsystem {
     private int orderedSeqIndex = 0;
     private double targetOrderedEncoder = 0;
     private ElapsedTime orderedTimer = new ElapsedTime();
-    private int[] currentOrderedSlots = new int[3];   // which mixer slot to RemoveArtifact at each step
-    private double[] currentOrderedServo = new double[3]; // servo positions in shoot order
-    private double[] currentOrderedEnc = new double[3];   // encoder targets in shoot order
-
+    private int orderedStartIndex = 0;
+    private boolean orderedReverse = false;
     private int unorderedCaseSwitch = 0;
     private int unorderedSeqIndex = 0;
     private double targetUnorderedPos = 0;
     private double targetUnorderedEncoder = 0;
     private ElapsedTime pauseTimer = new ElapsedTime();
-    private double offsetPositionMixer = 0.09028;
-    private final double initialPosMixer = 0.0827 + 2 * offsetPositionMixer;
+    private ElapsedTime unorderedTimer = new ElapsedTime();
+    private final double offsetPositionMixer = 0.09028;
+    private final double initialPosMixer = 0.0827 + 2 * offsetPositionMixer; // = 0.26326
 
-    // Load positions per slot index (0, 1, 2)
+    // Physical shoot positions per artifacte index (measured)
     private final double[] artPoz = {
-            initialPosMixer + 3 * offsetPositionMixer,
-            initialPosMixer + 1 * offsetPositionMixer,
-            initialPosMixer - 1 * offsetPositionMixer
+            initialPosMixer, // first ball to shoot
+            initialPosMixer + 2 * offsetPositionMixer, // second ball to shoot
+            initialPosMixer + 4 * offsetPositionMixer // third ball to shoot
+    };
+    // initialMixer - 2 * offset -third ball shoot
+    // initialMixer + 6 * offset - first ball shoot
+    // initialMixer + 8 * offset - second ball shoot
+
+    private final double[] artPozOrdered = {
+            initialPosMixer - offsetPositionMixer, // idx0
+            initialPosMixer + offsetPositionMixer, // idx1
+            initialPosMixer + 3 * offsetPositionMixer, // idx2
+            initialPosMixer + 5 * offsetPositionMixer, // idx3
+            initialPosMixer + 7 * offsetPositionMixer // idx4
     };
 
-    // Encoder positions per slot index (0, 1, 2) — must match artPoz order
     private final double[] pozEncoder = {
-            4050,
-            1335,
-            -1380
+            0,
+            2709,
+            5418
     };
 
-    // Shoot baseline — same formula as Unordered (pre-positions one step past slot 0,
-    // then sweeps decreasing through all slots in one direction)
-    private final double SHOOT_BASELINE_POS = initialPosMixer + 4 * offsetPositionMixer;
-    private final double SHOOT_BASELINE_ENC = 4050 + 1357.5;
+    private final double[] pozEncoderOrdered = {
+            -1354.5, // idx0
+            1354.5, // idx1
+            4063.5, // idx2
+            6772.5, // idx3
+            9481.5 // idx4
+    };
+
+    // which mixer slot each artPozOrdered index corresponds to
+    private final int[] slotAtIndex = { 2, 1, 0, 2, 1 };
+
+    private int[] orderedShootSlots = { 0, 1, 2 };
+    private double[] orderedShootPositions = { 0, 0, 0 };
+    private double[] orderedShootEncoders = { 0, 0, 0 };
+
+    // Shoot baseline — one step past artifacte[2] (last loaded ball)
+    // artifacte[0]=enc0, artifacte[1]=enc2709, artifacte[2]=enc5341
+    private final double SHOOT_BASELINE_POS = initialPosMixer + 4 * offsetPositionMixer; // = 0.6244
+    private final double SHOOT_BASELINE_ENC = 5418 + 1354.5; // = 6772.5
 
     private ShooterDistance shooterDistance;
 
     private boolean autoSpinUpBoost = false;
     private ElapsedTime autoBoostTimer = new ElapsedTime();
+    private boolean prepareCalculated = false;
+    private boolean wasArranged = false;
+    private int manualTransferMode = 0; // 0: AUTO, 1: FORWARD, 2: REVERSE
+    private int lastTagId = 0;
     private boolean brakeDone = false;
 
     public Shooter(TelemetryCustom tl, Mixer mixer, GamepadEx ct1, GamepadEx ct2, LimeLight limelight) {
@@ -123,6 +154,8 @@ public class Shooter implements Subsystem {
             Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
             ThrowGreen = new ButtonReader(ct1, GamepadKeys.Button.Y);
             ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.X);
+            TransferUp = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
+            TransferDown = new ButtonReader(ct2, GamepadKeys.Button.DPAD_DOWN);
         }
 
         ServoHood = hardwareMap.get(Servo.class, "ServoHood");
@@ -178,10 +211,10 @@ public class Shooter implements Subsystem {
             runtime.reset();
             shootingAllowed = true;
             if (CanShootArranged()) {
+                DetermineOrderedSequence();
                 shootType = ShootingState.Arranged;
                 arrangedIndex = 0;
                 prepareCase = 0; // reset so next prepare starts fresh
-                BuildOrderedSequence();
             } else {
                 shootType = ShootingState.Unarranged;
                 arrangedIndex = 0;
@@ -203,16 +236,19 @@ public class Shooter implements Subsystem {
         }
 
         if (!shootingAllowed && CanShootArranged()) {
+            // Both balls correct AND tag read — safe to build sequence and prepare
             RunPrepare();
             UpdateDistanceAndHood();
             CalculateShootingVelocity();
         } else if (!shootingAllowed && mixer.GetArtifactCount() == 3 && !CanShootArranged()) {
-            prepareCase = 0; // reset prepare if balls change
+            prepareCase = 0; // not ready yet, reset
+            prepareCalculated = false;
             MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
             UpdateDistanceAndHood();
             CalculateShootingVelocity();
         } else if (!shootingAllowed) {
             prepareCase = 0;
+            prepareCalculated = false;
             MotorRidicareBila.setVelocity(0);
             UpdateDistanceAndHood();
             CalculateShootingVelocity();
@@ -220,120 +256,180 @@ public class Shooter implements Subsystem {
 
         MaintainVelocity();
         HandleShootStates();
-    }
 
-    /**
-     * Builds the ordered shoot sequence dynamically so the drum always sweeps
-     * in one direction (same as Unordered), while still satisfying the required
-     * color order.
-     */
-    private void RunPrepare() {
-        switch (prepareCase) {
-            case 0:
-                // Build sequence and move to pre-position (one offset BEFORE first shoot slot)
-                BuildOrderedSequence();
-
-                // FIXED: We ADD the offset to sit before the target, because the sweep DECREASES values
-                mixer.SetPosition(currentOrderedServo[0] + offsetPositionMixer);
-                targetPrepareEncoder = currentOrderedEnc[0] + 1357.5;
-
-                MotorRidicareBila.setVelocity(0);
-                prepareTimer.reset();
-                prepareCase = 1;
-                break;
-
-            case 1:
-                // Wait until mixer arrives at pre-position
-                int enc = (int) mixer.GetEncoderPosition();
-                if (Math.abs(enc - targetPrepareEncoder) < 200 || prepareTimer.seconds() > 2.0) {
-                    // Arrived — now start MotorRidicareBila
-                    MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
-                    prepareCase = 2;
+        // Manual override toggle: Forward (Transfer), Reverse (-0.7), or AUTO
+        if (TransferUp != null && TransferDown != null) {
+            if (TransferUp.wasJustPressed()) {
+                if (manualTransferMode != 0) {
+                    manualTransferMode = 0;
+                } else {
+                    manualTransferMode = 1;
                 }
-                break;
+            }
+            if (TransferDown.wasJustPressed()) {
+                if (manualTransferMode != 0) {
+                    manualTransferMode = 0;
+                } else {
+                    manualTransferMode = 2;
+                }
+            }
 
-            case 2:
-                // Holding position, motor running, waiting for button press
-                // Nothing to do — Run() keeps MaintainVelocity going
-                break;
+            if (manualTransferMode == 1) {
+                MotorRidicareBila.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
+            } else if (manualTransferMode == 2) {
+                MotorRidicareBila.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                MotorRidicareBila.setPower(-0.7);
+            }
+            // In AUTO (0), the automatic setVelocity calls from Run logic will persist.
         }
     }
 
-    private void BuildOrderedSequence() {
-        Color[] required = limelight.artifactOrder;
+    public void StartBackMotorAuto() {
+        MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
+    }
 
-        // FIXED: A full revolution is 6 multiplier units, not 3.
-        double FULL_REV_ENC = 6 * 1357.5;
-        double FULL_REV_POS = 6 * offsetPositionMixer;
-
-        // Temporary array to hold the chosen slots before we apply the wrap-around math
-        int[] tempSlots = new int[3];
-        boolean matchFound = false;
-
-        // Try all 3 circular rotations for a unidirectional match
-        int[][] rotations = {{0,1,2},{1,2,0},{2,0,1}};
-        for (int[] rot : rotations) {
-            int s0 = rot[0], s1 = rot[1], s2 = rot[2];
-            if (mixer.artifacte[s0] == required[0]
-                    && mixer.artifacte[s1] == required[1]
-                    && mixer.artifacte[s2] == required[2]) {
-
-                tempSlots[0] = s0; tempSlots[1] = s1; tempSlots[2] = s2;
-                matchFound = true;
-                telemetry.Log("seq", String.format("%d→%d→%d uni", s0, s1, s2));
-                break;
+    private void RunPrepare() {
+        if (!shootingAllowed) {
+            if (CanShootArranged()) {
+                // Reset if we just became arranged (new ball configuration)
+                int currentTagId = limelight.GetID();
+                if (!wasArranged || currentTagId != lastTagId) {
+                    DetermineOrderedSequence();
+                    prepareCalculated = false;
+                    wasArranged = true;
+                    lastTagId = currentTagId;
+                }
+                PrepareArranged();
+                int curEnc = (int) mixer.GetEncoderPosition();
+                if (Math.abs(curEnc - targetPrepareEncoder) < 200)
+                    MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
+                else
+                    MotorRidicareBila.setVelocity(0);
+            } else {
+                prepareCalculated = false;
+                wasArranged = false;
+                MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
             }
+        } else {
+            prepareCalculated = false;
+            wasArranged = false;
         }
+    }
 
-        if (!matchFound) {
-            // Exception: no unidirectional rotation matches.
-            // Shoot green first, then remaining 2 purples.
-            int greenSlot = -1;
-            for (int i = 0; i < 3; i++) {
-                if (mixer.artifacte[i] == Color.Green) { greenSlot = i; break; }
-            }
+    private void PrepareArranged() {
+        // Prepare position is half offset below FIRST target ball in the sequence
+        double prePos = orderedShootPositions[0] - offsetPositionMixer;
+        double preEnc = orderedShootEncoders[0] - 1354.5;
 
-            int p1 = -1, p2 = -1;
-            for (int i = 0; i < 3; i++) {
-                if (i == greenSlot) continue;
-                if (p1 == -1) p1 = i; else p2 = i;
-            }
+        targetPrepareEncoder = preEnc;
+        mixer.SetPosition(prePos);
+    }
 
-            tempSlots[0] = greenSlot; tempSlots[1] = p1; tempSlots[2] = p2;
-            telemetry.Log("seq", String.format("%d→%d→%d exception", greenSlot, p1, p2));
-        }
-
-        // Calculate baseline absolute positions for whatever sequence was chosen
+    private void DetermineOrderedSequence() {
+        int greenSlot = -1;
         for (int i = 0; i < 3; i++) {
-            currentOrderedSlots[i] = tempSlots[i];
-            currentOrderedServo[i] = SHOOT_BASELINE_POS - (1 + 2 * tempSlots[i]) * offsetPositionMixer;
-            currentOrderedEnc[i] = SHOOT_BASELINE_ENC - (1 + 2 * tempSlots[i]) * 1357.5;
+            if (mixer.artifacte[i] == Color.Green) {
+                greenSlot = i;
+                break;
+            }
         }
+        int tagId = limelight.GetID();
+        if (tagId < 21 || tagId > 23 || greenSlot == -1)
+            return;
 
-        // FIXED: Enforce strictly decreasing unidirectional sweep for ALL sequences (including exception)
-        // We apply the wrap-around to BOTH the encoder AND the servo position so they stay synced.
-        if (currentOrderedEnc[1] > currentOrderedEnc[0]) {
-            currentOrderedEnc[1] -= FULL_REV_ENC;
-            currentOrderedServo[1] -= FULL_REV_POS;
-        }
-        if (currentOrderedEnc[2] > currentOrderedEnc[1]) {
-            currentOrderedEnc[2] -= FULL_REV_ENC;
-            currentOrderedServo[2] -= FULL_REV_POS;
+        int caseId = (tagId - 21) * 3 + greenSlot;
+        switch (caseId) {
+            // --- TARGET 21: G P P ---
+            case 0: // Mixer G P P -> Order: 0, 1, 2
+                SetShot(0, 0);
+                SetShot(1, 1);
+                SetShot(2, 2);
+                break;
+            case 1: // Mixer P G P -> Order: 1, 0, 2
+                SetShot(0, 1);
+                SetShot(1, 0);
+                SetShot(2, 2);
+                break;
+            case 2: // Mixer P P G -> Order: 2, 0, 1
+                SetShot(0, 2);
+                SetShot(1, 0);
+                SetShot(2, 1);
+                break;
+
+            // --- TARGET 22: P G P ---
+            case 3: // Mixer G P P -> Order: 1, 0, 2
+                SetShot(0, 1);
+                SetShot(1, 0);
+                SetShot(2, 2);
+                break;
+            case 4: // Mixer P G P -> Order: 0, 1, 2
+                SetShot(0, 0);
+                SetShot(1, 1);
+                SetShot(2, 2);
+                break;
+            case 5: // Mixer P P G -> Order: 0, 2, 1
+                SetShot(0, 0);
+                SetShot(1, 2);
+                SetShot(2, 1);
+                break;
+
+            // --- TARGET 23: P P G ---
+            case 6: // Mixer G P P -> Order: 1, 2, 0
+                SetShot(0, 1);
+                SetShot(1, 2);
+                SetShot(2, 0);
+                break;
+            case 7: // Mixer P G P -> Order: 0, 2, 1
+                SetShot(0, 0);
+                SetShot(1, 2);
+                SetShot(2, 1);
+                break;
+            case 8: // Mixer P P G -> Order: 0, 1, 2
+                SetShot(0, 0);
+                SetShot(1, 1);
+                SetShot(2, 2);
+                break;
         }
     }
 
-    private String colorName(Color c) {
-        if (c == Color.Green) return "G";
-        if (c == Color.Purple) return "P";
-        return "N";
+    private void SetShot(int seqIdx, int slotIdx) {
+        orderedShootSlots[seqIdx] = slotIdx;
+        orderedShootPositions[seqIdx] = artPoz[slotIdx];
+        orderedShootEncoders[seqIdx] = pozEncoder[slotIdx];
+    }
+
+    private int ColorCase(Color color1, Color color2) {
+        if (color1 == Color.Green && color2 == Color.Purple)
+            return 1; // Green → Purple → Purple
+        else if (color1 == Color.Purple && color2 == Color.Green)
+            return 2; // Purple → Green → Purple
+        else if (color1 == Color.Purple && color2 == Color.Purple)
+            return 3; // Purple → Purple → Green
+        else
+            return 0; // Invalid state
+    }
+
+    private double CalculateDirection(int pos1, int pos2) {
+        if (pos1 == pos2)
+            pos2 = mixer.GetColorPositionFurthest(Color.Purple);
+        if ((pos1 == 0 && pos2 == 1) || (pos1 == 1 && pos2 == 2) || (pos1 == 2 && pos2 == 0))
+            return offsetPositionMixer;
+        else
+            return -offsetPositionMixer;
     }
 
     private void ReadButtons() {
-        if (Aruncare != null && ThrowGreen != null && ThrowPurple != null) {
+        if (Aruncare != null)
             Aruncare.readValue();
+        if (ThrowGreen != null)
             ThrowGreen.readValue();
+        if (ThrowPurple != null)
             ThrowPurple.readValue();
-        }
+        if (TransferUp != null)
+            TransferUp.readValue();
+        if (TransferDown != null)
+            TransferDown.readValue();
     }
 
     private void ResetTimer() {
@@ -363,9 +459,9 @@ public class Shooter implements Subsystem {
             }
 
             if (brakingTimer.milliseconds() < 250) {
-                double effectiveMultiplier = breakMultiplier;
+                double effectiveMultiplier = breakMultiplierNear;
                 if (constDist > 2.9)
-                    effectiveMultiplier = breakMultiplier * 0.5;
+                    effectiveMultiplier = breakMultiplierFar;
 
                 double brakePower = -breakingError * effectiveMultiplier;
                 MotorAruncare.setVelocity(brakePower);
@@ -434,12 +530,19 @@ public class Shooter implements Subsystem {
         telemetry.Log("Unordered State", unorderedCaseSwitch);
 
         if (!isShooting && !mixer.IsEmpty()) {
-            MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
             isShooting = true;
-            unorderedCaseSwitch = 1;
             unorderedSeqIndex = 0;
             totalShootTimer.reset();
-            ResetTimer();
+            unorderedTimer.reset();
+
+            int bc = mixer.GetArtifactCount();
+            if (bc == 3) {
+                MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
+                unorderedCaseSwitch = 1; // Instant 3-ball sweep
+                runtime.reset();
+            } else {
+                unorderedCaseSwitch = 100; // 1 or 2 balls spin-up delay
+            }
         }
 
         if (!isShooting)
@@ -449,12 +552,49 @@ public class Shooter implements Subsystem {
         double baselineEnc = 4050 + 1357.5;
 
         switch (unorderedCaseSwitch) {
-            case 1:
-                if (unorderedSeqIndex < 3) {
-                    if (mixer.artifacte[unorderedSeqIndex] == Color.None) {
-                        unorderedSeqIndex++;
-                        return;
+            case 100: // Spin up wait for 1/2 balls
+                if (unorderedTimer.seconds() > 0.2) {
+                    MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
+                    int count = mixer.GetArtifactCount();
+                    if (count == 1) {
+                        unorderedCaseSwitch = 10;
+                    } else {
+                        // 2 balls: "make it think it has 3"
+                        unorderedCaseSwitch = 1;
                     }
+                    runtime.reset();
+                    unorderedTimer.reset();
+                }
+                break;
+
+            case 10: // 1-ball special push
+                mixer.SetPosition(mixer.GetCurrentPosition() + offsetPositionMixer);
+                targetUnorderedEncoder = 2 * 1357.5; // Exactly 1 offset in ticks
+                unorderedCaseSwitch = 11;
+                unorderedTimer.reset();
+                break;
+
+            case 11: // Wait for 1-ball pos
+                int curEnc = (int) mixer.GetEncoderPosition();
+                if (Math.abs(curEnc - (int) targetUnorderedEncoder) < 200 || unorderedTimer.seconds() > 0.3) {
+                    pauseTimer.reset();
+                    unorderedCaseSwitch = 12;
+                }
+                break;
+
+            case 12: // Remove and finish 1-ball
+                if (pauseTimer.seconds() > 0.05) {
+                    mixer.RemoveArtifact(0);
+                    mixer.RemoveArtifact(1);
+                    mixer.RemoveArtifact(2);
+                    unorderedCaseSwitch = 4;
+                    runtime.reset();
+                    unorderedTimer.reset();
+                }
+                break;
+
+            case 1: // Standard sweep logic (Used for 3-balls or "forced" 2-balls)
+                if (unorderedSeqIndex < 3) {
                     targetUnorderedPos = baselinePos - (1 + 2 * unorderedSeqIndex) * offsetPositionMixer;
                     targetUnorderedEncoder = baselineEnc - (1 + 2 * unorderedSeqIndex) * 1357.5;
                     mixer.SetPosition(targetUnorderedPos);
@@ -467,26 +607,25 @@ public class Shooter implements Subsystem {
                 }
                 break;
 
-            case 2:
+            case 2: // Wait for sweep pos
                 int currentEnc = (int) mixer.GetEncoderPosition();
-                if (Math.abs(currentEnc - targetUnorderedEncoder) < 200 || runtime.seconds() > 2) {
+                if (Math.abs(currentEnc - (int) targetUnorderedEncoder) < 200 || runtime.seconds() > 0.17) {
                     pauseTimer.reset();
                     unorderedCaseSwitch = 3;
                 }
                 break;
 
-            case 3:
+            case 3: // Clear slot and loop
                 if (pauseTimer.seconds() > 0.03) {
                     mixer.RemoveArtifact(unorderedSeqIndex);
                     unorderedSeqIndex++;
                     unorderedCaseSwitch = 1;
-                    pauseTimer.reset();
                 }
                 break;
 
-            case 4:
+            case 4: // Final reset
                 mixer.ResetServoPosition();
-                if (runtime.seconds() > 0.8) {
+                if (runtime.seconds() > 0.4) {
                     MotorRidicareBila.setVelocity(0);
                     shootType = ShootingState.None;
                     ResetShooter();
@@ -508,14 +647,15 @@ public class Shooter implements Subsystem {
             MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
         }
 
-        if (!isShooting) return;
+        if (!isShooting)
+            return;
 
         switch (orderedCaseSwitch) {
-            case 1: // Move to next shoot position
+            case 1:
                 if (orderedSeqIndex < 3) {
-                    // Use the dynamically built sequence — always sweeps in one direction
-                    mixer.SetPosition(currentOrderedServo[orderedSeqIndex]);
-                    targetOrderedEncoder = currentOrderedEnc[orderedSeqIndex];
+                    currentShootingPosition = orderedShootSlots[orderedSeqIndex];
+                    mixer.SetPosition(orderedShootPositions[orderedSeqIndex]);
+                    targetOrderedEncoder = orderedShootEncoders[orderedSeqIndex];
                     orderedCaseSwitch = 2;
                     orderedTimer.reset();
                 } else {
@@ -525,26 +665,26 @@ public class Shooter implements Subsystem {
                 }
                 break;
 
-            case 2: // Wait to arrive at position
+            case 2:
                 int curEnc = (int) mixer.GetEncoderPosition();
-                if (Math.abs(curEnc - targetOrderedEncoder) < 200 || orderedTimer.seconds() > 2.0) {
+                if (Math.abs(curEnc - targetOrderedEncoder) < 200 || orderedTimer.seconds() > 0.2) {
                     pauseTimer.reset();
                     orderedCaseSwitch = 3;
                 }
                 break;
 
-            case 3: // Ball shot — remove the correct slot, advance
-                if (pauseTimer.seconds() > 0.03) {
-                    mixer.RemoveArtifact(currentOrderedSlots[orderedSeqIndex]);
+            case 3:
+                if (pauseTimer.seconds() > 0.05) {
+                    mixer.RemoveArtifact(currentShootingPosition);
                     orderedSeqIndex++;
                     orderedCaseSwitch = 1;
-                    pauseTimer.reset(); // prevent double-firing
+                    pauseTimer.reset();
                 }
                 break;
 
-            case 4: // Done
+            case 4:
                 mixer.ResetServoPosition();
-                if (orderedTimer.seconds() > 0.8) {
+                if (orderedTimer.seconds() > 0.4) {
                     MotorRidicareBila.setVelocity(0);
                     shootType = ShootingState.None;
                     ResetShooter();
@@ -556,11 +696,15 @@ public class Shooter implements Subsystem {
     private void PurpleGreen() {
         if (!isShooting && !mixer.IsEmpty()) {
             if (shootType == ShootingState.Green && mixer.GetCountGreen() > 0)
-                currentShootingPosition = mixer.GetColorPosition(Color.Green);
+                currentShootingPosition = mixer.GetColorPositionClosest(Color.Green);
             else if (shootType == ShootingState.Purple && mixer.GetCountPurple() > 0)
-                currentShootingPosition = mixer.GetColorPosition(Color.Purple);
+                currentShootingPosition = mixer.GetColorPositionClosest(Color.Purple);
         }
         ShootColor();
+    }
+
+    public void StopBackMotor() {
+        MotorRidicareBila.setVelocity(0);
     }
 
     private void ShootColor() {
@@ -584,21 +728,31 @@ public class Shooter implements Subsystem {
         SetShooterVelocity(IDLE_VELOCITY_MAX);
         lastMotorPower = IDLE_VELOCITY_MAX;
         brakeDone = false;
+        prepareCalculated = false;
         mixer.ResetServoPosition();
         shootingAllowed = false;
         isShooting = false;
         shootType = ShootingState.None;
         arrangedIndex = 0;
+        autoShooting = false;
+    }
+
+    public boolean HasArrangedBalls() {
+        return mixer.GetCountGreen() == 1 && mixer.GetCountPurple() == 3;
     }
 
     public boolean CanShootArranged() {
-        return mixer.GetCountGreen() == 1 && mixer.GetCountPurple() == 3 && limelight.GetID() != 0;
+        return HasArrangedBalls() && limelight.GetID() != 0;
     }
 
     private void UpdateDistanceAndHood() {
-        double limeDist = limelight.GetDistanceToTargetPython();
-        if (limeDist > 0)
-            constDist = limeDist;
+        if (isLong) {
+            constDist = 3.36; // Fixed 336cm for auto long
+        } else {
+            double limeDist = limelight.GetDistanceToTargetPython();
+            if (limeDist > 0)
+                constDist = limeDist;
+        }
         HoodPosition();
     }
 
@@ -617,28 +771,28 @@ public class Shooter implements Subsystem {
 
     public void CalculateShootingVelocityTelemetry() {
         double distCm = constDist * 100;
-        telemetry.Log("Distance cm", distCm);
-        telemetry.Log("HoodPos", ServoHood.getPosition());
-        telemetry.Log("Last Shoot Duration", String.format("%.3f s", lastShootDuration));
-        telemetry.Log("Mixer count", mixer.GetArtifactCount());
-        telemetry.Log("Mixer encoder pos", mixer.GetEncoderPosition());
-        if (shooterDistance != null) {
-            ShooterDistance.ShotParameters p = shooterDistance.GetShotParams(distCm);
-            telemetry.Log("Table RPM", p.rpm);
-            telemetry.Log("Table Hood", p.hoodAngle);
-        }
-        telemetry.Log("Current Aruncare Vel", MotorAruncare.getVelocity());
-        telemetry.Log("Current Ridicare Vel", MotorRidicareBila.getVelocity());
         telemetry.Log("shootType", shootType.toString());
-        telemetry.Log("shootingAllowed", shootingAllowed);
+        telemetry.Log("shootAllowed", shootingAllowed);
         telemetry.Log("isShooting", isShooting);
-        telemetry.Log("orderedCase", orderedCaseSwitch);
-        telemetry.Log("orderedSeq", orderedSeqIndex);
-        telemetry.Log("canArranged", CanShootArranged());
-        if (currentOrderedSlots != null) {
-            telemetry.Log("orderedSlots",
-                    String.format("%d→%d→%d", currentOrderedSlots[0], currentOrderedSlots[1], currentOrderedSlots[2]));
-        }
+        telemetry.Log("ordCase", orderedCaseSwitch);
+        telemetry.Log("ordSeq", orderedSeqIndex);
+        telemetry.Log("ordStart", orderedStartIndex);
+        telemetry.Log("ordRev", orderedReverse);
+        telemetry.Log("prepCalc", prepareCalculated);
+        telemetry.Log("curEnc", (int) mixer.GetEncoderPosition());
+        telemetry.Log("prepTgtEnc", (int) targetPrepareEncoder);
+        telemetry.Log("curShootPos", currentShootingPosition);
+        int curIdx = orderedReverse ? orderedStartIndex - orderedSeqIndex : orderedStartIndex + orderedSeqIndex;
+        if (curIdx >= 0 && curIdx < 5)
+            telemetry.Log("curIdx", curIdx);
+        telemetry.Log("vel tgt", (int) targetShootingVelocity);
+        telemetry.Log("dist cm", (int) distCm);
+        String modeStr = "AUTO";
+        if (manualTransferMode == 1)
+            modeStr = "FORWARD";
+        else if (manualTransferMode == 2)
+            modeStr = "REVERSE";
+        telemetry.Log("Transfer Mode", modeStr);
     }
 
     private void MaintainVelocity() {
@@ -695,7 +849,6 @@ public class Shooter implements Subsystem {
 
             if (CanShootArranged()) {
                 shootType = ShootingState.Arranged;
-                BuildOrderedSequence();
             } else {
                 shootType = ShootingState.Unarranged;
             }

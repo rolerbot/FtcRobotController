@@ -16,7 +16,6 @@ public class TeleOpAlbastru extends LinearOpMode {
     TurretProfiledPIDControl turretMechanism;
     RobotPinpoint robotPinpoint;
     private GamepadEx ct1, ct2;
-    ButtonReader resetMixer;
 
     private void MapControlerButtons() {
         ct1 = new GamepadEx(gamepad1);
@@ -29,13 +28,13 @@ public class TeleOpAlbastru extends LinearOpMode {
     }
 
     private void InitAfter() {
-        drivetrain = new Drivetrain(ct1, ct2);
-        drivetrain.Initialize(hardwareMap);
-        drivetrain.schimbator = 1.4 - drivetrain.schimbator;
-
         robotPinpoint = new RobotPinpoint(myLogger, ct1, ct2);
         robotPinpoint.SetInitialPosition(135, 9, 90); // Blue alliance starting position
         robotPinpoint.Initialize(hardwareMap);
+
+        drivetrain = new Drivetrain(ct1, ct2, robotPinpoint);
+        drivetrain.Initialize(hardwareMap);
+        drivetrain.schimbator = 1.4 - drivetrain.schimbator;
 
         intake = new Intake(myLogger, ct1);
         intake.Initialize(hardwareMap);
@@ -43,16 +42,15 @@ public class TeleOpAlbastru extends LinearOpMode {
         mixer = new Mixer(myLogger, intake);
         mixer.Initialize(hardwareMap);
 
-        limelight = new LimeLight(true, false);
+        limelight = new LimeLight(true, false, ct2);
         limelight.Initialize(hardwareMap);
 
         shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight);
         shooter.Initialize(hardwareMap);
 
-        turretMechanism = new TurretProfiledPIDControl(limelight, shooter);
+        turretMechanism = new TurretProfiledPIDControl(limelight, shooter, ct2);
         turretMechanism.Initialize(hardwareMap);
 
-        resetMixer = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_STICK_BUTTON);
 
     }
 
@@ -67,26 +65,18 @@ public class TeleOpAlbastru extends LinearOpMode {
             turretMechanism.Run();
             intake.Run();
             drivetrain.Run();
-            resetMixer.readValue();
             if (!shooter.GetShootingAllow())
                 mixer.Run();
             shooter.Run();
             shooter.CalculateShootingVelocityTelemetry();
 
             telemetry.addData("Limelightdist:", limelight.GetDistanceToTargetPython());
-            telemetry.addData("Turret Angle", turretMechanism.getCurrentAngle());
-            telemetry.addData("Turret Error", turretMechanism.getErrorDegrees());
 
             telemetry.addLine("\n--- Arranged Shooting Debug ---");
             telemetry.addData("LimeLight ID", limelight.GetID());
             telemetry.addData("CanShootArranged", shooter.CanShootArranged());
             telemetry.addData("ArtifactOrder", limelight.artifactOrder[0] + "," +
                     limelight.artifactOrder[1] + "," + limelight.artifactOrder[2]);
-
-            telemetry.addLine("\n--- Turret PID Tuning (CT2) ---");
-            telemetry.addData("Kp (Dpad U/D)", TurretProfiledPIDControl.Kp);
-            telemetry.addData("Ki (Dpad R/L)", TurretProfiledPIDControl.Ki);
-            telemetry.addData("Kd (Bumpers)", TurretProfiledPIDControl.Kd);
 
             telemetry.update();
         }

@@ -34,8 +34,8 @@ public class AS12Gate extends OpMode {
 
         private Paths paths; // Paths defined in the Paths class
 
-        private final double maxShootingTime = 2.8; // seconds
-        private final double pickupWaitTime = 0.5; // seconds
+        private final double maxShootingTime = 2 ; // seconds
+        private final double pickupWaitTime = 0.3; // seconds
 
         @Override
         public void init() {
@@ -60,12 +60,12 @@ public class AS12Gate extends OpMode {
                 shooter.Initialize(hardwareMap);
                 shooter.ForceUpdateShooterF();
 
-                turret = new TurretPositionControl(limeLight, shooter);
+                turret = new TurretPositionControl(limeLight, shooter, null);
                 turret.Initialize(hardwareMap, true); // Reset encoder at start (Right barrier = 0)
                 turret.setUsePinpointFallback(false); // Disable odometry fallback in Auto
                 turret.setTargetTicks(0); // Set turret to encoder position 0 (physical start) in init
 
-                mixer.Reset(); // Ensure mixer is at home and encoder is zero
+                mixer.MoveToThreeBalls();
 
                 follower = Constants.createFollower(hardwareMap);
                 follower.setStartingPose(new Pose(19.5, 121.6, Math.toRadians(234)));
@@ -79,7 +79,7 @@ public class AS12Gate extends OpMode {
         @Override
         public void start() {
                 opmodeTimer.resetTimer();
-                intake.SetMotorPower(0.8);
+                intake.SetMotorPower(1);
                 shooter.StartAutoBoost(); // Optimized spin-up
                 setPathState(0);
         }
@@ -90,7 +90,6 @@ public class AS12Gate extends OpMode {
                 shooter.Run();
                 limeLight.Run();
                 turret.Run();
-                // Mixer called broadly as requested
 
                 autonomousPathUpdate(); // Update autonomous state machine
 
@@ -167,7 +166,7 @@ public class AS12Gate extends OpMode {
                                         new BezierLine(
                                                         new Pose(54.000, 85.000),
 
-                                                        new Pose(53.225, 59.615)))
+                                                        new Pose(53.225, 57)))
                                         .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
                                         .build();
@@ -175,9 +174,9 @@ public class AS12Gate extends OpMode {
                         // pick up balls
                         Path6 = follower.pathBuilder().addPath(
                                         new BezierLine(
-                                                        new Pose(53.225, 59.615),
+                                                        new Pose(53.225, 57),
 
-                                                        new Pose(20, 59.000)))
+                                                        new Pose(20, 57)))
                                         .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
                                         .build();
@@ -185,9 +184,9 @@ public class AS12Gate extends OpMode {
                         // go back a bit
                         Path7 = follower.pathBuilder().addPath(
                                         new BezierLine(
-                                                        new Pose(20, 59.000),
+                                                        new Pose(20, 57),
 
-                                                        new Pose(25.000, 59.000)))
+                                                        new Pose(25.000, 57)))
                                         .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
                                         .build();
@@ -248,7 +247,7 @@ public class AS12Gate extends OpMode {
                 switch (pathState) {
                         case 0:
                                 // 1. Drive to shooting position and Search (Pipeline 0)
-                                follower.setMaxPower(1);
+                                follower.setMaxPower(0.8);
                                 follower.followPath(paths.Path1, true);
                                 limeLight.getLimelight().pipelineSwitch(0);
                                 turret.setTrackingTag(false); // No tracking while driving
@@ -266,7 +265,7 @@ public class AS12Gate extends OpMode {
                                 // 3. Arrived. Check if we saw the tag. If not, wait for it (Pipeline 0).
                                 if (limeLight.GetID() != 0) {
                                         setPathState(3);
-                                } else if (pathTimer.getElapsedTimeSeconds() > 1) {
+                                } else if (pathTimer.getElapsedTimeSeconds() > 0.5) {
                                         // Timeout: proceed even if tag not seen (relies on last known or fallback)
                                         setPathState(3);
                                 }
@@ -276,33 +275,37 @@ public class AS12Gate extends OpMode {
                                 // 4. START ROTATION to midway point (-45 degrees)
                                 turret.setTrackingTag(false); // Safety: ensure tracking is OFF
                                 turret.setTargetAngle(-45); // Manually move to ~229 ticks from Right
+                                pathTimer.resetTimer();
                                 setPathState(4);
                                 break;
 
                         case 4:
                                 // 5. WAIT for turret to finish its manual rotation
                                 // Must wait at least 0.4s and check if turret reached target
-                                if (pathTimer.getElapsedTimeSeconds() > 0.4
+                                shooter.StartBackMotorAuto();
+                                if (pathTimer.getElapsedTimeSeconds() > 0.7
                                                 && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1)) {
                                         limeLight.RelocalizationBlue(); // Switch to Blue Shooting Pipeline (2)
-                                        turret.setTrackingTag(true); // Enable Active Tracking now
+                                        //turret.setTrackingTag(true); // Enable Active Tracking now
+                                        pathTimer.resetTimer();
                                         setPathState(5); // Proceed to 1s settle wait
                                 }
                                 break;
 
                         case 5:
                                 // 6. Track for a full 1.0 second to ensure accuracy
-                                if (pathTimer.getElapsedTimeSeconds() > 0.5) {
+                                if (pathTimer.getElapsedTimeSeconds() > 0.2) {
                                         shooter.StartAutoShoot();
+                                        pathTimer.resetTimer();
                                         setPathState(6);
                                 }
                                 break;
 
                         case 6:
                                 // 7. Monitor shooting progress
-                                if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > maxShootingTime) {
+                                if (pathTimer.getElapsedTimeSeconds() > 2) {
                                         follower.followPath(paths.Path2, true);
-                                        follower.setMaxPower(0.7);
+                                       // follower.setMaxPower(1);
                                         setPathState(100); // Changed to avoid overlap with existing states
                                 }
                                 break;
@@ -326,6 +329,7 @@ public class AS12Gate extends OpMode {
                                 mixer.Run();
                                 if (!follower.isBusy()) {
                                         follower.followPath(paths.Path4, true);
+                                        pathTimer.resetTimer();
                                         setPathState(8);
                                 }
                                 break;
@@ -336,6 +340,7 @@ public class AS12Gate extends OpMode {
                                 if (!follower.isBusy()) {
                                         if (pathTimer.getElapsedTimeSeconds() > 1) {
                                                 shooter.StartAutoShoot();
+                                                pathTimer.resetTimer();
                                                 setPathState(9);
                                         }
                                 } else {
@@ -387,8 +392,9 @@ public class AS12Gate extends OpMode {
                                 // Shooting position again (Path 8)
                                 mixer.Run();
                                 if (!follower.isBusy()) {
-                                        if (pathTimer.getElapsedTimeSeconds() > 1) {
+                                        if (pathTimer.getElapsedTimeSeconds() > 1.3) {
                                                 shooter.StartAutoShoot();
+                                                pathTimer.resetTimer();
                                                 setPathState(14);
                                         }
                                 } else {
@@ -410,6 +416,7 @@ public class AS12Gate extends OpMode {
                                 if (!follower.isBusy()) {
                                         intake.SetPowerMax();
                                         follower.followPath(paths.Path10, true);
+                                        pathTimer.resetTimer();
                                         setPathState(16);
                                 }
                                 break;
@@ -431,8 +438,9 @@ public class AS12Gate extends OpMode {
                                 // Final shooting position (Path 11)
                                 mixer.Run();
                                 if (!follower.isBusy()) {
-                                        if (pathTimer.getElapsedTimeSeconds() > 1) {
+                                        if (pathTimer.getElapsedTimeSeconds() > 1.3) {
                                                 shooter.StartAutoShoot();
+                                                pathTimer.resetTimer();
                                                 setPathState(18);
                                         }
                                 } else {

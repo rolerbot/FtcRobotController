@@ -14,10 +14,9 @@ public class TeleOpRosu extends LinearOpMode {
     Mixer mixer;
     Shooter shooter;
     LimeLight limelight;
-    TurretPositionControl turretMechanism;
+    TurretProfiledPIDControl turretMechanism;
     RobotPinpoint robotPinpoint;
     private GamepadEx ct1, ct2;
-    ButtonReader resetMixer;
 
     private void MapControlerButtons() {
         ct1 = new GamepadEx(gamepad1);
@@ -30,15 +29,15 @@ public class TeleOpRosu extends LinearOpMode {
     }
 
     private void InitAfter() {
-        drivetrain = new Drivetrain(ct1, ct2);
-        drivetrain.Initialize(hardwareMap);
-        drivetrain.schimbator = 1.4 - drivetrain.schimbator;
-
         // Initialize RobotPinpoint (with both controllers for rumble and ct2 for reset
         // button)
         robotPinpoint = new RobotPinpoint(myLogger, ct1, ct2);
         robotPinpoint.SetInitialPosition(9, 9, 90); // Red alliance starting position
         robotPinpoint.Initialize(hardwareMap);
+
+        drivetrain = new Drivetrain(ct1, ct2, robotPinpoint);
+        drivetrain.Initialize(hardwareMap);
+        drivetrain.schimbator = 1.4 - drivetrain.schimbator;
 
         intake = new Intake(myLogger, ct1);
         intake.Initialize(hardwareMap);
@@ -46,16 +45,15 @@ public class TeleOpRosu extends LinearOpMode {
         mixer = new Mixer(myLogger, intake);
         mixer.Initialize(hardwareMap);
 
-        limelight = new LimeLight(false, false);
+        limelight = new LimeLight(false, false, ct2);
         limelight.Initialize(hardwareMap);
 
         shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight);
         shooter.Initialize(hardwareMap);
 
-        turretMechanism = new TurretPositionControl(limelight, shooter);
+        turretMechanism = new TurretProfiledPIDControl(limelight, shooter, ct2);
         turretMechanism.Initialize(hardwareMap);
 
-        resetMixer = new ButtonReader(ct2, GamepadKeys.Button.RIGHT_STICK_BUTTON);
 
     }
 
@@ -71,7 +69,6 @@ public class TeleOpRosu extends LinearOpMode {
             turretMechanism.Run();
             intake.Run();
             drivetrain.Run();
-            resetMixer.readValue();
             if (!shooter.GetShootingAllow())
                 mixer.Run();
             shooter.Run();
@@ -83,7 +80,9 @@ public class TeleOpRosu extends LinearOpMode {
             telemetry.addData("CanShootArranged", shooter.CanShootArranged());
             telemetry.addData("ArtifactOrder", limelight.artifactOrder[0] + "," +
                     limelight.artifactOrder[1] + "," + limelight.artifactOrder[2]);
-
+            telemetry.addData("Mixer slot 0", mixer.artifacte[0].toString());
+            telemetry.addData("Mixer slot 1", mixer.artifacte[1].toString());
+            telemetry.addData("Mixer slot 2", mixer.artifacte[2].toString());
             telemetry.update();
         }
         telemetry.update();

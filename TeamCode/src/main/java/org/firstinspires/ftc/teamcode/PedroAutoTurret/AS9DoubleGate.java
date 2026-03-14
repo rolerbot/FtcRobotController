@@ -145,7 +145,7 @@ public class AS9DoubleGate extends OpMode {
                             new BezierCurve(
                                     new Pose(21, 85),
                                     new Pose(30, 80),
-                                    new Pose(19, 76)))
+                                     new Pose(18.5, 76)))
                     .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
 
                     .build();
@@ -153,7 +153,7 @@ public class AS9DoubleGate extends OpMode {
             // go to shoot
             Path4 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(19, 76),
+                                    new Pose(18.5, 76),
 
                                     new Pose(54.000, 85.000)))
                     .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
@@ -185,7 +185,7 @@ public class AS9DoubleGate extends OpMode {
                             new BezierLine(
                                     new Pose(20, 57),
 
-                                    new Pose(50, 57)))
+                                    new Pose(50 , 57)))
                     .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
                     .build();
@@ -205,7 +205,7 @@ public class AS9DoubleGate extends OpMode {
                             new BezierCurve(
                                     new Pose(21, 85),
                                     new Pose(30, 80),
-                                    new Pose(19, 76)))
+                                    new Pose(18.5, 76)))
                     .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
 
                     .build();
@@ -213,7 +213,7 @@ public class AS9DoubleGate extends OpMode {
             // got to shoot
             Path10 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(19, 76),
+                                    new Pose(18.5, 76),
 
                                     new Pose(55.000, 85.000)))
                     .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
@@ -224,9 +224,9 @@ public class AS9DoubleGate extends OpMode {
             // park
             Path11 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(19, 76),
+                                    new Pose(55, 85),
 
-                                    new Pose(30.000, 60.000)))
+                                    new Pose(20, 90)))
                     .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
 
                     .build();
@@ -321,9 +321,13 @@ public class AS9DoubleGate extends OpMode {
                 if (!follower.isBusy()) {
                     follower.followPath(paths.Path4, true);
                     pathTimer.resetTimer();
-                    setPathState(8);
+                    setPathState(19);
                 }
                 break;
+
+            case 19:
+                if(pathTimer.getElapsedTimeSeconds() > 1)
+                    setPathState(8);
 
             case 8:
                 // Go to shoot after gate (Path 4)
@@ -395,9 +399,13 @@ public class AS9DoubleGate extends OpMode {
                 if (!follower.isBusy()) {
                     follower.followPath(paths.Path10, true);
                     pathTimer.resetTimer();
-                    setPathState(15);
+                    setPathState(18);
                 }
                 break;
+
+            case 18:
+                if(pathTimer.getElapsedTimeSeconds() > 1)
+                    setPathState(15);
 
                 // go to shoot
             case 15:
@@ -418,11 +426,11 @@ public class AS9DoubleGate extends OpMode {
                 //finish shooting
                 if (mixer.IsEmpty() || pathTimer.getElapsedTimeSeconds() > maxShootingTime) {
                     follower.followPath(paths.Path11, true);
-                    setPathState(19);
+                    setPathState(17);
                 }
                 break;
 
-            case 19:
+            case 17:
                 // Parking
                 mixer.Run();
                 if (!follower.isBusy()) {

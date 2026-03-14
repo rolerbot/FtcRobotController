@@ -31,7 +31,7 @@ public class AL15CazBun extends OpMode {
     private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
-    private TurretProfiledPIDControl turret;
+    private TurretPositionControl turret;
 
     private Paths paths; // Paths defined in the Paths class
 
@@ -61,9 +61,9 @@ public class AL15CazBun extends OpMode {
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret = new TurretProfiledPIDControl(limeLight, shooter, null);
+        turret = new TurretPositionControl(limeLight, shooter, null);
         turret.Initialize(hardwareMap, true);
-        turret.setTargetAngle(0);
+        turret.setTargetTicks(0);
 
         mixer.MoveToThreeBalls();
 
@@ -231,7 +231,7 @@ public class AL15CazBun extends OpMode {
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 1
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.5)) {
-                    //limeLight.RelocalizationBlue();
+                    limeLight.RelocalizationBlue();
                     //turret.setTrackingTag(true);
                     setPathState(5);
                 }

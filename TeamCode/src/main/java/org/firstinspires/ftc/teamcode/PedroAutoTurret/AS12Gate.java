@@ -266,6 +266,7 @@ public class AS12Gate extends OpMode {
                                 if (limeLight.GetID() != 0) {
                                         setPathState(3);
                                 } else if (pathTimer.getElapsedTimeSeconds() > 0.5) {
+                                        limeLight.SkipArtifactDetection();
                                         // Timeout: proceed even if tag not seen (relies on last known or fallback)
                                         setPathState(3);
                                 }

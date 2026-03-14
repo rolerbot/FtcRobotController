@@ -13,7 +13,7 @@ public class EncoderTuner extends LinearOpMode {
     @Override
     public void runOpMode() {
         // Based on Mixer.java, the mixer motor is "MotorIN"
-        motor = hardwareMap.get(DcMotorEx.class, "MotorIN");
+        motor = hardwareMap.get(DcMotorEx.class, "MotorTurela");
 
         // Reset encoder at Init
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);

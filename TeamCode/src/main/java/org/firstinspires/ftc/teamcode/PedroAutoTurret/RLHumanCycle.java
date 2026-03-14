@@ -31,7 +31,7 @@ public class RLHumanCycle extends OpMode {
     private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
-    private TurretPositionControl turret;
+    private TurretProfiledPIDControl turret;
 
     private Paths paths; // Paths defined in the Paths class
 
@@ -61,10 +61,9 @@ public class RLHumanCycle extends OpMode {
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret = new TurretPositionControl(limeLight, shooter, null);
+        turret = new TurretProfiledPIDControl(limeLight, shooter, null);
         turret.Initialize(hardwareMap, true);
-        turret.setUsePinpointFallback(false);
-        turret.setTargetAngle(90);
+        turret.setTargetAngle(87);
 
         mixer.MoveToThreeBalls();
 
@@ -74,6 +73,12 @@ public class RLHumanCycle extends OpMode {
         paths = new Paths(follower);
 
         panelsTelemetry.debug("Status", "Initialized");
+        panelsTelemetry.update(telemetry);
+    }
+
+    @Override
+    public void init_loop() {
+        turret.Run();
         panelsTelemetry.update(telemetry);
     }
 
@@ -182,15 +187,17 @@ public class RLHumanCycle extends OpMode {
                 break;
 
             case 2: // Wait Tag
-                if ((limeLight.GetID() != 0 && pathTimer.getElapsedTimeSeconds() > 1.5) || pathTimer.getElapsedTimeSeconds() > 2) {
-                    if (limeLight.GetID() == 0) limeLight.SkipArtifactDetection();
+                if ((limeLight.GetID() != 0 && pathTimer.getElapsedTimeSeconds() > 1.5)
+                        || pathTimer.getElapsedTimeSeconds() > 2) {
+                    if (limeLight.GetID() == 0)
+                        limeLight.SkipArtifactDetection();
                     setPathState(3);
                 }
                 break;
 
             case 3: // Turret Fixed Position (Stuck at 60)
                 turret.setTrackingTag(true);
-                //turret.setTargetAngle(59);
+                // turret.setTargetAngle(59);
                 setPathState(4);
                 break;
 

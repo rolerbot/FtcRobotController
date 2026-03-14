@@ -121,6 +121,16 @@ public class Shooter implements Subsystem {
     private final double SHOOT_BASELINE_POS = initialPosMixer + 4 * offsetPositionMixer; // = 0.6244
     private final double SHOOT_BASELINE_ENC = 5418 + 1354.5; // = 6772.5
 
+    private double GetOrderedPos(int step) {
+        int idx = orderedReverse ? (orderedStartIndex - step) : (orderedStartIndex + step);
+        return artPozOrdered[idx];
+    }
+
+    private double GetOrderedEnc(int step) {
+        int idx = orderedReverse ? (orderedStartIndex - step) : (orderedStartIndex + step);
+        return pozEncoderOrdered[idx];
+    }
+
     private ShooterDistance shooterDistance;
 
     private boolean autoSpinUpBoost = false;
@@ -302,7 +312,7 @@ public class Shooter implements Subsystem {
                 }
                 PrepareArranged();
                 int curEnc = (int) mixer.GetEncoderPosition();
-                if (Math.abs(curEnc - targetPrepareEncoder) < 200)
+                if (Math.abs(curEnc - targetPrepareEncoder) < 250)
                     MotorRidicareBila.setVelocity(TRANSFER_VELOCITY);
                 else
                     MotorRidicareBila.setVelocity(0);
@@ -318,9 +328,11 @@ public class Shooter implements Subsystem {
     }
 
     private void PrepareArranged() {
-        // Prepare position is half offset below FIRST target ball in the sequence
-        double prePos = orderedShootPositions[0] - offsetPositionMixer;
-        double preEnc = orderedShootEncoders[0] - 1354.5;
+        // Reposition to a midpoint before the first ball in the sequence
+        double dir = orderedReverse ? -1.0 : 1.0;
+
+        double prePos = GetOrderedPos(0) - dir * offsetPositionMixer;
+        double preEnc = GetOrderedEnc(0) - dir * 1354.5;
 
         targetPrepareEncoder = preEnc;
         mixer.SetPosition(prePos);
@@ -337,66 +349,51 @@ public class Shooter implements Subsystem {
         int tagId = limelight.GetID();
         if (tagId < 21 || tagId > 23 || greenSlot == -1)
             return;
-
         int caseId = (tagId - 21) * 3 + greenSlot;
         switch (caseId) {
             // --- TARGET 21: G P P ---
-            case 0: // Mixer G P P -> Order: 0, 1, 2
-                SetShot(0, 0);
-                SetShot(1, 1);
-                SetShot(2, 2);
+            case 0: // Mixer G P P -> Shoot G P P (Order: 0, 1, 2)
+                SetSequence(2, true);
                 break;
-            case 1: // Mixer P G P -> Order: 1, 0, 2
-                SetShot(0, 1);
-                SetShot(1, 0);
-                SetShot(2, 2);
+            case 1: // Mixer P G P -> Shoot P P G (Order: 0, 2, 1)
+                SetSequence(2, false);
                 break;
-            case 2: // Mixer P P G -> Order: 2, 0, 1
-                SetShot(0, 2);
-                SetShot(1, 0);
-                SetShot(2, 1);
+            case 2: // Mixer P P G -> Shoot G P P (Order: 2, 1, 0)
+                SetSequence(0, false);
                 break;
 
             // --- TARGET 22: P G P ---
-            case 3: // Mixer G P P -> Order: 1, 0, 2
-                SetShot(0, 1);
-                SetShot(1, 0);
-                SetShot(2, 2);
+            case 3: // Mixer G P P -> Shoot P G P (Order: 1, 0, 2)
+                SetSequence(1, false);
                 break;
-            case 4: // Mixer P G P -> Order: 0, 1, 2
-                SetShot(0, 0);
-                SetShot(1, 1);
-                SetShot(2, 2);
+            case 4: // Mixer P G P -> Shoot P P G (Order: 0, 2, 1)
+                SetSequence(2, false);
                 break;
-            case 5: // Mixer P P G -> Order: 0, 2, 1
-                SetShot(0, 0);
-                SetShot(1, 2);
-                SetShot(2, 1);
+            case 5: // Mixer P P G -> Shoot P P G (Order: 1, 0, 2)
+                SetSequence(1, false);
                 break;
 
             // --- TARGET 23: P P G ---
-            case 6: // Mixer G P P -> Order: 1, 2, 0
-                SetShot(0, 1);
-                SetShot(1, 2);
-                SetShot(2, 0);
+            case 6: // Mixer G P P -> Shoot P P G (Order: 1, 2, 0)
+                SetSequence(4, true);
                 break;
-            case 7: // Mixer P G P -> Order: 0, 2, 1
-                SetShot(0, 0);
-                SetShot(1, 2);
-                SetShot(2, 1);
+            case 7: // Mixer P G P -> Shoot P G P (Order: 0, 1, 2)
+                SetSequence(2, true);
                 break;
-            case 8: // Mixer P P G -> Order: 0, 1, 2
-                SetShot(0, 0);
-                SetShot(1, 1);
-                SetShot(2, 2);
+            case 8: // Mixer P P G -> Shoot P G P (Order: 0, 2, 1)
+                SetSequence(2, false);
                 break;
         }
     }
 
-    private void SetShot(int seqIdx, int slotIdx) {
-        orderedShootSlots[seqIdx] = slotIdx;
-        orderedShootPositions[seqIdx] = artPoz[slotIdx];
-        orderedShootEncoders[seqIdx] = pozEncoder[slotIdx];
+    private void SetSequence(int startIdx, boolean reverse) {
+        orderedStartIndex = startIdx;
+        orderedReverse = reverse;
+        // Also fill legacy slots for slot mapping in RemoveArtifact
+        for (int i = 0; i < 3; i++) {
+            int idx = reverse ? (startIdx - i) : (startIdx + i);
+            orderedShootSlots[i] = slotAtIndex[idx];
+        }
     }
 
     private int ColorCase(Color color1, Color color2) {
@@ -653,9 +650,8 @@ public class Shooter implements Subsystem {
         switch (orderedCaseSwitch) {
             case 1:
                 if (orderedSeqIndex < 3) {
-                    currentShootingPosition = orderedShootSlots[orderedSeqIndex];
-                    mixer.SetPosition(orderedShootPositions[orderedSeqIndex]);
-                    targetOrderedEncoder = orderedShootEncoders[orderedSeqIndex];
+                    targetOrderedEncoder = GetOrderedEnc(orderedSeqIndex);
+                    mixer.SetPosition(GetOrderedPos(orderedSeqIndex));
                     orderedCaseSwitch = 2;
                     orderedTimer.reset();
                 } else {
@@ -667,7 +663,7 @@ public class Shooter implements Subsystem {
 
             case 2:
                 int curEnc = (int) mixer.GetEncoderPosition();
-                if (Math.abs(curEnc - targetOrderedEncoder) < 200 || orderedTimer.seconds() > 0.2) {
+                if (Math.abs(curEnc - (int) targetOrderedEncoder) < 200 || orderedTimer.seconds() > 0.2) {
                     pauseTimer.reset();
                     orderedCaseSwitch = 3;
                 }
@@ -675,10 +671,9 @@ public class Shooter implements Subsystem {
 
             case 3:
                 if (pauseTimer.seconds() > 0.05) {
-                    mixer.RemoveArtifact(currentShootingPosition);
+                    mixer.RemoveArtifact(orderedShootSlots[orderedSeqIndex]);
                     orderedSeqIndex++;
                     orderedCaseSwitch = 1;
-                    pauseTimer.reset();
                 }
                 break;
 

@@ -104,11 +104,14 @@ public class TurretPositionControl implements Subsystem {
 
         if (isManualMode) {
             double stick = ct2.getLeftX();
-            if (Math.abs(stick) < 0.05) stick = 0;
+            if (Math.abs(stick) < 0.05)
+                stick = 0;
             double manualPower = -stick * 0.7; // Higher max speed for "sensibilitate"
             // Bound checking in manual
-            if (currentTicks >= MAX_TICKS && manualPower > 0) manualPower = 0;
-            if (currentTicks <= MIN_TICKS && manualPower < 0) manualPower = 0;
+            if (currentTicks >= MAX_TICKS && manualPower > 0)
+                manualPower = 0;
+            if (currentTicks <= MIN_TICKS && manualPower < 0)
+                manualPower = 0;
             MotorTurela.setPower(manualPower);
             return;
         }
@@ -126,7 +129,8 @@ public class TurretPositionControl implements Subsystem {
                         persistentTargetAngle = currentAngle - horizontalAngleDeg;
                     }
                     double distInches = offsetDistance * 39.3701;
-                    if (avgDistance == 0) avgDistance = distInches;
+                    if (avgDistance == 0)
+                        avgDistance = distInches;
                     avgDistance = (0.85 * avgDistance) + (0.15 * distInches);
                 } else {
                     if (hasTrackingLock && usePinpointFallback && lastTargetTimer.seconds() >= VISION_TIMEOUT_SEC) {
@@ -168,15 +172,29 @@ public class TurretPositionControl implements Subsystem {
         double angleToTargetDegrees = Math.toDegrees(Math.atan2(deltaY, deltaX));
         double relativeAngle = angleToTargetDegrees - robotHeading;
 
-        while (relativeAngle > 180) relativeAngle -= 360;
-        while (relativeAngle < -180) relativeAngle += 360;
+        while (relativeAngle > 180)
+            relativeAngle -= 360;
+        while (relativeAngle < -180)
+            relativeAngle += 360;
         return relativeAngle;
     }
 
-    public void setTrackingTag(boolean track) { isTrackingTag = track; }
-    public boolean isTrackingTag() { return isTrackingTag; }
-    public void setUsePinpointFallback(boolean use) { usePinpointFallback = use; }
-    public double getCurrentDistance() { return avgDistance; }
+    public void setTrackingTag(boolean track) {
+        isTrackingTag = track;
+    }
+
+    public boolean isTrackingTag() {
+        return isTrackingTag;
+    }
+
+    public void setUsePinpointFallback(boolean use) {
+        usePinpointFallback = use;
+    }
+
+    public double getCurrentDistance() {
+        return avgDistance;
+    }
+
     public void setTargetAngle(double angleDegrees) {
         persistentTargetAngle = Range.clip(angleDegrees, -90.0, 90.0);
         targetTicks = (int) (persistentTargetAngle * TICKS_PER_DEGREE + TICKS_AT_CENTER);
@@ -194,14 +212,44 @@ public class TurretPositionControl implements Subsystem {
         MotorTurela.setPower(maxTurretSpeed);
     }
 
-    public double getMaxSpeed() { return maxTurretSpeed; }
-    public double getCurrentAngle() { return currentAngle; }
-    public int getCurrentTicks() { return MotorTurela.getCurrentPosition(); }
-    public double getTargetAngle() { return targetAngle; }
-    public int getTargetTicks() { return targetTicks; }
-    public boolean hasTrackingLock() { return hasTrackingLock; }
-    public double getTimeSinceLastTag() { return lastTargetTimer.seconds(); }
-    public boolean isActivelyTracking() { return hasTrackingLock && lastTargetTimer.seconds() < VISION_TIMEOUT_SEC; }
-    public void resetTrackingLock() { hasTrackingLock = false; lastTargetTimer.reset(); }
-    public void Run() { Update(); }
+    public double getMaxSpeed() {
+        return maxTurretSpeed;
+    }
+
+    public double getCurrentAngle() {
+        return currentAngle;
+    }
+
+    public int getCurrentTicks() {
+        return MotorTurela.getCurrentPosition();
+    }
+
+    public double getTargetAngle() {
+        return targetAngle;
+    }
+
+    public int getTargetTicks() {
+        return targetTicks;
+    }
+
+    public boolean hasTrackingLock() {
+        return hasTrackingLock;
+    }
+
+    public double getTimeSinceLastTag() {
+        return lastTargetTimer.seconds();
+    }
+
+    public boolean isActivelyTracking() {
+        return hasTrackingLock && lastTargetTimer.seconds() < VISION_TIMEOUT_SEC;
+    }
+
+    public void resetTrackingLock() {
+        hasTrackingLock = false;
+        lastTargetTimer.reset();
+    }
+
+    public void Run() {
+        Update();
+    }
 }

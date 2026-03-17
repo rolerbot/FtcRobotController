@@ -12,7 +12,6 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.geometry.Pose;
-import org.firstinspires.ftc.teamcode.TurretPositionControl;
 import org.firstinspires.ftc.teamcode.*;
 
 
@@ -31,7 +30,7 @@ public class AL15CazBun extends OpMode {
     private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
-    private TurretPositionControl turret;
+    private TurretProfiledPIDControl turret;
 
     private Paths paths; // Paths defined in the Paths class
 
@@ -61,9 +60,8 @@ public class AL15CazBun extends OpMode {
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret = new TurretPositionControl(limeLight, shooter, null);
+        turret = new TurretProfiledPIDControl(limeLight, null);
         turret.Initialize(hardwareMap, true);
-        turret.setTargetTicks(0);
 
         mixer.MoveToThreeBalls();
 
@@ -231,7 +229,7 @@ public class AL15CazBun extends OpMode {
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 1
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.5)) {
-                    limeLight.RelocalizationBlue();
+                    //limeLight.RelocalizationBlue();
                     //turret.setTrackingTag(true);
                     setPathState(5);
                 }

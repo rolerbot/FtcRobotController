@@ -14,7 +14,6 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import org.firstinspires.ftc.teamcode.*;
-import org.firstinspires.ftc.teamcode.TurretPositionControl;
 
 @Autonomous(name = "AS15CazBun", group = "Autonomous")
 @Configurable // Panels
@@ -30,7 +29,7 @@ public class AS15CazBun extends OpMode {
     private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
-    private TurretPositionControl turret;
+    private TurretProfiledPIDControl turret;
 
     private Paths paths; // Paths defined in the Paths class
 
@@ -60,7 +59,10 @@ public class AS15CazBun extends OpMode {
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret.setTargetTicks(0);
+        turret = new TurretProfiledPIDControl(limeLight, null);
+        turret.Initialize(hardwareMap);
+        turret.setUsePinpointFallback(false);
+        turret.setTargetAngle(0);
 
         mixer.MoveToThreeBalls();
 

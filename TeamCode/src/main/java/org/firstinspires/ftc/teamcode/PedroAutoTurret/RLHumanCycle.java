@@ -13,7 +13,6 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.geometry.Pose;
-import org.firstinspires.ftc.teamcode.TurretPositionControl;
 import org.firstinspires.ftc.teamcode.*;
 
 @Autonomous(name = "RLHumanCycle", group = "Autonomous")
@@ -61,7 +60,7 @@ public class RLHumanCycle extends OpMode {
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret = new TurretProfiledPIDControl(limeLight, shooter, null);
+        turret = new TurretProfiledPIDControl(limeLight, null);
         turret.Initialize(hardwareMap, true);
         turret.setTargetAngle(87);
 

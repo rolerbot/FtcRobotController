@@ -14,7 +14,6 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import org.firstinspires.ftc.teamcode.*;
-import org.firstinspires.ftc.teamcode.TurretPositionControl;
 
 @Autonomous(name = "AS9DoubleGate", group = "Autonomous")
 @Configurable // Panels
@@ -30,7 +29,7 @@ public class AS9DoubleGate extends OpMode {
     private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
-    private TurretPositionControl turret;
+    private TurretProfiledPIDControl turret;
 
     private Paths paths; // Paths defined in the Paths class
 
@@ -60,10 +59,10 @@ public class AS9DoubleGate extends OpMode {
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret = new TurretPositionControl(limeLight, shooter, null);
+        turret = new TurretProfiledPIDControl(limeLight, null);
         turret.Initialize(hardwareMap, true); // Reset encoder at start (Right barrier = 0)
         turret.setUsePinpointFallback(false); // Disable odometry fallback in Auto
-        turret.setTargetTicks(0); // Set turret to encoder position 0 (physical start) in init
+        turret.setTargetAngle(0); // Set turret to encoder position 0 (physical start) in init
 
         mixer.MoveToThreeBalls();
 

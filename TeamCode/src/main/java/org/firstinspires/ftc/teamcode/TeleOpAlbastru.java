@@ -48,7 +48,7 @@ public class TeleOpAlbastru extends LinearOpMode {
         shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight);
         shooter.Initialize(hardwareMap);
 
-        turretMechanism = new TurretProfiledPIDControl(limelight, shooter, ct2);
+        turretMechanism = new TurretProfiledPIDControl(limelight, ct2);
         turretMechanism.Initialize(hardwareMap);
 
 

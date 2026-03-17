@@ -466,7 +466,8 @@ public class Shooter implements Subsystem {
             } else {
                 isBraking = false;
             }
-        } else if (isBraking && breakingError <= 5) {
+        }
+        else if (isBraking && breakingError <= 5) {
             isBraking = false;
         }
 

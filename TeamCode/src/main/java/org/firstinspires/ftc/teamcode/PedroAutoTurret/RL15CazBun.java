@@ -13,7 +13,6 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.geometry.Pose;
-import org.firstinspires.ftc.teamcode.TurretPositionControl;
 import org.firstinspires.ftc.teamcode.*;
 
 @Autonomous(name = "RL15CazBun", group = "Autonomous")
@@ -61,9 +60,9 @@ public class RL15CazBun extends OpMode {
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret = new TurretProfiledPIDControl(limeLight, shooter, null);
+        turret = new TurretProfiledPIDControl(limeLight, null);
         turret.Initialize(hardwareMap, true);
-        // turret.setUsePinpointFallback(false);
+        turret.setUsePinpointFallback(false);
         turret.setTargetAngle(87);
 
         follower = Constants.createFollower(hardwareMap);

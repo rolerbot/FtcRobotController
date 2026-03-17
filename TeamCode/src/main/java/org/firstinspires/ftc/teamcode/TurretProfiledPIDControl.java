@@ -14,7 +14,6 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 public class TurretProfiledPIDControl implements Subsystem {
     private DcMotorEx MotorTurela = null;
     private final LimeLight limeLight;
-    private final Shooter shooter;
     private GamepadEx ct2;
     private ButtonReader btnManual;
     private boolean isManualMode = false;
@@ -48,9 +47,8 @@ public class TurretProfiledPIDControl implements Subsystem {
     private boolean usePinpointFallback = true;
     private double lastKp = Kp, lastKi = Ki, lastKd = Kd;
 
-    public TurretProfiledPIDControl(LimeLight limeLight, Shooter shooter, GamepadEx ct2) {
+    public TurretProfiledPIDControl(LimeLight limeLight, GamepadEx ct2) {
         this.limeLight = limeLight;
-        this.shooter = shooter;
         this.ct2 = ct2;
         if (ct2 != null) {
             this.btnManual = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
@@ -231,6 +229,10 @@ public class TurretProfiledPIDControl implements Subsystem {
 
     public double getCurrentDistance() {
         return avgDistance;
+    }
+
+    public void setUsePinpointFallback(boolean use) {
+        this.usePinpointFallback = use;
     }
 
     public void setTargetAngle(double angleDegrees) {

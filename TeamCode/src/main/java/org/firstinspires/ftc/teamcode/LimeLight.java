@@ -1,12 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.pedropathing.geometry.Pose;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-import org.firstinspires.ftc.teamcode.pedroPathing.PinpointBlocksDriver.GoBildaPinpointDriver;
 import com.pedropathing.ftc.FTCCoordinates;
 import com.pedropathing.geometry.PedroCoordinates;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
@@ -139,7 +140,7 @@ public class LimeLight implements Subsystem {
 
     public void Initialize(HardwareMap hardwareMap) {
         LinkComponents(hardwareMap);
-        pinpoint.setOffsets(2.11, -3.31);
+        pinpoint.setOffsets(2.11, -3.31, DistanceUnit.INCH);
 
         // HIGH SPEED TRACKING SETUP
         limelight.setPollRateHz(125); // Max possible update rate

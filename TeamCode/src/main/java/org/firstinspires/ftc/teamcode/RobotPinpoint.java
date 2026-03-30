@@ -3,11 +3,11 @@ package org.firstinspires.ftc.teamcode;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.pedroPathing.PinpointBlocksDriver.GoBildaPinpointDriver;
 
 public class RobotPinpoint implements Subsystem {
     private GoBildaPinpointDriver pinpoint;
@@ -54,7 +54,7 @@ public class RobotPinpoint implements Subsystem {
     private void ConfigurePinpoint() {
         // Configure pinpoint offsets (adjust these to your robot)
         // X offset and Y offset in inches
-        pinpoint.setOffsets(2.11, -3.31);
+        pinpoint.setOffsets(2.11, -3.31, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(
                 GoBildaPinpointDriver.EncoderDirection.FORWARD,

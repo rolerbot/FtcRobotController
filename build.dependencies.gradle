@@ -6,17 +6,18 @@ repositories {
     maven { url = "https://mymaven.bylazar.com/releases" }
     maven { url = 'https://maven.pedropathing.com/' }
     maven { url = "https://mymaven.bylazar.com/releases" }
+
 }
 
 dependencies {
-    implementation 'org.firstinspires.ftc:Inspection:11.1.0'
-    implementation 'org.firstinspires.ftc:Blocks:11.1.0'
-    implementation 'org.firstinspires.ftc:RobotCore:11.1.0'
-    implementation 'org.firstinspires.ftc:RobotServer:11.1.0'
-    implementation 'org.firstinspires.ftc:OnBotJava:11.1.0'
-    implementation 'org.firstinspires.ftc:Hardware:11.1.0'
-    implementation 'org.firstinspires.ftc:FtcCommon:11.1.0'
-    implementation 'org.firstinspires.ftc:Vision:11.1.0'
+    implementation 'org.firstinspires.ftc:Inspection:12.0.0'
+    implementation 'org.firstinspires.ftc:Blocks:12.0.0'
+    implementation 'org.firstinspires.ftc:RobotCore:12.0.0'
+    implementation 'org.firstinspires.ftc:RobotServer:12.0.0'
+    implementation 'org.firstinspires.ftc:OnBotJava:12.0.0'
+    implementation 'org.firstinspires.ftc:Hardware:12.0.0'
+    implementation 'org.firstinspires.ftc:FtcCommon:12.0.0'
+    implementation 'org.firstinspires.ftc:Vision:12.0.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
     runtimeOnly 'org.tensorflow:tensorflow-lite:2.12.0'
@@ -39,5 +40,6 @@ dependencies {
     //http://192.168.43.1:8080
     //http://192.168.49.1:8080
     //http://192.168.43.1:8080/dash
+
 }
 

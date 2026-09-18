@@ -3,18 +3,19 @@ package org.firstinspires.ftc.teamcode;
 import android.widget.Button;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
+import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Intake implements Subsystem {
     private DcMotorEx MotorIntake;
-    private ButtonReader Forward;
-    private ButtonReader Backward;
-    private ButtonReader Stop;
-    private GamepadEx ct1;
+    ButtonReader Forward;
+     ButtonReader Backward;
+     ButtonReader Stop;
+    private final GamepadEx ct1;
 
-    private Intake(GamepadEx ct)
+    public Intake(GamepadEx ct)
     {
         this.ct1 = ct;
     }
@@ -26,7 +27,9 @@ public class Intake implements Subsystem {
     {
         LinkComponents(hwMap);
 
-        Forward = ButtonReader();
+        Forward = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+        Backward = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
+        Stop = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
 
         MotorIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MotorIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -53,6 +56,6 @@ public class Intake implements Subsystem {
 
     public void Run()
     {
-
+        Apas();
     }
 }

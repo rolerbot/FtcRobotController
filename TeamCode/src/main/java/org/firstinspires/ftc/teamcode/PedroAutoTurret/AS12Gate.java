@@ -23,6 +23,8 @@ public class AS12Gate extends OpMode {
         private Timer pathTimer, opmodeTimer;
         private int pathState; // Current autonomous path state (state machine)
 
+        private ShooterDistance shooterDistance; // Used for interpolating shooter parameters
+
         // Robot subsystems
         private TelemetryCustom telemetryCustom;
         private Intake intake;
@@ -41,6 +43,7 @@ public class AS12Gate extends OpMode {
                 panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
                 pathTimer = new Timer();
                 opmodeTimer = new Timer();
+            //shooter.SetHoodPosition(params.hoodAngle);
 
                 telemetryCustom = new TelemetryCustom(telemetry);
 
@@ -69,6 +72,8 @@ public class AS12Gate extends OpMode {
                 follower = Constants.createFollower(hardwareMap);
                 follower.setStartingPose(new Pose(19.5, 121.6, Math.toRadians(234)));
 
+                shooterDistance = new ShooterDistance();
+
                 paths = new Paths(follower); // Build paths
 
                 panelsTelemetry.debug("Status", "Initialized");
@@ -79,7 +84,10 @@ public class AS12Gate extends OpMode {
         public void start() {
                 opmodeTimer.resetTimer();
                 intake.SetMotorPower(1);
-                shooter.StartAutoBoost(); // Optimized spin-up
+                //shooter.StartAutoBoost(); // Optimized spin-up
+                ShooterDistance.ShotParameters params = shooterDistance.GetShotParams(116);
+                shooter.SetShooterVelocity(params.rpm);
+                shooter.ServoHood.setPosition(params.hoodAngle);
                 setPathState(0);
         }
 
@@ -249,7 +257,7 @@ public class AS12Gate extends OpMode {
                                 follower.setMaxPower(0.8);
                                 follower.followPath(paths.Path1, true);
                                 limeLight.getLimelight().pipelineSwitch(0);
-                                turret.setTrackingTag(false); // No tracking while driving
+                               // turret.setTrackingTag(false); // No tracking while driving
                                 setPathState(1);
                                 break;
 
@@ -275,6 +283,7 @@ public class AS12Gate extends OpMode {
                                 // 4. START ROTATION to midway point (-45 degrees)
                                 turret.setTrackingTag(false); // Safety: ensure tracking is OFF
                                 turret.setTargetAngle(-45); // Manually move to ~229 ticks from Right
+                                turret.setTrackingTag(true);
                                 pathTimer.resetTimer();
                                 setPathState(4);
                                 break;
@@ -295,6 +304,10 @@ public class AS12Gate extends OpMode {
                         case 5:
                                 // 6. Track for a full 1.0 second to ensure accuracy
                                 if (pathTimer.getElapsedTimeSeconds() > 0.2) {
+                                        ShooterDistance.ShotParameters params = shooterDistance.GetShotParams(148.4376);
+                                        shooter.SetShooterVelocity(params.rpm);
+                                        shooter.ServoHood.setPosition(params.hoodAngle);
+                                        //shooter.SetHoodPosition(params.hoodAngle);
                                         shooter.StartAutoShoot();
                                         pathTimer.resetTimer();
                                         setPathState(6);

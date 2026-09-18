@@ -20,7 +20,6 @@ public class Drivetrain implements Subsystem {
     private DcMotorEx MotorSD = null;
     private ButtonReader Viteza;
     private final GamepadEx ct1, ct2;
-    private RobotPinpoint robotPinpoint = null;
     double schimbator = 0.4;// Viteza 0.4
     double[] speeds = new double[4];
     double drive, strafe, twist;
@@ -35,12 +34,6 @@ public class Drivetrain implements Subsystem {
     public Drivetrain(GamepadEx ct1, GamepadEx ct2) {
         this.ct1 = ct1;
         this.ct2 = ct2;
-    }
-
-    public Drivetrain(GamepadEx ct1, GamepadEx ct2, RobotPinpoint robotPinpoint) {
-        this.ct1 = ct1;
-        this.ct2 = ct2;
-        this.robotPinpoint = robotPinpoint;
     }
 
     public void LinkComponents(HardwareMap hardwareMap) {

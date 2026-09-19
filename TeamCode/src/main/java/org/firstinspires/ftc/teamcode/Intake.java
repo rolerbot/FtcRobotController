@@ -53,7 +53,6 @@ public class Intake implements Subsystem {
             MotorIntake.setPower(0);
         }
     }
-
     public void Run()
     {
         Apas();

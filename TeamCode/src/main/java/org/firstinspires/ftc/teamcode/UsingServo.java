@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "RobotAlbastru", group = "Linear Opmode")
+@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "UsingServo", group = "Linear Opmode")
 public class UsingServo extends LinearOpMode {
     private GamepadEx ct1;
     private Servo servo;

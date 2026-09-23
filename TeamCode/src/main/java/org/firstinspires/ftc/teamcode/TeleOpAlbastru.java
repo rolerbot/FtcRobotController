@@ -22,7 +22,7 @@ public class TeleOpAlbastru extends LinearOpMode {
 
     private void InitAfter() {
 
-        drivetrain = new Drivetrain(ct1, ct2);
+        drivetrain = new Drivetrain(ct1);
         drivetrain.Initialize(hardwareMap);
         drivetrain.schimbator = 1.4 - drivetrain.schimbator;
 

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -23,6 +24,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
  * Tot aici se calculeaza geometria spre goal (pozitia axei turelei, distanta, unghiul),
  * ca turela si shooterul sa foloseasca exact aceleasi valori in aceeasi bucla.
  */
+@Configurable
 public class RobotPinpoint implements Subsystem {
     private GoBildaPinpointDriver pinpoint;
     private final TelemetryCustom telemetry;

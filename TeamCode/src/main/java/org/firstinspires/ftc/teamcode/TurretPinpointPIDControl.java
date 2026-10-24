@@ -34,8 +34,9 @@ public class TurretPinpointPIDControl implements Subsystem {
     private boolean isManualMode = false;
 
     // ---------- la fel ca in codul vechi ----------
-    private final double TICKS_PER_DEGREE = 5.25;
-    private final int TICKS_AT_CENTER = 455;
+    // Configurabile din Panels ca sa poata fi calibrate (valorile sunt cele din codul vechi)
+    public static double TICKS_PER_DEGREE = 5.25;
+    public static int TICKS_AT_CENTER = 455;
     private final int MIN_TICKS = 0;
     private final int MAX_TICKS = 910;
     private final double MAX_ANGLE_RANGE = 90.0;

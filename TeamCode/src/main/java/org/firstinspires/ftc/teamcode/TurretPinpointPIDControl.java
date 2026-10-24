@@ -41,10 +41,6 @@ public class TurretPinpointPIDControl implements Subsystem {
     public static String PINPOINT_NAME = "pinpoint";
     public static String TURRET_MOTOR_NAME = "MotorTurela";
 
-    // true = clasa asta apeleaza pinpoint.update() in fiecare bucla.
-    // Pune false daca altceva (drivetrain / follower) face deja update pe acelasi Pinpoint.
-    private boolean updatePinpoint = true;
-
     private final double TICKS_PER_DEGREE = 5.25;
     private final int TICKS_AT_CENTER = 455;
     private final int MIN_TICKS = 0;
@@ -98,15 +94,6 @@ public class TurretPinpointPIDControl implements Subsystem {
 
     /** Pinpoint-ul e luat din hardwareMap la Initialize (dupa PINPOINT_NAME). */
     public TurretPinpointPIDControl(boolean isBlue, GamepadEx ct2) {
-        this(null, isBlue, ct2);
-    }
-
-    /**
-     * Foloseste un Pinpoint deja creat (ex. cel din drivetrain).
-     * In cazul asta, de obicei apelezi si setUpdatePinpoint(false).
-     */
-    public TurretPinpointPIDControl(GoBildaPinpointDriver sharedPinpoint, boolean isBlue, GamepadEx ct2) {
-        this.pinpoint = sharedPinpoint;
         this.isBlue = isBlue;
         this.ct2 = ct2;
         if (ct2 != null) {
@@ -119,9 +106,7 @@ public class TurretPinpointPIDControl implements Subsystem {
 
     public void LinkComponents(HardwareMap hwMap) {
         MotorTurela = hwMap.get(DcMotorEx.class, TURRET_MOTOR_NAME);
-        if (pinpoint == null) {
-            pinpoint = hwMap.get(GoBildaPinpointDriver.class, PINPOINT_NAME);
-        }
+        pinpoint = hwMap.get(GoBildaPinpointDriver.class, PINPOINT_NAME);
     }
 
     public void Initialize(HardwareMap hwMap) {
@@ -157,9 +142,7 @@ public class TurretPinpointPIDControl implements Subsystem {
         double dt = loopTimer.seconds();
         loopTimer.reset();
 
-        if (updatePinpoint) {
-            pinpoint.update();
-        }
+        pinpoint.update();
         robotX = pinpoint.getPosX(DistanceUnit.INCH);
         robotY = pinpoint.getPosY(DistanceUnit.INCH);
         robotHeadingDeg = pinpoint.getHeading(AngleUnit.DEGREES);
@@ -255,10 +238,6 @@ public class TurretPinpointPIDControl implements Subsystem {
     public boolean isOnTarget() { return controller.atGoal(); }
 
     public void setAlliance(boolean blue) { isBlue = blue; }
-
-    public void setUpdatePinpoint(boolean update) { updatePinpoint = update; }
-
-    public GoBildaPinpointDriver getPinpoint() { return pinpoint; }
 
     /** true = ocheste automat goal-ul; false = sta la unghiul dat cu setTargetAngle(). */
     public void setAutoAim(boolean enabled) { autoAim = enabled; }

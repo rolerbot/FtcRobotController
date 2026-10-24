@@ -13,13 +13,13 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
  *  1. Impinge capul de mana la capatul din DREAPTA (acelasi loc ca la autonomie) si apasa INIT.
  *     Encoderul se reseteaza la 0 aici. Motorul e liber (FLOAT), capul se misca de mana.
  *  2. Apasa START.
- *  3. Roteste capul de mana si apasa pe gamepad 1:
+ *  3. Roteste capul din mana si apasa pe gamepad 1(pe radu):
  *       A = capul priveste EXACT inainte (paralel cu robotul)
  *       B = capul priveste EXACT 90° la STANGA (perpendicular pe robot)
  *       X = capul priveste EXACT 90° la DREAPTA (daca ajunge; optional)
  *       Y = capul e la capatul maxim din STANGA
  *  4. Citeste rezultatul din telemetrie si pune valorile in TurretPinpointPIDControl.
- *
+ *  RADU DACA CITESTI ASTA SA IMI BELESI PULA TINERE ESTI UN TERMINAT
  * Dupa calibrare, encoderul ramane valid (0 = capatul din dreapta) pana la oprirea robotului.
  */
 @TeleOp(name = "Calibrare Turela", group = "Tuning")

@@ -44,10 +44,10 @@ public class RobotPinpoint implements Subsystem {
 
     // Punctul spre care se uita turela si fata de care se masoara distanta
     // (coordonate de teren Pedro, inch)
-    public static double TARGET_BLUE_X = 9;
-    public static double TARGET_BLUE_Y = 137.0;
-    public static double TARGET_RED_X = 137.0;
-    public static double TARGET_RED_Y = 137.0;
+    public static double TARGET_BLUE_X = 0.0;
+    public static double TARGET_BLUE_Y = 144.0;
+    public static double TARGET_RED_X = 144.0;
+    public static double TARGET_RED_Y = 144.0;
     // =====================================================
 
     // Pozitia curenta a robotului

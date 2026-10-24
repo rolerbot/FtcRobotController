@@ -40,13 +40,13 @@ public class TurretPinpointPIDControl implements Subsystem {
     private final int MAX_TICKS = 910;
     private final double MAX_ANGLE_RANGE = 90.0;
 
-    public static double Kp = 0.042;
+    public static double Kp = 0.032;
     public static double Ki = 0.00;
     public static double Kd = 0.005;
     public static double maxVelocity = 300.0;
-    public static double maxAcceleration = 400.0;
+    public static double maxAcceleration = 200.0;
 
-    private double maxTurretSpeed = 0.8;
+    private double maxTurretSpeed = 0.6;
 
     // Deadzone / toleranta (grade), in functie de distanta (inch) - valorile din codul vechi
     public static double ANGLE_TOLERANCE_DEG = 0.9;   // departe (>= 3.3 m)

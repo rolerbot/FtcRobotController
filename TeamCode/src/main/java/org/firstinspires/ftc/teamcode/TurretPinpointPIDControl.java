@@ -5,40 +5,29 @@ import com.arcrobotics.ftclib.trajectory.TrapezoidProfile;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-
 /**
- * Turela care ocheste DOAR pe baza goBILDA Pinpoint. Fara camera, fara Limelight.
+ * Turela care ocheste DOAR pe baza pozitiei din RobotPinpoint. Fara camera.
  *
  * In fiecare bucla:
- *  1. citeste X, Y, heading din Pinpoint
- *  2. calculeaza pozitia axei turelei pe teren (offset rotit cu heading-ul)
- *  3. unghiul spre goal fata de robot = unghiul la care trebuie sa stea turela
- *  4. ProfiledPID pe unghi + feedforward pe viteza cu care se schimba tinta
+ *  1. ia unghiul spre goal calculat de RobotPinpoint (din axa turelei, fata de fata robotului)
+ *  2. ProfiledPID pe unghi + feedforward pe viteza cu care se misca tinta
  *
- * Conventie: unghi turela pozitiv = spre STANGA (CCW), ca in TurretProfiledPIDControl.
+ * RobotPinpoint.Run() trebuie apelat INAINTE de turret.Run() in bucla.
  *
- * Pinpoint da pozitia fata de locul unde a fost resetat. Ca GOAL_X/GOAL_Y sa aiba sens,
- * apeleaza setStartPose(...) la init cu pozitia reala de start pe teren
- * (sau seteaza pozitia din alt cod, ex. din follower-ul de autonomie).
+ * Conventie: unghi turela pozitiv = spre STANGA (CCW). 0 = TICKS_AT_CENTER.
  */
 public class TurretPinpointPIDControl implements Subsystem {
     private DcMotorEx MotorTurela = null;
-    private GoBildaPinpointDriver pinpoint = null;
-    private GamepadEx ct2;
+    private final RobotPinpoint robotPinpoint;
+    private final GamepadEx ct2;
     private ButtonReader btnManual;
     private boolean isManualMode = false;
 
-    // numele din configuratia robotului
-    public static String PINPOINT_NAME = "pinpoint";
     public static String TURRET_MOTOR_NAME = "MotorTurela";
 
     private final double TICKS_PER_DEGREE = 5.25;
@@ -47,18 +36,8 @@ public class TurretPinpointPIDControl implements Subsystem {
     private final int MAX_TICKS = 910;
     private final double MAX_ANGLE_RANGE = 90.0;
 
-    // ===================== DE MASURAT / SETAT (inch) =====================
-    // Axa turelei fata de centrul de tracking al Pinpoint, in sistemul ROBOTULUI
-    public static double PIVOT_FWD_IN = 0.0;   // + = spre fata robotului
-    public static double PIVOT_LEFT_IN = 0.0;  // + = spre stanga robotului
     // Unde priveste turela la TICKS_AT_CENTER fata de fata robotului (0 = inainte, 180 = inapoi)
     public static double TURRET_ZERO_HEADING_DEG = 0.0;
-
-    // Punctul de ochire pe teren, in acelasi sistem de coordonate ca Pinpoint
-    public static double GOAL_X_BLUE = 0.0;
-    public static double GOAL_X_RED = 144.0;
-    public static double GOAL_Y = 144.0;
-    // =====================================================================
 
     public static double Kp = 0.042;
     public static double Ki = 0.0;
@@ -74,16 +53,12 @@ public class TurretPinpointPIDControl implements Subsystem {
 
     public static double ANGLE_TOLERANCE_DEG = 1.0;
 
-    private ProfiledPIDController controller;
+    private final ProfiledPIDController controller;
     private double maxTurretSpeed = 0.8;
-    private boolean isBlue;
 
     private double currentAngle = 0;
     private double targetAngle = 0;
     private int currentTicks = 0;
-    private double distanceToGoal = 0;
-
-    private double robotX = 0, robotY = 0, robotHeadingDeg = 0;
 
     private boolean autoAim = true;
     private double manualTargetAngle = 0;
@@ -92,9 +67,9 @@ public class TurretPinpointPIDControl implements Subsystem {
     private double lastRawTarget = Double.NaN;
     private double targetRate = 0; // grade/s
 
-    /** Pinpoint-ul e luat din hardwareMap la Initialize (dupa PINPOINT_NAME). */
-    public TurretPinpointPIDControl(boolean isBlue, GamepadEx ct2) {
-        this.isBlue = isBlue;
+    /** ct2 poate fi null (autonomie) - atunci nu exista mod manual. */
+    public TurretPinpointPIDControl(RobotPinpoint robotPinpoint, GamepadEx ct2) {
+        this.robotPinpoint = robotPinpoint;
         this.ct2 = ct2;
         if (ct2 != null) {
             this.btnManual = new ButtonReader(ct2, GamepadKeys.Button.DPAD_RIGHT);
@@ -106,7 +81,6 @@ public class TurretPinpointPIDControl implements Subsystem {
 
     public void LinkComponents(HardwareMap hwMap) {
         MotorTurela = hwMap.get(DcMotorEx.class, TURRET_MOTOR_NAME);
-        pinpoint = hwMap.get(GoBildaPinpointDriver.class, PINPOINT_NAME);
     }
 
     public void Initialize(HardwareMap hwMap) {
@@ -132,27 +106,17 @@ public class TurretPinpointPIDControl implements Subsystem {
         loopTimer.reset();
     }
 
-    /** Seteaza pozitia de start a robotului pe teren (inch, grade). */
-    public void setStartPose(double xIn, double yIn, double headingDeg) {
-        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, xIn, yIn, AngleUnit.DEGREES, headingDeg));
-        lastRawTarget = Double.NaN;
-    }
-
     public void Update() {
         double dt = loopTimer.seconds();
         loopTimer.reset();
-
-        pinpoint.update();
-        robotX = pinpoint.getPosX(DistanceUnit.INCH);
-        robotY = pinpoint.getPosY(DistanceUnit.INCH);
-        robotHeadingDeg = pinpoint.getHeading(AngleUnit.DEGREES);
 
         if (ct2 != null) {
             btnManual.readValue();
             if (btnManual.wasJustPressed()) {
                 isManualMode = !isManualMode;
                 if (!isManualMode) {
-                    // ATENTIE: 0 tickuri = MIN_TICKS. Apasa doar cu turela la capatul MIN.
+                    // ATENTIE: 0 tickuri = MIN_TICKS (capatul din dreapta).
+                    // Apasa doar cu turela impinsa la capatul MIN.
                     MotorTurela.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
                     MotorTurela.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
                     controller.reset(ticksToAngle(0));
@@ -175,9 +139,8 @@ public class TurretPinpointPIDControl implements Subsystem {
             return;
         }
 
-        // ---------- tinta din Pinpoint ----------
-        double angleToGoal = computeAngleToGoal(); // calculeaza si distanta
-        double rawTarget = autoAim ? angleToGoal : manualTargetAngle;
+        // ---------- tinta ----------
+        double rawTarget = autoAim ? computeAngleToGoal() : manualTargetAngle;
 
         if (!Double.isNaN(lastRawTarget) && dt > 1e-4) {
             double rate = normalizeDeg(rawTarget - lastRawTarget) / dt;
@@ -194,7 +157,7 @@ public class TurretPinpointPIDControl implements Subsystem {
         controller.setTolerance(ANGLE_TOLERANCE_DEG);
 
         double power = controller.calculate(currentAngle, targetAngle);
-        if (!atLimit) {
+        if (autoAim && !atLimit) {
             power += kV * targetRate;
         }
         power = Range.clip(power, -maxTurretSpeed, maxTurretSpeed);
@@ -207,20 +170,7 @@ public class TurretPinpointPIDControl implements Subsystem {
 
     /** Unghiul (fata de centrul turelei) la care trebuie sa stea turela ca sa ocheasca goal-ul. */
     private double computeAngleToGoal() {
-        double h = Math.toRadians(robotHeadingDeg);
-        double cos = Math.cos(h), sin = Math.sin(h);
-
-        // pozitia axei turelei pe teren
-        double pivotX = robotX + PIVOT_FWD_IN * cos - PIVOT_LEFT_IN * sin;
-        double pivotY = robotY + PIVOT_FWD_IN * sin + PIVOT_LEFT_IN * cos;
-
-        double goalX = isBlue ? GOAL_X_BLUE : GOAL_X_RED;
-        double dx = goalX - pivotX;
-        double dy = GOAL_Y - pivotY;
-        distanceToGoal = Math.hypot(dx, dy);
-
-        double fieldAngle = Math.toDegrees(Math.atan2(dy, dx));
-        return normalizeDeg(fieldAngle - robotHeadingDeg - TURRET_ZERO_HEADING_DEG);
+        return normalizeDeg(robotPinpoint.GetAngleToGoalDeg() - TURRET_ZERO_HEADING_DEG);
     }
 
     private double ticksToAngle(int ticks) {
@@ -237,28 +187,32 @@ public class TurretPinpointPIDControl implements Subsystem {
 
     public boolean isOnTarget() { return controller.atGoal(); }
 
-    public void setAlliance(boolean blue) { isBlue = blue; }
-
     /** true = ocheste automat goal-ul; false = sta la unghiul dat cu setTargetAngle(). */
-    public void setAutoAim(boolean enabled) { autoAim = enabled; }
+    public void setAutoAim(boolean enabled) {
+        if (enabled && !autoAim) {
+            lastRawTarget = Double.NaN;
+            targetRate = 0;
+        }
+        autoAim = enabled;
+    }
 
     public boolean isAutoAim() { return autoAim; }
 
+    /** Unghi fix (grade, + = stanga). Opreste ochirea automata. */
     public void setTargetAngle(double angleDegrees) {
         manualTargetAngle = Range.clip(angleDegrees, -MAX_ANGLE_RANGE, MAX_ANGLE_RANGE);
         autoAim = false;
     }
 
-    /** Distanta axa turelei -> goal, in inch (pentru shooter). */
-    public double getDistanceToGoal() { return distanceToGoal; }
-
-    /** Compatibil cu TurretProfiledPIDControl. */
-    public double getCurrentDistance() { return distanceToGoal; }
+    /** Distanta axa turelei -> goal, in inch. */
+    public double getDistanceToGoal() { return robotPinpoint.GetDistanceToGoalInches(); }
 
     /** true daca goal-ul e in afara celor +-90 de grade (turela sta la limita). */
     public boolean isTargetOutOfRange() {
-        return !Double.isNaN(lastRawTarget) && Math.abs(lastRawTarget) > MAX_ANGLE_RANGE;
+        return autoAim && !Double.isNaN(lastRawTarget) && Math.abs(lastRawTarget) > MAX_ANGLE_RANGE;
     }
+
+    public boolean isManualMode() { return isManualMode; }
 
     public void setMaxSpeed(double speed) { maxTurretSpeed = Range.clip(speed, 0.0, 1.0); }
 
@@ -270,11 +224,15 @@ public class TurretPinpointPIDControl implements Subsystem {
 
     public double getTargetRate() { return targetRate; }
 
-    public double getRobotX() { return robotX; }
-
-    public double getRobotY() { return robotY; }
-
-    public double getRobotHeadingDeg() { return robotHeadingDeg; }
+    public void UpdateTelemetry(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
+        telemetry.addLine("=== TURELA ===");
+        telemetry.addData("  Mod", isManualMode ? "MANUAL" : (autoAim ? "AUTO (Pinpoint)" : "UNGHI FIX"));
+        telemetry.addData("  Unghi", "%.1f° (tinta %.1f°)", currentAngle, targetAngle);
+        telemetry.addData("  Ticks", currentTicks);
+        if (isTargetOutOfRange()) {
+            telemetry.addLine("  Goal in afara de +-90°!");
+        }
+    }
 
     public void Run() { Update(); }
 }

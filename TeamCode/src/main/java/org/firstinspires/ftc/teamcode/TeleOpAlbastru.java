@@ -13,7 +13,7 @@ public class TeleOpAlbastru extends LinearOpMode {
     Mixer mixer;
     Shooter shooter;
     LimeLight limelight;
-    TurretProfiledPIDControl turretMechanism;
+    TurretPinpointPIDControl turretMechanism;
     RobotPinpoint robotPinpoint;
     private GamepadEx ct1, ct2;
 
@@ -28,7 +28,7 @@ public class TeleOpAlbastru extends LinearOpMode {
     }
 
     private void InitAfter() {
-        robotPinpoint = new RobotPinpoint(myLogger, ct1, ct2);
+        robotPinpoint = new RobotPinpoint(myLogger, ct1, ct2, true);
         robotPinpoint.SetInitialPosition(135, 9, 90); // Blue alliance starting position
         robotPinpoint.Initialize(hardwareMap);
 
@@ -45,10 +45,10 @@ public class TeleOpAlbastru extends LinearOpMode {
         limelight = new LimeLight(true, false, ct2);
         limelight.Initialize(hardwareMap);
 
-        shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight);
+        shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight, robotPinpoint);
         shooter.Initialize(hardwareMap);
 
-        turretMechanism = new TurretProfiledPIDControl(limelight, ct2);
+        turretMechanism = new TurretPinpointPIDControl(robotPinpoint, ct2);
         turretMechanism.Initialize(hardwareMap);
 
 
@@ -70,7 +70,8 @@ public class TeleOpAlbastru extends LinearOpMode {
             shooter.Run();
             shooter.CalculateShootingVelocityTelemetry();
 
-            telemetry.addData("Limelightdist:", limelight.GetDistanceToTargetPython());
+            robotPinpoint.UpdateTelemetry(telemetry);
+            turretMechanism.UpdateTelemetry(telemetry);
 
             telemetry.addLine("\n--- Arranged Shooting Debug ---");
             telemetry.addData("LimeLight ID", limelight.GetID());

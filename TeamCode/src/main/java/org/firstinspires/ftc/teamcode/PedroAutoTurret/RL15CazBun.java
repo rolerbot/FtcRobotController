@@ -30,7 +30,8 @@ public class RL15CazBun extends OpMode {
     private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
-    private TurretProfiledPIDControl turret;
+    private TurretPinpointPIDControl turret;
+    private RobotPinpoint robotPinpoint;
 
     private Paths paths; // Paths defined in the Paths class
 
@@ -45,6 +46,8 @@ public class RL15CazBun extends OpMode {
 
         telemetryCustom = new TelemetryCustom(telemetry);
 
+        robotPinpoint = new RobotPinpoint(telemetryCustom, false);
+
         intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
@@ -56,17 +59,17 @@ public class RL15CazBun extends OpMode {
         mixer.Initialize(hardwareMap);
         mixer.SetArtifacts(); // Load 3 balls
 
-        shooter = new Shooter(telemetryCustom, mixer, limeLight, true);
+        shooter = new Shooter(telemetryCustom, mixer, limeLight, robotPinpoint, true);
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret = new TurretProfiledPIDControl(limeLight, null);
+        turret = new TurretPinpointPIDControl(robotPinpoint, null);
         turret.Initialize(hardwareMap, true);
-        turret.setUsePinpointFallback(false);
         turret.setTargetAngle(87);
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(144 - 57, 9, Math.toRadians(0)));
+        robotPinpoint.Initialize(hardwareMap);
 
         paths = new Paths(follower);
 
@@ -92,6 +95,7 @@ public class RL15CazBun extends OpMode {
     @Override
     public void loop() {
         follower.update();
+        robotPinpoint.Run();
         shooter.Run();
         limeLight.Run();
         turret.Run();
@@ -194,7 +198,7 @@ public class RL15CazBun extends OpMode {
                 follower.setMaxPower(0.8);
                 follower.followPath(paths.ShootingPos, true);
                 limeLight.getLimelight().pipelineSwitch(0);
-                // turret.setTrackingTag(false);
+                // turret.setAutoAim(false);
                 setPathState(1);
                 break;
 
@@ -216,7 +220,7 @@ public class RL15CazBun extends OpMode {
                 if (pathTimer.getElapsedTimeSeconds() > 1.5
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 2)) {
                     // limeLight.RelocalizationRed();
-                    // turret.setTrackingTag(true);
+                    // turret.setAutoAim(true);
                     pathTimer.resetTimer();
                     setPathState(5);
                 }

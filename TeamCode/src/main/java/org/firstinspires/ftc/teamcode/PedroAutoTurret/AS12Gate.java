@@ -29,7 +29,8 @@ public class AS12Gate extends OpMode {
         private LimeLight limeLight;
         private Shooter shooter;
         private Mixer mixer;
-        private TurretProfiledPIDControl turret;
+        private TurretPinpointPIDControl turret;
+        private RobotPinpoint robotPinpoint;
 
         private Paths paths; // Paths defined in the Paths class
 
@@ -44,6 +45,8 @@ public class AS12Gate extends OpMode {
 
                 telemetryCustom = new TelemetryCustom(telemetry);
 
+                robotPinpoint = new RobotPinpoint(telemetryCustom, true);
+
                 intake = new Intake(telemetryCustom);
                 intake.Initialize(hardwareMap);
 
@@ -55,19 +58,19 @@ public class AS12Gate extends OpMode {
                 mixer.Initialize(hardwareMap);
                 mixer.SetArtifacts(); // Load 3 balls
 
-                shooter = new Shooter(telemetryCustom, mixer, limeLight, false);
+                shooter = new Shooter(telemetryCustom, mixer, limeLight, robotPinpoint, false);
                 shooter.Initialize(hardwareMap);
                 shooter.ForceUpdateShooterF();
 
-                turret = new TurretProfiledPIDControl(limeLight, null);
+                turret = new TurretPinpointPIDControl(robotPinpoint, null);
                 turret.Initialize(hardwareMap, true); // Reset encoder at start (Right barrier = 0)
-                turret.setUsePinpointFallback(false); // Disable odometry fallback in Auto
                 turret.setTargetAngle(0); // Set turret to encoder position 0 (physical start) in init
 
                 mixer.MoveToThreeBalls();
 
                 follower = Constants.createFollower(hardwareMap);
                 follower.setStartingPose(new Pose(19.5, 121.6, Math.toRadians(234)));
+                robotPinpoint.Initialize(hardwareMap);
 
                 paths = new Paths(follower); // Build paths
 
@@ -86,6 +89,7 @@ public class AS12Gate extends OpMode {
         @Override
         public void loop() {
                 follower.update(); // Update Pedro Pathing
+                robotPinpoint.Run();
                 shooter.Run();
                 limeLight.Run();
                 turret.Run();
@@ -249,7 +253,7 @@ public class AS12Gate extends OpMode {
                                 follower.setMaxPower(0.8);
                                 follower.followPath(paths.Path1, true);
                                 limeLight.getLimelight().pipelineSwitch(0);
-                                turret.setTrackingTag(false); // No tracking while driving
+                                turret.setAutoAim(false); // No tracking while driving
                                 setPathState(1);
                                 break;
 
@@ -273,7 +277,7 @@ public class AS12Gate extends OpMode {
 
                         case 3:
                                 // 4. START ROTATION to midway point (-45 degrees)
-                                turret.setTrackingTag(false); // Safety: ensure tracking is OFF
+                                turret.setAutoAim(false); // Safety: ensure tracking is OFF
                                 turret.setTargetAngle(-45); // Manually move to ~229 ticks from Right
                                 pathTimer.resetTimer();
                                 setPathState(4);
@@ -285,8 +289,7 @@ public class AS12Gate extends OpMode {
                                 shooter.StartBackMotorAuto();
                                 if (pathTimer.getElapsedTimeSeconds() > 0.7
                                                 && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1)) {
-                                        limeLight.RelocalizationBlue(); // Switch to Blue Shooting Pipeline (2)
-                                        //turret.setTrackingTag(true); // Enable Active Tracking now
+                                        //turret.setAutoAim(true); // Enable Active Tracking now
                                         pathTimer.resetTimer();
                                         setPathState(5); // Proceed to 1s settle wait
                                 }

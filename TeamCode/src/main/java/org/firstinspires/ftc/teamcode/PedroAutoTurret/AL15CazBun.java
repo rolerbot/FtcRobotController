@@ -30,7 +30,8 @@ public class AL15CazBun extends OpMode {
     private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
-    private TurretProfiledPIDControl turret;
+    private TurretPinpointPIDControl turret;
+    private RobotPinpoint robotPinpoint;
 
     private Paths paths; // Paths defined in the Paths class
 
@@ -45,6 +46,8 @@ public class AL15CazBun extends OpMode {
 
         telemetryCustom = new TelemetryCustom(telemetry);
 
+        robotPinpoint = new RobotPinpoint(telemetryCustom, true);
+
         intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
@@ -56,17 +59,18 @@ public class AL15CazBun extends OpMode {
         mixer.Initialize(hardwareMap);
         mixer.SetArtifacts(); // Load 3 balls
 
-        shooter = new Shooter(telemetryCustom, mixer, limeLight, true);
+        shooter = new Shooter(telemetryCustom, mixer, limeLight, robotPinpoint, true);
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret = new TurretProfiledPIDControl(limeLight, null);
+        turret = new TurretPinpointPIDControl(robotPinpoint, null);
         turret.Initialize(hardwareMap, true);
 
         mixer.MoveToThreeBalls();
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(57, 9, Math.toRadians(180)));
+        robotPinpoint.Initialize(hardwareMap);
 
         paths = new Paths(follower);
 
@@ -86,6 +90,7 @@ public class AL15CazBun extends OpMode {
     @Override
     public void loop() {
         follower.update();
+        robotPinpoint.Run();
         shooter.Run();
         limeLight.Run();
         turret.Run();
@@ -206,7 +211,7 @@ public class AL15CazBun extends OpMode {
                 follower.setMaxPower(0.8);
                 follower.followPath(paths.ShootingPos, true);
                 limeLight.getLimelight().pipelineSwitch(0);
-                turret.setTrackingTag(false);
+                turret.setAutoAim(false);
                 setPathState(1);
                 break;
 
@@ -230,7 +235,7 @@ public class AL15CazBun extends OpMode {
                 if (pathTimer.getElapsedTimeSeconds() > 1
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.5)) {
                     //limeLight.RelocalizationBlue();
-                    //turret.setTrackingTag(true);
+                    //turret.setAutoAim(true);
                     setPathState(5);
                 }
                 break;
@@ -273,7 +278,6 @@ public class AL15CazBun extends OpMode {
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 0.7
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.0)) {
-                    limeLight.RelocalizationBlue();
                     setPathState(13);
                 }
                 break;

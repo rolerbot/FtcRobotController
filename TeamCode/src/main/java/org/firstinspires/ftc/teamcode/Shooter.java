@@ -24,7 +24,12 @@ public class Shooter implements Subsystem {
     private boolean shootingAllowed = false;
     public Servo ServoHood = null;
 
-    private double constDist = 3.6; // Default fallback for ShootingPos (~3.6m)
+    private double constDist = 3.6; // metri; actualizat din RobotPinpoint
+
+    // Corectie pentru tabelul din ShooterDistance. Tabelul a fost facut cu distanta
+    // camera -> AprilTag (Limelight); acum distanta e axa turelei -> GOAL (Pinpoint).
+    // Daca bilele cad constant prea scurt/lung, ajusteaza aici (cm) sau refa tabelul.
+    public static double DISTANCE_CORRECTION_CM = 0.0;
     private int caseSwitch = 0;
 
     // Prepare state machine (runs before button press when CanShootArranged)
@@ -33,7 +38,8 @@ public class Shooter implements Subsystem {
     private ElapsedTime prepareTimer = new ElapsedTime();
     private DcMotorEx MotorAruncare = null;
     private ShooterVoltageHelper voltageHelper = null;
-    private LimeLight limelight;
+    private final LimeLight limelight;          // doar pentru ID-ul motivului (21/22/23)
+    private final RobotPinpoint robotPinpoint;  // distanta pana la goal
     private final double BASE_SHOOTER_F = 13;
     private double shooterF = BASE_SHOOTER_F;
     private double shooterP = 13;
@@ -141,15 +147,18 @@ public class Shooter implements Subsystem {
     private int lastTagId = 0;
     private boolean brakeDone = false;
 
-    public Shooter(TelemetryCustom tl, Mixer mixer, GamepadEx ct1, GamepadEx ct2, LimeLight limelight) {
+    public Shooter(TelemetryCustom tl, Mixer mixer, GamepadEx ct1, GamepadEx ct2, LimeLight limelight,
+            RobotPinpoint robotPinpoint) {
         this.ct1 = ct1;
         this.ct2 = ct2;
         this.mixer = mixer;
         this.telemetry = tl;
         this.limelight = limelight;
+        this.robotPinpoint = robotPinpoint;
     }
 
-    public Shooter(TelemetryCustom tl, Mixer mixer, LimeLight limelight, boolean isLong) {
+    public Shooter(TelemetryCustom tl, Mixer mixer, LimeLight limelight, RobotPinpoint robotPinpoint,
+            boolean isLong) {
         this.ct1 = null;
         this.ct2 = null;
         this.mixer = mixer;
@@ -157,6 +166,7 @@ public class Shooter implements Subsystem {
         this.isLong = isLong;
         this.isAutoShooting = true;
         this.limelight = limelight;
+        this.robotPinpoint = robotPinpoint;
     }
 
     public void LinkComponents(HardwareMap hardwareMap) {
@@ -745,11 +755,8 @@ public class Shooter implements Subsystem {
         if (isLong) {
             constDist = 3.36; // Fixed 336cm for auto long
         } else {
-            double limeDist = limelight.GetDistanceToTargetPython();
-            if (limeDist > 0)
-                constDist = limeDist;
+            constDist = robotPinpoint.GetDistanceToGoalMeters() + DISTANCE_CORRECTION_CM / 100.0;
         }
-        HoodPosition();
     }
 
     private void CalculateShootingVelocity() {
@@ -760,6 +767,7 @@ public class Shooter implements Subsystem {
         ShooterDistance.ShotParameters params = shooterDistance.GetShotParams(distCm);
         targetShootingVelocity = params.rpm;
         targetHoodPosition = params.hoodAngle;
+        HoodPosition(); // dupa ce s-a calculat noua pozitie (inainte era setata cu o bucla in urma)
 
         telemetry.Log("Shot @ dist", String.format("%.1f cm → %.0f RPM, hood %.3f",
                 distCm, targetShootingVelocity, targetHoodPosition));
@@ -879,4 +887,4 @@ public class Shooter implements Subsystem {
     public boolean IsShootingStateNone() {
         return shootType == ShootingState.None;
     }
-}
+}

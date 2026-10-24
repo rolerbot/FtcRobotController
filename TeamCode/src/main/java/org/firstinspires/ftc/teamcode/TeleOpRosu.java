@@ -14,7 +14,7 @@ public class TeleOpRosu extends LinearOpMode {
     Mixer mixer;
     Shooter shooter;
     LimeLight limelight;
-    TurretProfiledPIDControl turretMechanism;
+    TurretPinpointPIDControl turretMechanism;
     RobotPinpoint robotPinpoint;
     private GamepadEx ct1, ct2;
 
@@ -31,7 +31,7 @@ public class TeleOpRosu extends LinearOpMode {
     private void InitAfter() {
         // Initialize RobotPinpoint (with both controllers for rumble and ct2 for reset
         // button)
-        robotPinpoint = new RobotPinpoint(myLogger, ct1, ct2);
+        robotPinpoint = new RobotPinpoint(myLogger, ct1, ct2, false);
         robotPinpoint.SetInitialPosition(9, 9, 90); // Red alliance starting position
         robotPinpoint.Initialize(hardwareMap);
 
@@ -48,10 +48,10 @@ public class TeleOpRosu extends LinearOpMode {
         limelight = new LimeLight(false, false, ct2);
         limelight.Initialize(hardwareMap);
 
-        shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight);
+        shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight, robotPinpoint);
         shooter.Initialize(hardwareMap);
 
-        turretMechanism = new TurretProfiledPIDControl(limelight, ct2);
+        turretMechanism = new TurretPinpointPIDControl(robotPinpoint, ct2);
         turretMechanism.Initialize(hardwareMap);
 
 
@@ -75,6 +75,9 @@ public class TeleOpRosu extends LinearOpMode {
 
             shooter.CalculateShootingVelocityTelemetry();
 
+            robotPinpoint.UpdateTelemetry(telemetry);
+            turretMechanism.UpdateTelemetry(telemetry);
+
             telemetry.addLine("\n--- Arranged Shooting Debug ---");
             telemetry.addData("LimeLight ID", limelight.GetID());
             telemetry.addData("CanShootArranged", shooter.CanShootArranged());
@@ -88,4 +91,4 @@ public class TeleOpRosu extends LinearOpMode {
         telemetry.update();
         myLogger.close();
     }
-}
+}

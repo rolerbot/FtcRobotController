@@ -12,7 +12,9 @@ public class ShooterTuning extends OpMode {
 
     private DcMotorEx shooterMotor1, motorridicarebila;
     private Servo hoodServo;
-    private LimeLight limelight;
+    private RobotPinpoint robotPinpoint;
+    // Alianta pentru care se masoara distanta pana la goal
+    public static boolean IS_BLUE = true;
     // private Drivetrain drivetrain;
     private double currenttargetVelocity = 1100;
     double F = 0;
@@ -55,8 +57,14 @@ public class ShooterTuning extends OpMode {
         // drivetrain = new Drivetrain(ct1, null);
         // drivetrain.Initialize(hardwareMap);
 
-        limelight = new LimeLight(true, false);
-        limelight.Initialize(hardwareMap);
+        // Distanta pana la goal din Pinpoint (aceeasi pe care o foloseste Shooter-ul).
+        // Gamepad 2 Right Trigger = reset la pozitia de start de mai jos.
+        robotPinpoint = new RobotPinpoint(new TelemetryCustom(telemetry), ct1, ct2, IS_BLUE);
+        if (IS_BLUE)
+            robotPinpoint.SetInitialPosition(135, 9, 90);
+        else
+            robotPinpoint.SetInitialPosition(9, 9, 90);
+        robotPinpoint.Initialize(hardwareMap);
 
         PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
         shooterMotor1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
@@ -94,7 +102,7 @@ public class ShooterTuning extends OpMode {
         VelocityUp.readValue();
         VelocityDown.readValue();
 
-        limelight.Run();
+        robotPinpoint.Run();
         // drivetrain.Run();
 
         if (stepIncrease.wasJustPressed())
@@ -162,9 +170,12 @@ public class ShooterTuning extends OpMode {
         telemetry.addLine("=== GAMEPAD 2 - VELOCITY ===");
         telemetry.addLine("  Y: +50 RPM  |  A: -50 RPM");
         telemetry.addLine();
-        telemetry.addData("Distance", "%.2f m", limelight.GetDistanceToTargetPython());
+        telemetry.addData("Distance", "%.2f m (%.0f cm)",
+                robotPinpoint.GetDistanceToGoalMeters(), robotPinpoint.GetDistanceToGoalInches() * 2.54);
+        telemetry.addData("Pinpoint", "X %.1f  Y %.1f  H %.1f",
+                robotPinpoint.GetX(), robotPinpoint.GetY(), robotPinpoint.GetHeading());
         telemetry.update();
 
     }
 
-}
+}

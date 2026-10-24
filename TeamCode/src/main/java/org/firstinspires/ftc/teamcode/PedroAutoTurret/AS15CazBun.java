@@ -29,7 +29,8 @@ public class AS15CazBun extends OpMode {
     private LimeLight limeLight;
     private Shooter shooter;
     private Mixer mixer;
-    private TurretProfiledPIDControl turret;
+    private TurretPinpointPIDControl turret;
+    private RobotPinpoint robotPinpoint;
 
     private Paths paths; // Paths defined in the Paths class
 
@@ -44,6 +45,8 @@ public class AS15CazBun extends OpMode {
 
         telemetryCustom = new TelemetryCustom(telemetry);
 
+        robotPinpoint = new RobotPinpoint(telemetryCustom, true);
+
         intake = new Intake(telemetryCustom);
         intake.Initialize(hardwareMap);
 
@@ -55,19 +58,19 @@ public class AS15CazBun extends OpMode {
         mixer.Initialize(hardwareMap);
         mixer.SetArtifacts(); // Load 3 balls
 
-        shooter = new Shooter(telemetryCustom, mixer, limeLight, false);
+        shooter = new Shooter(telemetryCustom, mixer, limeLight, robotPinpoint, false);
         shooter.Initialize(hardwareMap);
         shooter.ForceUpdateShooterF();
 
-        turret = new TurretProfiledPIDControl(limeLight, null);
+        turret = new TurretPinpointPIDControl(robotPinpoint, null);
         turret.Initialize(hardwareMap);
-        turret.setUsePinpointFallback(false);
         turret.setTargetAngle(0);
 
         mixer.MoveToThreeBalls();
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(26.8, 131.5, Math.toRadians(233)));
+        robotPinpoint.Initialize(hardwareMap);
 
         paths = new Paths(follower);
 
@@ -87,6 +90,7 @@ public class AS15CazBun extends OpMode {
     @Override
     public void loop() {
         follower.update();
+        robotPinpoint.Run();
         shooter.Run();
         limeLight.Run();
         turret.Run();
@@ -117,7 +121,7 @@ public class AS15CazBun extends OpMode {
                 follower.setMaxPower(0.6);
                 follower.followPath(paths.Path1, true);
                 limeLight.getLimelight().pipelineSwitch(0);
-                turret.setTrackingTag(false);
+                turret.setAutoAim(false);
                 setPathState(1);
                 break;
 
@@ -134,7 +138,7 @@ public class AS15CazBun extends OpMode {
                 break;
             case 3: // Pattern Step 2: Turret pre-position
                 mixer.Run();
-                turret.setTrackingTag(false);
+                turret.setAutoAim(false);
                 turret.setTargetAngle(-45);
                 setPathState(4);
                 break;
@@ -143,8 +147,7 @@ public class AS15CazBun extends OpMode {
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 0.7
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.0)) {
-                    limeLight.RelocalizationBlue();
-                    turret.setTrackingTag(true);
+                    turret.setAutoAim(true);
                     setPathState(5);
                 }
                 break;
@@ -200,7 +203,7 @@ public class AS15CazBun extends OpMode {
                 break;
             case 12:
                 mixer.Run();
-                turret.setTrackingTag(false);
+                turret.setAutoAim(false);
                 turret.setTargetAngle(-45);
                 setPathState(13);
                 break;
@@ -209,8 +212,7 @@ public class AS15CazBun extends OpMode {
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 0.7
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.0)) {
-                    limeLight.RelocalizationBlue();
-                    turret.setTrackingTag(true);
+                    turret.setAutoAim(true);
                     setPathState(14);
                 }
                 break;
@@ -266,7 +268,7 @@ public class AS15CazBun extends OpMode {
                 break;
             case 22:
                 mixer.Run();
-                turret.setTrackingTag(false);
+                turret.setAutoAim(false);
                 turret.setTargetAngle(-45);
                 setPathState(23);
                 break;
@@ -275,8 +277,7 @@ public class AS15CazBun extends OpMode {
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 0.7
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.0)) {
-                    limeLight.RelocalizationBlue();
-                    turret.setTrackingTag(true);
+                    turret.setAutoAim(true);
                     setPathState(24);
                 }
                 break;
@@ -332,7 +333,7 @@ public class AS15CazBun extends OpMode {
                 break;
             case 32:
                 mixer.Run();
-                turret.setTrackingTag(false);
+                turret.setAutoAim(false);
                 turret.setTargetAngle(-45);
                 setPathState(33);
                 break;
@@ -341,8 +342,7 @@ public class AS15CazBun extends OpMode {
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 0.7
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.0)) {
-                    limeLight.RelocalizationBlue();
-                    turret.setTrackingTag(true);
+                    turret.setAutoAim(true);
                     setPathState(34);
                 }
                 break;
@@ -398,7 +398,7 @@ public class AS15CazBun extends OpMode {
                 break;
             case 42:
                 mixer.Run();
-                turret.setTrackingTag(false);
+                turret.setAutoAim(false);
                 turret.setTargetAngle(-45);
                 setPathState(43);
                 break;
@@ -407,8 +407,7 @@ public class AS15CazBun extends OpMode {
                 shooter.StartBackMotorAuto();
                 if (pathTimer.getElapsedTimeSeconds() > 0.7
                         && (turret.isOnTarget() || pathTimer.getElapsedTimeSeconds() > 1.0)) {
-                    limeLight.RelocalizationBlue();
-                    turret.setTrackingTag(true);
+                    turret.setAutoAim(true);
                     setPathState(44);
                 }
                 break;

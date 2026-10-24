@@ -227,7 +227,9 @@ public class TurretPinpointPIDControl implements Subsystem {
     public void UpdateTelemetry(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
         telemetry.addLine("=== TURELA ===");
         telemetry.addData("  Mod", isManualMode ? "MANUAL" : (autoAim ? "AUTO (Pinpoint)" : "UNGHI FIX"));
-        telemetry.addData("  Unghi", "%.1f° (tinta %.1f°)", currentAngle, targetAngle);
+        telemetry.addData("  Unghi", "%.1f°", currentAngle);
+        telemetry.addData("  Tinta", "%.1f°", targetAngle);
+        telemetry.addData("  Eroare (tinta-unghi)", "%.2f°", targetAngle - currentAngle);
         telemetry.addData("  Ticks", currentTicks);
         if (isTargetOutOfRange()) {
             telemetry.addLine("  Goal in afara de +-90°!");

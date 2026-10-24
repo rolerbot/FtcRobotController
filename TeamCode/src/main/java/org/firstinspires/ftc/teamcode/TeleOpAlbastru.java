@@ -15,6 +15,7 @@ public class TeleOpAlbastru extends LinearOpMode {
     LimeLight limelight;
     TurretPinpointPIDControl turretMechanism;
     RobotPinpoint robotPinpoint;
+    FieldDrawing fieldDrawing;
     private GamepadEx ct1, ct2;
 
     private void MapControlerButtons() {
@@ -51,6 +52,8 @@ public class TeleOpAlbastru extends LinearOpMode {
         turretMechanism = new TurretPinpointPIDControl(robotPinpoint, ct2);
         turretMechanism.Initialize(hardwareMap);
 
+        fieldDrawing = new FieldDrawing();
+
 
     }
 
@@ -63,15 +66,18 @@ public class TeleOpAlbastru extends LinearOpMode {
             robotPinpoint.Run();
             limelight.Run();
             turretMechanism.Run();
+
+            // Primele pe ecran: pozitia robotului si turela
+            robotPinpoint.UpdateTelemetry(telemetry);
+            turretMechanism.UpdateTelemetry(telemetry);
+            fieldDrawing.Draw(robotPinpoint, turretMechanism);
+
             intake.Run();
             drivetrain.Run();
             if (!shooter.GetShootingAllow())
                 mixer.Run();
             shooter.Run();
             shooter.CalculateShootingVelocityTelemetry();
-
-            robotPinpoint.UpdateTelemetry(telemetry);
-            turretMechanism.UpdateTelemetry(telemetry);
 
             telemetry.addLine("\n--- Arranged Shooting Debug ---");
             telemetry.addData("LimeLight ID", limelight.GetID());

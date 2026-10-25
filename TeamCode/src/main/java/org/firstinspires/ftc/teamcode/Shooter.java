@@ -40,6 +40,8 @@ public class Shooter implements Subsystem {
     private ShooterVoltageHelper voltageHelper = null;
     private final LimeLight limelight;          // doar pentru ID-ul motivului (21/22/23)
     private final RobotPinpoint robotPinpoint;  // distanta pana la goal
+    // Daca e setata, distanta (si eventual viteza + hood direct) vin de la turela
+    private TurretShot turretShot = null;
     private final double BASE_SHOOTER_F = 13;
     private double shooterF = BASE_SHOOTER_F;
     private double shooterP = 13;
@@ -303,6 +305,15 @@ public class Shooter implements Subsystem {
             }
             // In AUTO (0), the automatic setVelocity calls from Run logic will persist.
         }
+    }
+
+    /**
+     * Shooter-ul ia distanta de la turela (ex. tinta virtuala la TurretMotionCompensatedPID).
+     * Daca turela da lovitura direct (HasDirectShot, ex. TurretBallisticShotPID), viteza
+     * flywheel si hood-ul vin de la ea, fara tabelul ShooterDistance.
+     */
+    public void SetTurretShot(TurretShot turret) {
+        this.turretShot = turret;
     }
 
     public void StartBackMotorAuto() {
@@ -755,7 +766,10 @@ public class Shooter implements Subsystem {
         if (isLong) {
             constDist = 3.36; // Fixed 336cm for auto long
         } else {
-            constDist = robotPinpoint.GetDistanceToGoalMeters() + DISTANCE_CORRECTION_CM / 100.0;
+            double meters = (turretShot != null)
+                    ? turretShot.GetShotDistanceMeters()
+                    : robotPinpoint.GetDistanceToGoalMeters();
+            constDist = meters + DISTANCE_CORRECTION_CM / 100.0;
         }
     }
 
@@ -764,6 +778,15 @@ public class Shooter implements Subsystem {
             return;
 
         double distCm = constDist * 100;
+
+        // Turela care da lovitura direct (ex. fizica): viteza si hood fara tabel
+        if (turretShot != null && turretShot.HasDirectShot() && !isLong) {
+            targetShootingVelocity = turretShot.GetFlywheelVelocity();
+            targetHoodPosition = turretShot.GetHoodServoPosition();
+            HoodPosition();
+            return;
+        }
+
         ShooterDistance.ShotParameters params = shooterDistance.GetShotParams(distCm);
         targetShootingVelocity = params.rpm;
         targetHoodPosition = params.hoodAngle;

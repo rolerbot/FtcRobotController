@@ -63,6 +63,11 @@ public class RobotPinpoint implements Subsystem {
     private double distanceToGoalIn = 0;
     private double angleToGoalDeg = 0; // fata de fata robotului, + = stanga
 
+    // Viteze (coordonate de teren, ca pozitia): inch/s si rad/s (+ = CCW)
+    private double velX = 0;
+    private double velY = 0;
+    private double headingVelRad = 0;
+
     // Pozitia la care se reseteaza (Right Trigger pe gamepad 2 in TeleOp)
     private double initialX = 0;
     private double initialY = 0;
@@ -143,6 +148,9 @@ public class RobotPinpoint implements Subsystem {
         x = pose.getX(DistanceUnit.INCH);
         y = pose.getY(DistanceUnit.INCH);
         heading = pose.getHeading(AngleUnit.DEGREES);
+        velX = pinpoint.getVelX(DistanceUnit.INCH);
+        velY = pinpoint.getVelY(DistanceUnit.INCH);
+        headingVelRad = pinpoint.getHeadingVelocity(AngleUnit.RADIANS.getUnnormalized());
         UpdateGoalGeometry();
     }
 
@@ -230,6 +238,22 @@ public class RobotPinpoint implements Subsystem {
 
     public double GetTurretY() { return turretY; }
 
+    /** Viteza robotului pe teren (inch/s), aceeasi pe care o foloseste Pedro. */
+    public double GetVelX() { return velX; }
+
+    public double GetVelY() { return velY; }
+
+    /** Viteza de rotatie a robotului (rad/s, + = CCW / stanga). */
+    public double GetHeadingVelocityRad() { return headingVelRad; }
+
+    /**
+     * Viteza axei turelei pe teren (inch/s). Turela e in spatele centrului, deci cand
+     * robotul se roteste, axa ei se misca pe un cerc: v_turela = v_centru + omega x r.
+     */
+    public double GetTurretVelX() { return velX - headingVelRad * (turretY - y); }
+
+    public double GetTurretVelY() { return velY + headingVelRad * (turretX - x); }
+
     /** Distanta axa turelei -> punctul tinta, inch. */
     public double GetDistanceToGoalInches() { return distanceToGoalIn; }
 
@@ -255,5 +279,6 @@ public class RobotPinpoint implements Subsystem {
         telemetry.addData("  Turela pe teren", "X %.1f\"  Y %.1f\"", turretX, turretY);
         telemetry.addData("  Dist goal", "%.1f\" (%.0f cm)", distanceToGoalIn, distanceToGoalIn * 2.54);
         telemetry.addData("  Unghi goal", "%.1f°", angleToGoalDeg);
+        telemetry.addData("  Viteza", "vx %.1f  vy %.1f in/s  w %.0f°/s", velX, velY, Math.toDegrees(headingVelRad));
     }
 }

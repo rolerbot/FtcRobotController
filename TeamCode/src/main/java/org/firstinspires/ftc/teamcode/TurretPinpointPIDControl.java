@@ -26,7 +26,7 @@ import com.qualcomm.robotcore.util.Range;
  * Schimbarile din Panels se pierd la restart -> dupa ce gasesti valorile bune, scrie-le aici.
  */
 @Configurable
-public class TurretPinpointPIDControl implements Subsystem {
+public class TurretPinpointPIDControl implements TurretShot {
     private DcMotorEx MotorTurela = null;
     private final RobotPinpoint robotPinpoint;
     private final GamepadEx ct2;
@@ -230,12 +230,14 @@ public class TurretPinpointPIDControl implements Subsystem {
 
     public boolean isManualMode() { return isManualMode; }
 
+    @Override
     public double getCurrentAngle() { return currentAngle; }
 
     public int getCurrentTicks() { return MotorTurela.getCurrentPosition(); }
 
     public double getTargetAngle() { return targetAngle; }
 
+    @Override
     public void UpdateTelemetry(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
         telemetry.addLine("=== TURELA ===");
         telemetry.addData("  Mod", isManualMode ? "MANUAL" : (autoAim ? "AUTO (Pinpoint)" : "UNGHI FIX"));
@@ -248,6 +250,26 @@ public class TurretPinpointPIDControl implements Subsystem {
             telemetry.addLine("  Tinta in afara de +-90°!");
         }
     }
+
+    // ---------------- TurretShot (pentru Shooter, FieldDrawing, TeleOp) ----------------
+
+    @Override
+    public double getAimAngle() { return neededAngle; }
+
+    @Override
+    public double getZeroHeadingDeg() { return TURRET_ZERO_HEADING_DEG; }
+
+    @Override
+    public double GetShotDistanceMeters() { return robotPinpoint.GetDistanceToGoalMeters(); }
+
+    @Override
+    public boolean HasDirectShot() { return false; }
+
+    @Override
+    public double GetFlywheelVelocity() { return 0; }
+
+    @Override
+    public double GetHoodServoPosition() { return 0; }
 
     public void Run() { Update(); }
 }

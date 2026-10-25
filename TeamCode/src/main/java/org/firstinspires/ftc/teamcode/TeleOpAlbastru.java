@@ -3,8 +3,10 @@ package org.firstinspires.ftc.teamcode;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+@Configurable
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "RobotAlbastru", group = "Linear Opmode")
 public class TeleOpAlbastru extends LinearOpMode {
     TelemetryCustom myLogger;
@@ -13,7 +15,11 @@ public class TeleOpAlbastru extends LinearOpMode {
     Mixer mixer;
     Shooter shooter;
     LimeLight limelight;
-    TurretPinpointPIDControl turretMechanism;
+    // false = varianta 2 (tabel + tinta virtuala), true = varianta 1 (fizica din video).
+    // Se poate schimba din Panels (Configurables), apoi INIT din nou.
+    public static boolean ARUNCARE_FIZICA = false;
+
+    TurretShot turretMechanism;
     RobotPinpoint robotPinpoint;
     FieldDrawing fieldDrawing;
     private GamepadEx ct1, ct2;
@@ -49,8 +55,13 @@ public class TeleOpAlbastru extends LinearOpMode {
         shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight, robotPinpoint);
         shooter.Initialize(hardwareMap);
 
-        turretMechanism = new TurretPinpointPIDControl(robotPinpoint, ct2);
+        // Alege varianta de turela. Daca stergeti una dintre clase, stergeti si linia ei de aici.
+        if (ARUNCARE_FIZICA)
+            turretMechanism = new TurretBallisticShotPID(robotPinpoint, ct2);     // varianta 1: fizica
+        else
+            turretMechanism = new TurretMotionCompensatedPID(robotPinpoint, ct2); // varianta 2: tabel + tinta virtuala
         turretMechanism.Initialize(hardwareMap);
+        shooter.SetTurretShot(turretMechanism);
 
         fieldDrawing = new FieldDrawing();
 

@@ -12,6 +12,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  *  - linia GALBENA: unde AR TREBUI sa traga turela (axa turelei -> tinta)
  *  - linia ROSIE:   unde trage turela ACUM (din unghiul real al encoderului)
  * Daca turela e bine ochita, linia rosie se suprapune peste cea galbena.
+ *  - linia CYAN: unde vrea codul sa ocheasca (cu compensarea de miscare, daca turela are);
+ *    cand robotul merge, linia rosie trebuie sa se suprapuna peste cea cyan.
  *
  * Panels: conectat la WiFi-ul robotului -> http://192.168.43.1:8001 -> tab-ul Field.
  */
@@ -24,6 +26,7 @@ public class FieldDrawing {
     private final Style historyStyle = new Style("", "#4CAF50", 0.5);
     private final Style targetStyle = new Style("", "#FFC107", 0.75);  // galben: unde ar trebui
     private final Style turretStyle = new Style("", "#F44336", 0.75);  // rosu: unde trage acum
+    private final Style virtualStyle = new Style("", "#00BCD4", 0.75); // cyan: tinta virtuala
 
     private FieldManager field;
     private boolean enabled = true;
@@ -43,7 +46,7 @@ public class FieldDrawing {
         }
     }
 
-    public void Draw(RobotPinpoint rp, TurretPinpointPIDControl turret) {
+    public void Draw(RobotPinpoint rp, TurretShot turret) {
         if (!enabled || drawTimer.milliseconds() < DRAW_PERIOD_MS)
             return;
         drawTimer.reset();
@@ -87,8 +90,19 @@ public class FieldDrawing {
             field.moveCursor(tx, ty);
             field.line(gx, gy);
 
+            // unde vrea codul sa ocheasca (cu compensare, daca turela are) - cyan
+            dist = turret.GetShotDistanceMeters() / 0.0254;
+            double aimCalc = h + Math.toRadians(turret.getZeroHeadingDeg() + turret.getAimAngle());
+            double ax = tx + Math.cos(aimCalc) * dist;
+            double ay = ty + Math.sin(aimCalc) * dist;
+            field.setStyle(virtualStyle);
+            field.moveCursor(tx, ty);
+            field.line(ax, ay);
+            field.moveCursor(ax, ay);
+            field.circle(2);
+
             // unde priveste turela acum: heading robot + zero turela + unghi encoder
-            double aim = h + Math.toRadians(TurretPinpointPIDControl.TURRET_ZERO_HEADING_DEG + turret.getCurrentAngle());
+            double aim = h + Math.toRadians(turret.getZeroHeadingDeg() + turret.getCurrentAngle());
             field.setStyle(turretStyle);
             field.moveCursor(tx, ty);
             field.circle(1.5);

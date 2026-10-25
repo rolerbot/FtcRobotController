@@ -72,6 +72,11 @@ public class ShooterDistance {
         return table.get(table.size() - 1);
     }
 
+    /** Tabelul (doar citire), folosit la calibrarea variantei cu fizica. */
+    public List<ShotParameters> GetTable() {
+        return Collections.unmodifiableList(table);
+    }
+
     private double Lerp(double a, double b, double t) {
         return a + (b - a) * t;
     }
@@ -84,4 +89,4 @@ public class ShooterDistance {
             }
         });
     }
-}
+}

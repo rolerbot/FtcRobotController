@@ -43,15 +43,15 @@ public class RobotPinpoint implements Subsystem {
     // (intake, shooter) nu mai pot muta X / Y / heading. Abaterile mici se rescriu in Pinpoint.
     // Daca abaterea e mare (alt robot v-a impins), pozitia noua e acceptata.
     public static boolean POSE_LOCK_ACTIVA = true;
-    public static double LOCK_DELAY_S = 0.4;           // cat sta fara comenzi inainte de blocare
-    public static double LOCK_MAX_SPEED_IN_S = 8.0;    // peste asta robotul inca se misca -> nu blocam
-    public static double LOCK_MAX_TURN_DEG_S = 20.0;
+    public static double LOCK_DELAY_S = 0.6;           // cat sta fara comenzi (si oprit) inainte de blocare
+    public static double LOCK_MAX_SPEED_IN_S = 1.5;    // peste asta robotul inca se misca -> nu blocam
+    public static double LOCK_MAX_TURN_DEG_S = 3.0;    // peste asta robotul inca se roteste -> nu blocam
     public static double LOCK_MAX_DRIFT_IN = 3.0;      // peste asta = impins -> se accepta pozitia noua
     public static double LOCK_MAX_DRIFT_DEG = 4.0;
     public static double LOCK_CORRECT_IN = 0.3;        // de la ce abatere se rescrie pozitia in Pinpoint
     public static double LOCK_CORRECT_DEG = 0.3;
     public static double LOCK_CORRECT_PERIOD_S = 0.5;  // cel mult o rescriere la atata timp
-    public static double STICK_DEADBAND = 0.05;        // joystick / trigger sub asta = fara comanda
+    public static double STICK_DEADBAND = 0.1;         // joystick / trigger sub asta = fara comanda (joc in repaus)
     // ==========================================================================================
 
     private boolean locked = false;

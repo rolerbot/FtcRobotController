@@ -16,10 +16,6 @@ public class TeleOpRosu extends LinearOpMode {
     Mixer mixer;
     Shooter shooter;
     LimeLight limelight;
-    // false = varianta 2 (tabel + tinta virtuala), true = varianta 1 (fizica din video).
-    // Se poate schimba din Panels (Configurables), apoi INIT din nou.
-    public static boolean ARUNCARE_FIZICA = false;
-
     TurretShot turretMechanism;
     RobotPinpoint robotPinpoint;
     FieldDrawing fieldDrawing;
@@ -58,11 +54,7 @@ public class TeleOpRosu extends LinearOpMode {
         shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight, robotPinpoint);
         shooter.Initialize(hardwareMap);
 
-        // Alege varianta de turela. Daca stergeti una dintre clase, stergeti si linia ei de aici.
-        if (ARUNCARE_FIZICA)
-            turretMechanism = new TurretBallisticShotPID(robotPinpoint, ct2);     // varianta 1: fizica
-        else
-            turretMechanism = new TurretMotionCompensatedPID(robotPinpoint, ct2); // varianta 2: tabel + tinta virtuala
+        turretMechanism = new TurretMotionCompensatedPID(robotPinpoint, ct2); // varianta 2: tabel + tinta virtuala
         turretMechanism.Initialize(hardwareMap);
         shooter.SetTurretShot(turretMechanism);
 
@@ -108,4 +100,4 @@ public class TeleOpRosu extends LinearOpMode {
         telemetry.update();
         myLogger.close();
     }
-}
+}

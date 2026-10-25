@@ -221,6 +221,13 @@ public class RobotPinpoint implements Subsystem {
             anchorY = y;
             anchorH = heading;
             correctTimer.reset();
+        } else if (Math.hypot(velX, velY) > LOCK_MAX_SPEED_IN_S
+                || Math.abs(Math.toDegrees(headingVelRad)) > LOCK_MAX_TURN_DEG_S) {
+            // robotul chiar se misca (ex. impins, sau Drivetrain2 il readuce la pozitie)
+            // -> eliberam blocarea, ca miscarea reala sa nu fie stearsa
+            locked = false;
+            stillTimer.reset();
+            return false;
         }
 
         lockDriftIn = Math.hypot(x - anchorX, y - anchorY);

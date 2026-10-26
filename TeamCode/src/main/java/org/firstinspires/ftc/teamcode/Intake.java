@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Intake implements Subsystem {
     private DcMotorEx MotorIntake;
-    ButtonReader Forward;
+     ButtonReader Forward;
      ButtonReader Backward;
      ButtonReader Stop;
     private final GamepadEx ct1;

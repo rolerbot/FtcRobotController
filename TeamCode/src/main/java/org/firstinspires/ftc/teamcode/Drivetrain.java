@@ -78,7 +78,7 @@ public class Drivetrain implements Subsystem {
         }
         drive = -ct1.getLeftY() * schimbator;
         strafe = ct1.getLeftX() * schimbator;
-        twist = schimbator * (ct1.gamepad.left_trigger - ct1.gamepad.right_trigger);
+        double twist = -ct1.getRightX() * schimbator; // joystick dreapta: dreapta = rotire spre dreapta
 
         // --- ACTIVE BRAKE SECTION ---
         // Calling it here makes it internal to Run(). 

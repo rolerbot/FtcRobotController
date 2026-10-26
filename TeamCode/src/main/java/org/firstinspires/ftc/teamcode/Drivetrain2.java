@@ -10,6 +10,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+import com.pedropathing.control.PIDFCoefficients;
+
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 /**
  * Drivetrain2 - varianta de test pentru Drivetrain (aceleasi motoare, aceleasi comenzi).
@@ -57,6 +60,14 @@ public class Drivetrain2 implements Subsystem {
     public static double HOLD_KD = 0.004;              // putere per inch/s (amortizare)
     public static double HOLD_KP_HEADING = 0.015;      // putere per grad de eroare
     public static double HOLD_KD_HEADING = 0.0008;     // putere per grad/s
+    public static double HOLD_KS = 0.05;               // doar cu HOLD_CA_PEDRO = false: putere minima contra frecarii
+    public static double HOLD_KS_TURN = 0.04;          // doar cu HOLD_CA_PEDRO = false
+    // true = mentinerea foloseste EXACT PIDF-urile din pedroPathing/Constants (translational + heading),
+    // cu aceleasi scalari ca follower.holdPoint() (holdPointTranslationalScaling / HeadingScaling)
+    // si aceeasi conversie in puteri de roti ca Mecanum din Pedro (xVelocity / yVelocity).
+    // Daca refaceti tuning-ul Pedro, se schimba automat si aici. HOLD_KP/KD/KS de mai sus nu se folosesc;
+    // din constantele de aici conteaza doar deadband-urile si pragul de renuntare (GIVEUP).
+    public static boolean HOLD_CA_PEDRO = true;
     public static double HOLD_DEADBAND_IN = 0.4;       // sub eroarea asta nu corecteaza (fara tremurat)
     public static double HOLD_DEADBAND_DEG = 1.0;
     public static double HOLD_MAX_POWER = 0.45;        // putere maxima de corectie (deplasare)
@@ -149,7 +160,8 @@ public class Drivetrain2 implements Subsystem {
             stoppedTimer.reset();
         }
 
-        if (stare == Stare.OPRIT) {
+        // OPRIT sau ANULATA (dupa o impingere mare): cand robotul sta din nou, tine pozitia noua
+        if (stare == Stare.OPRIT || stare == Stare.MENTINERE_ANULATA) {
             if (!robotStill) {
                 stoppedTimer.reset();
             } else if (HOLD_ACTIV && robotPinpoint != null && stoppedTimer.seconds() >= HOLD_DELAY_S) {
@@ -170,7 +182,8 @@ public class Drivetrain2 implements Subsystem {
         if (stare == Stare.MENTINERE) {
             double[] c = HoldCorrection();
             if (c == null) {
-                stare = Stare.MENTINERE_ANULATA; // eroare prea mare -> renunta pana la urmatoarea oprire
+                stare = Stare.MENTINERE_ANULATA; // eroare prea mare -> renunta; cand sta, tine pozitia noua
+                stoppedTimer.reset();
             } else {
                 outDrive = c[0];
                 outStrafe = c[1];
@@ -209,6 +222,7 @@ public class Drivetrain2 implements Subsystem {
      * null = eroarea e prea mare -> se renunta (siguranta).
      */
     private double[] HoldCorrection() {
+        if (HOLD_CA_PEDRO) return HoldCorrectionPedro();
         double x = robotPinpoint.GetX();
         double y = robotPinpoint.GetY();
         double hDeg = robotPinpoint.GetHeading();
@@ -236,6 +250,9 @@ public class Drivetrain2 implements Subsystem {
         if (holdErrIn > HOLD_DEADBAND_IN) {
             fwd = HOLD_KP * errFwd - HOLD_KD * vFwd;
             left = HOLD_KP * errLeft - HOLD_KD * vLeft;
+            // kS pe directia erorii: fara el, la 1-3" puterea e sub frecare si robotul nu se misca
+            fwd += HOLD_KS * errFwd / holdErrIn;
+            left += HOLD_KS * errLeft / holdErrIn;
             double mag = Math.hypot(fwd, left);
             if (mag > HOLD_MAX_POWER) {
                 fwd *= HOLD_MAX_POWER / mag;
@@ -243,12 +260,73 @@ public class Drivetrain2 implements Subsystem {
             }
         }
         if (Math.abs(holdErrDeg) > HOLD_DEADBAND_DEG) {
-            turn = Range.clip(HOLD_KP_HEADING * holdErrDeg - HOLD_KD_HEADING * omegaDeg,
+            turn = Range.clip(HOLD_KP_HEADING * holdErrDeg - HOLD_KD_HEADING * omegaDeg
+                            + Math.signum(holdErrDeg) * HOLD_KS_TURN,
                     -HOLD_MAX_TURN_POWER, HOLD_MAX_TURN_POWER);
         }
 
         // conventia interna: drive + = inapoi, strafe + = dreapta, twist + = stanga (CCW)
         return new double[] { -fwd, -left, turn };
+    }
+
+    /**
+     * Ca follower.holdPoint() din Pedro 2.x (VectorCalculator + Mecanum.calculateDrive):
+     *  - translational: |putere| = (P*e + D*de/dt + F) * holdPointTranslationalScaling, pe directia erorii
+     *  - heading:       putere   = (P*e + D*de/dt + F*sens) * holdPointHeadingScaling   (e in radiani)
+     *  - roti: Pedro inmulteste vectorii cu 2 si ii descompune pe vectorii rotilor (unghi din
+     *    xVelocity/yVelocity) -> putere roata = inainte/cos(t) +- lateral/sin(t) +- rotire/cos(t)
+     * de/dt e luat din viteza Pinpoint (aceeasi valoare, fara zgomotul derivatei numerice).
+     */
+    private double[] HoldCorrectionPedro() {
+        double x = robotPinpoint.GetX();
+        double y = robotPinpoint.GetY();
+        double hDeg = robotPinpoint.GetHeading();
+        double h = Math.toRadians(hDeg);
+
+        double ex = holdX - x;
+        double ey = holdY - y;
+        holdErrIn = Math.hypot(ex, ey);
+        holdErrDeg = NormalizeDeg(holdH - hDeg);
+
+        if (holdErrIn > HOLD_GIVEUP_IN || Math.abs(holdErrDeg) > HOLD_GIVEUP_DEG) {
+            return null;
+        }
+
+        PIDFCoefficients tc = Constants.followerConstants.coefficientsTranslationalPIDF;
+        PIDFCoefficients hc = Constants.followerConstants.coefficientsHeadingPIDF;
+        double tScale = Constants.followerConstants.holdPointTranslationalScaling;
+        double hScale = Constants.followerConstants.holdPointHeadingScaling;
+        double maxP = Constants.driveConstants.maxPower;
+        double t = Math.atan2(Constants.driveConstants.yVelocity, Constants.driveConstants.xVelocity);
+        double cosT = Math.cos(t), sinT = Math.sin(t);
+
+        double vx = robotPinpoint.GetVelX(), vy = robotPinpoint.GetVelY();
+        double cos = Math.cos(h), sin = Math.sin(h);
+
+        double fwd = 0, left = 0;
+        if (holdErrIn > HOLD_DEADBAND_IN) {
+            double ux = ex / holdErrIn, uy = ey / holdErrIn;   // directia spre punctul de mentinere
+            double dErr = -(vx * ux + vy * uy);                 // d|e|/dt
+            double mag = (tc.P * holdErrIn + tc.D * dErr + tc.F) * tScale;
+            mag = Range.clip(mag, 0, maxP);
+            double fx = ux * mag, fy = uy * mag;                // pe teren
+            fwd = fx * cos + fy * sin;                          // in sistemul robotului
+            left = -fx * sin + fy * cos;
+        }
+
+        double turn = 0;
+        if (Math.abs(holdErrDeg) > HOLD_DEADBAND_DEG) {
+            double e = Math.toRadians(holdErrDeg);
+            double dErr = -robotPinpoint.GetHeadingVelocityRad();
+            double sens = Math.signum(e);
+            turn = (hc.P * e + hc.D * dErr + hc.F * sens) * hScale;
+            turn = Range.clip(turn, -maxP, maxP);
+        }
+
+        // descompunerea pe roti ca in Pedro
+        double wFwd = fwd / cosT, wLeft = left / sinT, wTurn = turn / cosT;
+        // conventia interna: drive + = inapoi, strafe + = dreapta, twist + = stanga (CCW)
+        return new double[] { -wFwd, -wLeft, wTurn };
     }
 
     private boolean zeroPowerSet = false;

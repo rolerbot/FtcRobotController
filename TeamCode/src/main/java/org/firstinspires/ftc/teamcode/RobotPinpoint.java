@@ -51,6 +51,9 @@ public class RobotPinpoint implements Subsystem {
     public static double LOCK_CORRECT_IN = 0.3;        // de la ce abatere se rescrie pozitia in Pinpoint
     public static double LOCK_CORRECT_DEG = 0.3;
     public static double LOCK_CORRECT_PERIOD_S = 0.5;  // cel mult o rescriere la atata timp
+    // false = se blocheaza DOAR heading-ul (deriva din vibratii e doar pe heading; X/Y erau stabile).
+    // Asa o impingere mica/inceata pe X/Y nu mai e "stearsa", iar Drivetrain2 o vede si readuce robotul.
+    public static boolean LOCK_XY = false;
     public static double STICK_DEADBAND = 0.1;         // joystick / trigger sub asta = fara comanda (joc in repaus)
     // ==========================================================================================
 
@@ -230,7 +233,7 @@ public class RobotPinpoint implements Subsystem {
             return false;
         }
 
-        lockDriftIn = Math.hypot(x - anchorX, y - anchorY);
+        lockDriftIn = LOCK_XY ? Math.hypot(x - anchorX, y - anchorY) : 0;
         lockDriftDeg = NormalizeDeg(heading - anchorH);
 
         if (lockDriftIn > LOCK_MAX_DRIFT_IN || Math.abs(lockDriftDeg) > LOCK_MAX_DRIFT_DEG) {
@@ -244,16 +247,20 @@ public class RobotPinpoint implements Subsystem {
 
         if ((lockDriftIn > LOCK_CORRECT_IN || Math.abs(lockDriftDeg) > LOCK_CORRECT_DEG)
                 && correctTimer.seconds() >= LOCK_CORRECT_PERIOD_S) {
-            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, anchorX, anchorY, AngleUnit.DEGREES, anchorH));
+            pinpoint.setPosition(LOCK_XY
+                    ? new Pose2D(DistanceUnit.INCH, anchorX, anchorY, AngleUnit.DEGREES, anchorH)
+                    : new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, anchorH));
             correctTimer.reset();
             lockCorrections++;
         }
 
-        x = anchorX;
-        y = anchorY;
+        if (LOCK_XY) {
+            x = anchorX;
+            y = anchorY;
+            velX = 0;
+            velY = 0;
+        }
         heading = anchorH;
-        velX = 0;
-        velY = 0;
         headingVelRad = 0;
         return true;
     }

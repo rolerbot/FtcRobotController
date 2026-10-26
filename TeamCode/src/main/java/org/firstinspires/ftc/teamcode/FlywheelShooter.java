@@ -8,14 +8,13 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
-// Shooter cu flywheel: doua motoare care se rotesc in sensuri opuse, hood optional.
+// Shooter cu flywheel: doua motoare care se rotesc in sensuri opuse.
 //
 // Controale:
 //  DPAD_UP / DPAD_DOWN     - viteza +/- 5
@@ -25,7 +24,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 //  X                       - alege constanta (P, I, D, F)
 //  Y / A                   - creste / scade constanta aleasa
 //  LEFT_BUMPER             - schimba marimea pasului (10, 1, 0.1, 0.01, 0.001)
-//  Stick dreapta (sus/jos) - muta hood-ul (daca exista ServoHood)
 //
 // Constantele public static se pot schimba si LIVE din Panels (tab Configurables).
 // Schimbarile din Panels si din controller se pierd la restart: scrie aici valorile bune.
@@ -33,7 +31,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class FlywheelShooter implements Subsystem {
     private DcMotorEx MotorShooter;
     private DcMotorEx MotorShooter2;
-    private Servo ServoHood = null;
     private VoltageSensor battery = null;
     private final GamepadEx ct;
     private final Telemetry telemetry;
@@ -58,7 +55,6 @@ public class FlywheelShooter implements Subsystem {
     // Viteza care chiar e ceruta motoarelor acum (0 cand e oprit)
     public double TargetVelocity = 0;
 
-    public double HoodPosition = 0.5;
     public final ShotTable Table = new ShotTable();
 
     private final String[] numeParam = {"P", "I", "D", "F"};
@@ -78,13 +74,6 @@ public class FlywheelShooter implements Subsystem {
     public void LinkComponents(HardwareMap hwMap) {
         MotorShooter = hwMap.get(DcMotorEx.class, "MotorShooter");
         MotorShooter2 = hwMap.get(DcMotorEx.class, "MotorShooter2");
-
-        // Hood-ul e optional: daca nu exista in configuratie, shooterul merge fara el
-        try {
-            ServoHood = hwMap.get(Servo.class, "ServoHood");
-        } catch (IllegalArgumentException e) {
-            ServoHood = null;
-        }
 
         if (hwMap.voltageSensor.iterator().hasNext())
             battery = hwMap.voltageSensor.iterator().next();
@@ -112,11 +101,6 @@ public class FlywheelShooter implements Subsystem {
         MotorShooter2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         MotorShooter2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         MotorShooter2.setDirection(DcMotor.Direction.REVERSE);
-
-        if (ServoHood != null) {
-            ServoHood.setDirection(Servo.Direction.FORWARD);
-            ServoHood.setPosition(HoodPosition);
-        }
 
         voltajFiltrat = GetBatteryVoltage();
         ApplyPIDF();
@@ -208,21 +192,14 @@ public class FlywheelShooter implements Subsystem {
                 && Math.abs(TargetVelocity - GetVelocity2()) < Toleranta;
     }
 
-    // ---------------- Hood si tabel ----------------
+    // ---------------- Tabel ----------------
 
-    public void SetHood(double position) {
-        HoodPosition = Range.clip(position, 0.0, 1.0);
-        if (ServoHood != null)
-            ServoHood.setPosition(HoodPosition);
-    }
-
-    // Pune viteza si hood-ul dupa tabel, pentru distanta data. false daca tabelul e gol.
+    // Pune viteza dupa tabel, pentru distanta data. false daca tabelul e gol.
     public boolean ApplyDistance(double distanceCm) {
         ShotTable.Shot shot = Table.Get(distanceCm);
         if (shot == null)
             return false;
         SetTargetVelocity(shot.velocity);
-        SetHood(shot.hood);
         return true;
     }
 
@@ -274,11 +251,6 @@ public class FlywheelShooter implements Subsystem {
         if (StepChange.wasJustPressed()) pasIndex = (pasIndex + 1) % pasi.length;
         if (ParamUp.wasJustPressed()) SetParam(GetParam() + pasi[pasIndex]);
         if (ParamDown.wasJustPressed()) SetParam(GetParam() - pasi[pasIndex]);
-
-        // Stick dreapta in sus = hood mai sus (stick-ul in sus da valoare negativa)
-        double stick = -ct.getRightY();
-        if (ServoHood != null && Math.abs(stick) > 0.1)
-            SetHood(HoodPosition + stick * 0.002);
     }
 
     // ---------------- Telemetrie ----------------
@@ -303,8 +275,6 @@ public class FlywheelShooter implements Subsystem {
         telemetry.addData("P / I / D", "%.3f / %.3f / %.3f", P, I, D);
         telemetry.addData("F (baza / compensat)", "%.3f / %.3f", F, CompensatedF());
         telemetry.addData("Baterie", "%.2f V", voltajFiltrat);
-        if (ServoHood != null)
-            telemetry.addData("Hood", "%.3f", HoodPosition);
     }
 
     public void Run() {

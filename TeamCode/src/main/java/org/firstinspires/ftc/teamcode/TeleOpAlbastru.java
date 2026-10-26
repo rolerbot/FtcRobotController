@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 public class TeleOpAlbastru extends LinearOpMode {
     Drivetrain drivetrain;
     Intake intake;
+    Shooter shooter;
     private GamepadEx ct1, ct2;
 
     private void MapControlerButtons() {
@@ -28,6 +29,9 @@ public class TeleOpAlbastru extends LinearOpMode {
 
         intake = new Intake(ct1);
         intake.Initialize(hardwareMap);
+
+        shooter = new Shooter(ct2, telemetry);
+        shooter.Initialize(hardwareMap);
     }
 
     public void runOpMode() {
@@ -38,8 +42,10 @@ public class TeleOpAlbastru extends LinearOpMode {
         while (opModeIsActive()) {
             drivetrain.Run();
             intake.Run();
+            shooter.Run();
             telemetry.update();
         }
+        shooter.Stop();
         telemetry.update();
     }
 }

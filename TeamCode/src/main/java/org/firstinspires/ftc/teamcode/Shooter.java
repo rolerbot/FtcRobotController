@@ -3,12 +3,13 @@ package org.firstinspires.ftc.teamcode;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.arcrobotics.ftclib.gamepad.TriggerReader;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 public class Shooter implements Subsystem {
-    private ButtonReader Aruncare;
+    private TriggerReader Aruncare;
     private ButtonReader ThrowGreen, ThrowPurple;
     private ButtonReader TransferUp, TransferDown;
     private DcMotorEx MotorRidicareBila = null;
@@ -173,7 +174,7 @@ public class Shooter implements Subsystem {
 
     public void LinkComponents(HardwareMap hardwareMap) {
         if (ct1 != null && ct2 != null) {
-            Aruncare = new ButtonReader(ct1, GamepadKeys.Button.A);
+            Aruncare = new TriggerReader(ct1, GamepadKeys.Trigger.RIGHT_TRIGGER);
             ThrowGreen = new ButtonReader(ct1, GamepadKeys.Button.Y);
             ThrowPurple = new ButtonReader(ct1, GamepadKeys.Button.X);
             TransferUp = new ButtonReader(ct2, GamepadKeys.Button.DPAD_UP);
@@ -910,4 +911,4 @@ public class Shooter implements Subsystem {
     public boolean IsShootingStateNone() {
         return shootType == ShootingState.None;
     }
-}
+}

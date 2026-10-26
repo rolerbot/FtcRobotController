@@ -120,7 +120,7 @@ public class Drivetrain2 implements Subsystem {
         // comenzile soferului (exact ca in Drivetrain)
         double drive = -ct1.getLeftY() * schimbator;
         double strafe = ct1.getLeftX() * schimbator;
-        double twist = schimbator * (ct1.gamepad.left_trigger - ct1.gamepad.right_trigger);
+        double twist = -ct1.getRightX() * schimbator; // joystick dreapta: dreapta = rotire spre dreapta
         if (Math.abs(drive) < STICK_DEADBAND * schimbator) drive = 0;
         if (Math.abs(strafe) < STICK_DEADBAND * schimbator) strafe = 0;
         if (Math.abs(twist) < STICK_DEADBAND * schimbator) twist = 0;

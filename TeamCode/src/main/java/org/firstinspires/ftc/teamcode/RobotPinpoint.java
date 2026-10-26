@@ -161,9 +161,8 @@ public class RobotPinpoint implements Subsystem {
             UpdateGoalGeometry();
         }
 
-        // Reset (Right Trigger pe gamepad 2)
         if (gamepad2 != null) {
-            boolean currentTriggerState = gamepad2.gamepad.right_trigger > 0.5;
+            boolean currentTriggerState = gamepad2.gamepad.left_bumper;
             if (currentTriggerState && !lastTriggerState) {
                 ResetPosition();
             }
@@ -200,7 +199,8 @@ public class RobotPinpoint implements Subsystem {
         boolean driverIdle = Math.abs(gamepad1.getLeftX()) < STICK_DEADBAND
                 && Math.abs(gamepad1.getLeftY()) < STICK_DEADBAND
                 && gamepad1.gamepad.left_trigger < STICK_DEADBAND
-                && gamepad1.gamepad.right_trigger < STICK_DEADBAND;
+                && gamepad1.gamepad.right_trigger < STICK_DEADBAND
+                && Math.abs(gamepad1.getRightX()) < STICK_DEADBAND;
         if (!driverIdle) {
             locked = false;
             stillTimer.reset();

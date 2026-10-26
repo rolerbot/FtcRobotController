@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "RobotAlbastru", group = "Linear Opmode")
 public class TeleOpAlbastru extends LinearOpMode {
     TelemetryCustom myLogger;
-    Drivetrain drivetrain;
+    Drivetrain2 drivetrain;
     Intake intake;
     Mixer mixer;
     Shooter shooter;
@@ -35,7 +35,7 @@ public class TeleOpAlbastru extends LinearOpMode {
         robotPinpoint.SetInitialPosition(135, 9, 90); // Blue alliance starting position
         robotPinpoint.Initialize(hardwareMap);
 
-        drivetrain = new Drivetrain(ct1, ct2, robotPinpoint);
+        drivetrain = new Drivetrain2(ct1, ct2, robotPinpoint);
         drivetrain.Initialize(hardwareMap);
         drivetrain.schimbator = 1.4 - drivetrain.schimbator;
 

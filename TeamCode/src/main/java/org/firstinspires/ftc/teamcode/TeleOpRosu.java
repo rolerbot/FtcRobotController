@@ -11,7 +11,7 @@ import org.openftc.easyopencv.OpenCvCamera;
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "RobotRosu", group = "Linear Opmode")
 public class TeleOpRosu extends LinearOpMode {
     TelemetryCustom myLogger;
-    Drivetrain drivetrain;
+    Drivetrain2 drivetrain;
     Intake intake;
     Mixer mixer;
     Shooter shooter;
@@ -38,7 +38,7 @@ public class TeleOpRosu extends LinearOpMode {
         robotPinpoint.SetInitialPosition(9, 9, 90); // Red alliance starting position
         robotPinpoint.Initialize(hardwareMap);
 
-        drivetrain = new Drivetrain(ct1, ct2, robotPinpoint);
+        drivetrain = new Drivetrain2(ct1, ct2, robotPinpoint);
         drivetrain.Initialize(hardwareMap);
         drivetrain.schimbator = 1.4 - drivetrain.schimbator;
 

@@ -68,12 +68,17 @@ public class Drivetrain2 implements Subsystem {
     // Daca refaceti tuning-ul Pedro, se schimba automat si aici. HOLD_KP/KD/KS de mai sus nu se folosesc;
     // din constantele de aici conteaza doar deadband-urile si pragul de renuntare (GIVEUP).
     public static boolean HOLD_CA_PEDRO = true;
+    // Cat de "dur" tine pozitia, ca multiplicator peste calculul Pedro (P, D si F cresc la fel):
+    //  1.0 = exact follower.holdPoint() din Pedro (moale)
+    //  ~2.2 = cat de tare corecteaza Pedro cand urmareste un traseu (PIDF-ul fara scalarea de hold)
+    // Daca robotul tremura / oscileaza pe loc -> scadeti (1.5).
+    public static double HOLD_RIGIDITATE = 2.0;
     public static double HOLD_DEADBAND_IN = 0.4;       // sub eroarea asta nu corecteaza (fara tremurat)
     public static double HOLD_DEADBAND_DEG = 1.0;
     public static double HOLD_MAX_POWER = 0.45;        // putere maxima de corectie (deplasare)
     public static double HOLD_MAX_TURN_POWER = 0.35;
-    public static double HOLD_GIVEUP_IN = 24.0;        // peste asta renunta (siguranta)
-    public static double HOLD_GIVEUP_DEG = 45.0;
+    public static double HOLD_GIVEUP_IN = 48.0;        // peste asta renunta (siguranta)
+    public static double HOLD_GIVEUP_DEG = 90.0;
     // ============================================================
 
     private enum Stare { MERS, OPRIRE, OPRIT, MENTINERE, MENTINERE_ANULATA }
@@ -331,7 +336,7 @@ public class Drivetrain2 implements Subsystem {
         if (holdErrIn > HOLD_DEADBAND_IN) {
             double ux = ex / holdErrIn, uy = ey / holdErrIn;   // directia spre punctul de mentinere
             double dErr = -(vx * ux + vy * uy);                 // d|e|/dt
-            double mag = (tc.P * holdErrIn + tc.D * dErr + tc.F) * tScale;
+            double mag = (tc.P * holdErrIn + tc.D * dErr + tc.F) * tScale * HOLD_RIGIDITATE;
             mag = Range.clip(mag, 0, maxP);
             double fx = ux * mag, fy = uy * mag;                // pe teren
             fwd = fx * cos + fy * sin;                          // in sistemul robotului
@@ -343,7 +348,7 @@ public class Drivetrain2 implements Subsystem {
             double e = Math.toRadians(holdErrDeg);
             double dErr = -robotPinpoint.GetHeadingVelocityRad();
             double sens = Math.signum(e);
-            turn = (hc.P * e + hc.D * dErr + hc.F * sens) * hScale;
+            turn = (hc.P * e + hc.D * dErr + hc.F * sens) * hScale * HOLD_RIGIDITATE;
             turn = Range.clip(turn, -maxP, maxP);
         }
 

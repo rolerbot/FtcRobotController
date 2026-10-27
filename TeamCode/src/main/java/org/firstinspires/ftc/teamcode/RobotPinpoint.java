@@ -288,7 +288,12 @@ public class RobotPinpoint implements Subsystem {
      * Reset la pozitia initiala. Robotul trebuie sa fie fix in acel loc cand apesi,
      * pentru ca se recalibreaza si IMU-ul.
      */
+    private int resetCount = 0;
+    /** Creste la fiecare ResetPosition(); Drivetrain2 il foloseste ca sa nu mearga spre o pozitie veche. */
+    public int GetResetCount() { return resetCount; }
+
     public void ResetPosition() {
+        resetCount++;
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, initialX, initialY, AngleUnit.DEGREES, initialHeading));
         pinpoint.recalibrateIMU();
         locked = false;

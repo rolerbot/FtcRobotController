@@ -70,6 +70,7 @@ public class TeleOpAlbastru extends LinearOpMode {
 
             // Primele pe ecran: pozitia robotului si turela
             robotPinpoint.UpdateTelemetry(telemetry);
+            drivetrain.UpdateTelemetry(telemetry);
             turretMechanism.UpdateTelemetry(telemetry);
             fieldDrawing.Draw(robotPinpoint, turretMechanism);
 

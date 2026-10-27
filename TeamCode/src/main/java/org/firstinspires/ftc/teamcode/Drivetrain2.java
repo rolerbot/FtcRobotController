@@ -49,7 +49,7 @@ public class Drivetrain2 implements Subsystem {
     // true = motoarele merg liber (FLOAT) cat se opreste (aluneca mai mult, ca la Pedro);
     // false = BRAKE si cat se opreste (oprirea urmeaza exact rampa de mai sus).
     public static boolean FLOAT_CAT_SE_OPRESTE = false;
-    public static double STICK_DEADBAND = 0.05;
+    public static double STICK_DEADBAND = 0.10;  // ca la blocarea din RobotPinpoint; sub asta joystick-ul e considerat lasat
 
     // ===================== MENTINERE POZITIE =====================
     public static boolean HOLD_ACTIV = true;
@@ -72,12 +72,18 @@ public class Drivetrain2 implements Subsystem {
     public static double HOLD_DEADBAND_DEG = 1.0;
     public static double HOLD_MAX_POWER = 0.45;        // putere maxima de corectie (deplasare)
     public static double HOLD_MAX_TURN_POWER = 0.35;
-    public static double HOLD_GIVEUP_IN = 12.0;        // peste asta renunta (siguranta)
-    public static double HOLD_GIVEUP_DEG = 25.0;
+    public static double HOLD_GIVEUP_IN = 24.0;        // peste asta renunta (siguranta)
+    public static double HOLD_GIVEUP_DEG = 45.0;
     // ============================================================
 
     private enum Stare { MERS, OPRIRE, OPRIT, MENTINERE, MENTINERE_ANULATA }
     private Stare stare = Stare.OPRIT;
+    // diagnostic: de ce nu (mai) mentine
+    private String motivAnulare = "-";
+    private int nrMentineri = 0;
+    private double erMaxIn = 0, erMaxDeg = 0;
+    private int lastResetCount = 0;
+    private double stickX = 0, stickY = 0, stickR = 0;
 
     private double curDrive = 0, curStrafe = 0, curTwist = 0; // comenzile dupa rampa
     private final ElapsedTime loopTimer = new ElapsedTime();
@@ -129,6 +135,9 @@ public class Drivetrain2 implements Subsystem {
         }
 
         // comenzile soferului (exact ca in Drivetrain)
+        stickX = ct1.getLeftX();
+        stickY = ct1.getLeftY();
+        stickR = ct1.getRightX();
         double drive = -ct1.getLeftY() * schimbator;
         double strafe = ct1.getLeftX() * schimbator;
         double twist = -ct1.getRightX() * schimbator; // joystick dreapta: dreapta = rotire spre dreapta
@@ -165,6 +174,10 @@ public class Drivetrain2 implements Subsystem {
             if (!robotStill) {
                 stoppedTimer.reset();
             } else if (HOLD_ACTIV && robotPinpoint != null && stoppedTimer.seconds() >= HOLD_DELAY_S) {
+                nrMentineri++;
+                erMaxIn = 0;
+                erMaxDeg = 0;
+                lastResetCount = robotPinpoint.GetResetCount();
                 holdX = robotPinpoint.GetX();
                 holdY = robotPinpoint.GetY();
                 holdH = robotPinpoint.GetHeading();
@@ -173,6 +186,12 @@ public class Drivetrain2 implements Subsystem {
         }
         if (stare == Stare.MENTINERE && !HOLD_ACTIV) {
             stare = Stare.OPRIT;
+        }
+        // reset de pozitie (bumper) in timpul mentinerii: punctul vechi nu mai e valid
+        if (stare == Stare.MENTINERE && robotPinpoint.GetResetCount() != lastResetCount) {
+            stare = Stare.MENTINERE_ANULATA;
+            motivAnulare = "reset Pinpoint";
+            stoppedTimer.reset();
         }
 
         // FLOAT doar cat se opreste (daca e cerut), altfel BRAKE
@@ -183,6 +202,7 @@ public class Drivetrain2 implements Subsystem {
             double[] c = HoldCorrection();
             if (c == null) {
                 stare = Stare.MENTINERE_ANULATA; // eroare prea mare -> renunta; cand sta, tine pozitia noua
+                motivAnulare = String.format("eroare prea mare: %.1f\"  %.0f°", holdErrIn, holdErrDeg);
                 stoppedTimer.reset();
             } else {
                 outDrive = c[0];
@@ -232,6 +252,8 @@ public class Drivetrain2 implements Subsystem {
         double ey = holdY - y;
         holdErrIn = Math.hypot(ex, ey);
         holdErrDeg = NormalizeDeg(holdH - hDeg);
+        erMaxIn = Math.max(erMaxIn, holdErrIn);
+        erMaxDeg = Math.max(erMaxDeg, Math.abs(holdErrDeg));
 
         if (holdErrIn > HOLD_GIVEUP_IN || Math.abs(holdErrDeg) > HOLD_GIVEUP_DEG) {
             return null;
@@ -287,6 +309,8 @@ public class Drivetrain2 implements Subsystem {
         double ey = holdY - y;
         holdErrIn = Math.hypot(ex, ey);
         holdErrDeg = NormalizeDeg(holdH - hDeg);
+        erMaxIn = Math.max(erMaxIn, holdErrIn);
+        erMaxDeg = Math.max(erMaxDeg, Math.abs(holdErrDeg));
 
         if (holdErrIn > HOLD_GIVEUP_IN || Math.abs(holdErrDeg) > HOLD_GIVEUP_DEG) {
             return null;
@@ -352,8 +376,13 @@ public class Drivetrain2 implements Subsystem {
     public void UpdateTelemetry(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
         telemetry.addLine("=== DRIVETRAIN2 ===");
         telemetry.addData("  Stare", stare);
+        telemetry.addData("  Joystick (stg X/Y, dr X)", "%.2f / %.2f / %.2f  (deadband %.2f)",
+                stickX, stickY, stickR, STICK_DEADBAND);
         if (stare == Stare.MENTINERE || stare == Stare.MENTINERE_ANULATA) {
             telemetry.addData("  Eroare mentinere", "%.2f\"  %.1f°", holdErrIn, holdErrDeg);
         }
+        telemetry.addData("  Eroare maxima (impingere)", "%.1f\"  %.0f°", erMaxIn, erMaxDeg);
+        telemetry.addData("  Mentineri pornite", nrMentineri);
+        telemetry.addData("  Ultima anulare", motivAnulare);
     }
 }

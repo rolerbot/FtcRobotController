@@ -4,7 +4,6 @@ import com.bylazar.configurables.annotations.Configurable;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
@@ -37,34 +36,6 @@ public class RobotPinpoint implements Subsystem {
     private final boolean ownsUpdate;
 
     private boolean lastTriggerState = false;
-
-    // ===================== BLOCARE POZITIE CAND ROBOTUL STA (doar TeleOp) =====================
-    // Cand soferul nu da comenzi de mers si robotul sta, pozitia se "ingheata": vibratiile
-    // (intake, shooter) nu mai pot muta X / Y / heading. Abaterile mici se rescriu in Pinpoint.
-    // Daca abaterea e mare (alt robot v-a impins), pozitia noua e acceptata.
-    public static boolean POSE_LOCK_ACTIVA = true;
-    public static double LOCK_DELAY_S = 0.6;           // cat sta fara comenzi (si oprit) inainte de blocare
-    public static double LOCK_MAX_SPEED_IN_S = 1.5;    // peste asta robotul inca se misca -> nu blocam
-    public static double LOCK_MAX_TURN_DEG_S = 3.0;    // peste asta robotul inca se roteste -> nu blocam
-    public static double LOCK_MAX_DRIFT_IN = 3.0;      // peste asta = impins -> se accepta pozitia noua
-    public static double LOCK_MAX_DRIFT_DEG = 4.0;
-    public static double LOCK_CORRECT_IN = 0.3;        // de la ce abatere se rescrie pozitia in Pinpoint
-    public static double LOCK_CORRECT_DEG = 0.3;
-    public static double LOCK_CORRECT_PERIOD_S = 0.5;  // cel mult o rescriere la atata timp
-    // false = se blocheaza DOAR heading-ul (deriva din vibratii e doar pe heading; X/Y erau stabile).
-    // Asa o impingere mica/inceata pe X/Y nu mai e "stearsa", iar Drivetrain2 o vede si readuce robotul.
-    public static boolean LOCK_XY = false;
-    public static double STICK_DEADBAND = 0.1;         // joystick / trigger sub asta = fara comanda (joc in repaus)
-    // ==========================================================================================
-
-    private boolean locked = false;
-    private double anchorX = 0, anchorY = 0, anchorH = 0;
-    private double lockDriftIn = 0, lockDriftDeg = 0;
-    private int lockCorrections = 0, lockPushes = 0;
-    private final ElapsedTime stillTimer = new ElapsedTime();
-    private final ElapsedTime correctTimer = new ElapsedTime();
-    // valorile brute din Pinpoint (inainte de blocare), pentru telemetrie / teste
-    private double rawX = 0, rawY = 0, rawHeading = 0;
 
     // ===================== GEOMETRIE =====================
     // Axa de rotatie a turelei fata de centrul robotului (centrul de tracking al Pinpoint),
@@ -160,9 +131,6 @@ public class RobotPinpoint implements Subsystem {
             pinpoint.update();
         }
         ReadPosition();
-        if (ownsUpdate && UpdatePoseLock()) {
-            UpdateGoalGeometry();
-        }
 
         if (gamepad2 != null) {
             boolean currentTriggerState = gamepad2.gamepad.left_bumper;
@@ -179,94 +147,12 @@ public class RobotPinpoint implements Subsystem {
         x = pose.getX(DistanceUnit.INCH);
         y = pose.getY(DistanceUnit.INCH);
         heading = pose.getHeading(AngleUnit.DEGREES);
-        rawX = x;
-        rawY = y;
-        rawHeading = heading;
         velX = pinpoint.getVelX(DistanceUnit.INCH);
         velY = pinpoint.getVelY(DistanceUnit.INCH);
         headingVelRad = pinpoint.getHeadingVelocity(AngleUnit.RADIANS.getUnnormalized());
         UpdateGoalGeometry();
     }
 
-    /**
-     * Blocarea pozitiei cand robotul sta. Returneaza true daca pozitia folosita e cea blocata
-     * (atunci x, y, heading = ancora si vitezele = 0).
-     */
-    private boolean UpdatePoseLock() {
-        if (!POSE_LOCK_ACTIVA || gamepad1 == null) {
-            locked = false;
-            stillTimer.reset();
-            return false;
-        }
-
-        boolean driverIdle = Math.abs(gamepad1.getLeftX()) < STICK_DEADBAND
-                && Math.abs(gamepad1.getLeftY()) < STICK_DEADBAND
-                && gamepad1.gamepad.left_trigger < STICK_DEADBAND
-                && gamepad1.gamepad.right_trigger < STICK_DEADBAND
-                && Math.abs(gamepad1.getRightX()) < STICK_DEADBAND
-                && !motorsCommanded;
-        if (!driverIdle) {
-            locked = false;
-            stillTimer.reset();
-            return false;
-        }
-
-        if (!locked) {
-            boolean slow = Math.hypot(velX, velY) < LOCK_MAX_SPEED_IN_S
-                    && Math.abs(Math.toDegrees(headingVelRad)) < LOCK_MAX_TURN_DEG_S;
-            if (!slow) {
-                stillTimer.reset();
-                return false;
-            }
-            if (stillTimer.seconds() < LOCK_DELAY_S)
-                return false;
-            locked = true;
-            anchorX = x;
-            anchorY = y;
-            anchorH = heading;
-            correctTimer.reset();
-        } else if (Math.hypot(velX, velY) > LOCK_MAX_SPEED_IN_S
-                || Math.abs(Math.toDegrees(headingVelRad)) > LOCK_MAX_TURN_DEG_S) {
-            // robotul chiar se misca (ex. impins, sau Drivetrain2 il readuce la pozitie)
-            // -> eliberam blocarea, ca miscarea reala sa nu fie stearsa
-            locked = false;
-            stillTimer.reset();
-            return false;
-        }
-
-        lockDriftIn = LOCK_XY ? Math.hypot(x - anchorX, y - anchorY) : 0;
-        lockDriftDeg = NormalizeDeg(heading - anchorH);
-
-        if (lockDriftIn > LOCK_MAX_DRIFT_IN || Math.abs(lockDriftDeg) > LOCK_MAX_DRIFT_DEG) {
-            // abatere mare = robotul a fost impins -> acceptam pozitia noua ca ancora
-            anchorX = x;
-            anchorY = y;
-            anchorH = heading;
-            lockPushes++;
-            return false;
-        }
-
-        if ((lockDriftIn > LOCK_CORRECT_IN || Math.abs(lockDriftDeg) > LOCK_CORRECT_DEG)
-                && correctTimer.seconds() >= LOCK_CORRECT_PERIOD_S) {
-            pinpoint.setPosition(LOCK_XY
-                    ? new Pose2D(DistanceUnit.INCH, anchorX, anchorY, AngleUnit.DEGREES, anchorH)
-                    : new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, anchorH));
-            correctTimer.reset();
-            lockCorrections++;
-        }
-
-        if (LOCK_XY) {
-            x = anchorX;
-            y = anchorY;
-            velX = 0;
-            velY = 0;
-        }
-        heading = anchorH;
-        headingVelRad = 0;
-        return true;
-    }
-
-    public boolean IsPoseLocked() { return locked; }
 
     private void UpdateGoalGeometry() {
         double h = Math.toRadians(heading);
@@ -289,11 +175,6 @@ public class RobotPinpoint implements Subsystem {
      * Reset la pozitia initiala. Robotul trebuie sa fie fix in acel loc cand apesi,
      * pentru ca se recalibreaza si IMU-ul.
      */
-    // true cand drivetrain-ul comanda motoarele (ex. Drivetrain2 readuce robotul pe pozitie).
-    // Atunci blocarea NU are voie sa porneasca: ar "sterge" rotirea reala ca pe o deriva.
-    private boolean motorsCommanded = false;
-    public void SetMotorsCommanded(boolean commanded) { motorsCommanded = commanded; }
-
     private int resetCount = 0;
     /** Creste la fiecare ResetPosition(); Drivetrain2 il foloseste ca sa nu mearga spre o pozitie veche. */
     public int GetResetCount() { return resetCount; }
@@ -302,8 +183,6 @@ public class RobotPinpoint implements Subsystem {
         resetCount++;
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, initialX, initialY, AngleUnit.DEGREES, initialHeading));
         pinpoint.recalibrateIMU();
-        locked = false;
-        stillTimer.reset();
 
         x = initialX;
         y = initialY;
@@ -330,8 +209,6 @@ public class RobotPinpoint implements Subsystem {
     /** Seteaza pozitia curenta (relocalizare). */
     public void SetPosition(double x, double y, double headingDegrees) {
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, headingDegrees));
-        locked = false;
-        stillTimer.reset();
         this.x = x;
         this.y = y;
         this.heading = headingDegrees;
@@ -408,9 +285,5 @@ public class RobotPinpoint implements Subsystem {
         telemetry.addData("  Dist goal", "%.1f\" (%.0f cm)", distanceToGoalIn, distanceToGoalIn * 2.54);
         telemetry.addData("  Unghi goal", "%.1f°", angleToGoalDeg);
         telemetry.addData("  Viteza", "vx %.1f  vy %.1f in/s  w %.0f°/s", velX, velY, Math.toDegrees(headingVelRad));
-        telemetry.addData("  Blocare pozitie", !POSE_LOCK_ACTIVA ? "OPRITA" : (locked
-                ? String.format("DA (abatere %.2f\" %.2f°, corectii %d)", lockDriftIn, lockDriftDeg, lockCorrections)
-                : "nu"));
-        telemetry.addData("  Pinpoint brut", "X %.2f  Y %.2f  H %.2f°  (impingeri %d)", rawX, rawY, rawHeading, lockPushes);
     }
 }

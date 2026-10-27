@@ -1,20 +1,28 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.arcrobotics.ftclib.gamepad.ButtonReader;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 
+import java.util.List;
+
 /**
- * Limelight folosit DOAR pentru motiv (tag-urile 21 / 22 / 23 de pe obelisc) -> ordinea bilelor.
+ * Limelight: motivul (tag-urile 21 / 22 / 23 de pe obelisc -> ordinea bilelor) si tag-ul goal-ului
+ * (20 albastru / 24 rosu) pentru corectia de heading (HeadingCameraCorrector).
  *
- * Pozitia robotului, distanta pana la goal si ochirea turelei vin acum din RobotPinpoint,
- * nu din camera. Pipeline-urile de goal (1 = rosu, 2 = albastru) nu mai sunt folosite.
+ * PIPELINE = 1: pipeline AprilTag nativ (ID filter 20-24, fara 3D). Da lista de tag-uri cu ID si tx.
+ * PIPELINE = 0: vechiul pipeline Python (doar motivul, fara tx) - rezerva, merge exact ca inainte.
+ * Se poate schimba live din Panels.
  */
+@Configurable
 public class LimeLight implements Subsystem {
-    private static final int MOTIF_PIPELINE = 0;
+    public static int PIPELINE = 1;
+    private static final int PYTHON_PIPELINE = 0;
 
     private Limelight3A limelight;
     private int IdTag = 0;
@@ -25,6 +33,11 @@ public class LimeLight implements Subsystem {
 
     public Color[] artifactOrder = { Color.None, Color.None, Color.None };
     private boolean artifactOrderDetected = false;
+
+    // tag-ul goal-ului alliantei, din ultimul cadru
+    private boolean goalSeen = false;
+    private double goalTx = 0, goalTy = 0;
+    private double stalenessMs = 1e9;
 
     /** isAuto ramane in constructor ca sa nu se schimbe apelurile existente. */
     public LimeLight(boolean IsBlue, boolean isAuto) {
@@ -56,7 +69,7 @@ public class LimeLight implements Subsystem {
             btn23 = new ButtonReader(ct2, GamepadKeys.Button.A);
         }
 
-        switchPipeline(MOTIF_PIPELINE);
+        switchPipeline(PIPELINE);
     }
 
     public void Run() {
@@ -74,13 +87,16 @@ public class LimeLight implements Subsystem {
             }
         }
 
-        if (artifactOrderDetected)
-            return; // motivul e cunoscut, nu mai citim camera
-
-        switchPipeline(MOTIF_PIPELINE);
+        switchPipeline(PIPELINE);
+        goalSeen = false;
 
         LLResult result = limelight.getLatestResult();
-        if (result != null) {
+        if (result == null) return;
+        stalenessMs = result.getStaleness();
+
+        if (PIPELINE == PYTHON_PIPELINE) {
+            // vechiul mod: doar motivul, din scriptul Python
+            if (artifactOrderDetected) return;
             double[] pythonOut = result.getPythonOutput();
             if (pythonOut != null && pythonOut.length >= 2 && pythonOut[0] > 0.5) {
                 int id = (int) pythonOut[1];
@@ -88,8 +104,41 @@ public class LimeLight implements Subsystem {
                     SetDetectedId(id);
                 }
             }
+            return;
+        }
+
+        // pipeline AprilTag nativ: fiecare tag cu ID-ul si tx-ul lui
+        if (!result.isValid()) return;
+        List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
+        if (tags == null) return;
+        int goalId = isBlue ? 20 : 24;
+        for (LLResultTypes.FiducialResult t : tags) {
+            int id = t.getFiducialId();
+            if (!artifactOrderDetected && (id == 21 || id == 22 || id == 23)) {
+                SetDetectedId(id);
+            } else if (id == goalId) {
+                goalSeen = true;
+                goalTx = t.getTargetXDegrees();
+                goalTy = t.getTargetYDegrees();
+            }
         }
     }
+
+    // ---------- tag-ul goal-ului (pentru corectia de heading) ----------
+
+    /** true daca in ultimul cadru se vede tag-ul goal-ului alliantei (doar pe pipeline-ul AprilTag). */
+    public boolean HasGoalTag() { return goalSeen; }
+
+    /** Unghiul orizontal pana la tag-ul goal-ului (grade, + = spre dreapta). */
+    public double GetGoalTx() { return goalTx; }
+
+    /** Unghiul vertical pana la tag-ul goal-ului (grade, + = in sus). */
+    public double GetGoalTy() { return goalTy; }
+
+    /** Cat de vechi e ultimul rezultat de la camera (ms). */
+    public double GetStalenessMs() { return stalenessMs; }
+
+    // ---------- motivul ----------
 
     private void SetDetectedId(int id) {
         this.IdTag = id;

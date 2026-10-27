@@ -16,6 +16,7 @@ public class TeleOpAlbastru extends LinearOpMode {
     Shooter2 shooter;
     LimeLight limelight;
     TurretShot turretMechanism;
+    HeadingCameraCorrector headingCorrector;
     RobotPinpoint robotPinpoint;
     FieldDrawing fieldDrawing;
     private GamepadEx ct1, ct2;
@@ -54,6 +55,7 @@ public class TeleOpAlbastru extends LinearOpMode {
         turretMechanism = new TurretMotionCompensatedPID(robotPinpoint, ct2); // varianta 2: tabel + tinta virtuala
         turretMechanism.Initialize(hardwareMap);
         shooter.SetTurretShot(turretMechanism);
+        headingCorrector = new HeadingCameraCorrector(robotPinpoint, limelight, turretMechanism);
 
         fieldDrawing = new FieldDrawing();
     }
@@ -67,11 +69,13 @@ public class TeleOpAlbastru extends LinearOpMode {
             robotPinpoint.Run();
             limelight.Run();
             turretMechanism.Run();
+            headingCorrector.Run(); // corectie heading cu camera, doar cand robotul si turela stau
 
             // Primele pe ecran: pozitia robotului si turela
             robotPinpoint.UpdateTelemetry(telemetry);
             drivetrain.UpdateTelemetry(telemetry);
             turretMechanism.UpdateTelemetry(telemetry);
+            headingCorrector.UpdateTelemetry(telemetry);
             fieldDrawing.Draw(robotPinpoint, turretMechanism);
 
             intake.Run();

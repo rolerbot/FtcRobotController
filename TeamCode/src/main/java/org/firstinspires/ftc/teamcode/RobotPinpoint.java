@@ -208,6 +208,7 @@ public class RobotPinpoint implements Subsystem {
 
     /** Seteaza pozitia curenta (relocalizare). */
     public void SetPosition(double x, double y, double headingDegrees) {
+        resetCount++; // pozitia s-a schimbat brusc -> Drivetrain2 isi reia punctul de mentinere
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, headingDegrees));
         this.x = x;
         this.y = y;

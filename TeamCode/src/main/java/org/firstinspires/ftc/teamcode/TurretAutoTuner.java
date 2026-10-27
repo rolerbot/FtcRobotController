@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.arcrobotics.ftclib.controller.wpilibcontroller.ProfiledPIDController;
 import com.arcrobotics.ftclib.trajectory.TrapezoidProfile;
 import com.bylazar.configurables.annotations.Configurable;
-import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -14,328 +13,414 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Auto-tuning pentru PID-ul turelei (metoda "releu", Astrom-Hagglund).
+ * Auto-tuning AUTOMAT pentru PID-ul turelei.
  *
- * Ce face:
- *  X  = masoara kS: puterea minima la care turela incepe sa se miste (in ambele sensuri).
- *  Y  = testul releu: in jurul centrului da +P / -P dupa semnul erorii -> turela oscileaza singura.
- *       Din amplitudinea si perioada oscilatiei se calculeaza Ku (castigul critic) si Tu (perioada),
- *       apoi Kp / Kd dupa 3 reguli (agresiv / echilibrat / fara depasire).
- *  DPAD sus/jos = alege setul de valori propus.
- *  A  = test treapta (+-30 grade) cu valorile ALESE   -> depasire, timp de stabilizare.
- *  B  = test treapta cu valorile ACTUALE din TurretMotionCompensatedPID (pentru comparatie).
- *  RB = aplica valorile alese in TurretMotionCompensatedPID si TurretBallisticShotPID
- *       (doar pana la restartul aplicatiei: dupa ce sunt bune, SCRIETI-LE IN COD).
+ * A = porneste tot (dureaza ~3-4 minute). B = opreste. X = sterge valorile salvate (revine la cele din cod).
+ * Y = verifica doar valorile actuale (un singur test, fara sa schimbe nimic).
  *
- * INAINTE DE INIT: turela impinsa de mana la opritorul din DREAPTA (acolo encoderul devine 0),
- * exact ca la autonomie. Robotul pe loc, nimeni langa turela.
+ * Ce face singur:
+ *  1. Masoara kS (puterea la care turela se urneste).
+ *  2. Testeaza valorile actuale (ca referinta).
+ *  3. Creste Kp pas cu pas pana turela incepe sa oscileze / sa treaca de tinta, apoi alege
+ *     o valoare cu marja de siguranta (KP_MARJA) sub cea la care a aparut problema.
+ *  4. Cauta Kd-ul cu cel mai bun rezultat pentru Kp-ul ales.
+ *  5. Verifica de 2 ori valorile alese; daca apare oscilatie, scade Kp si reia.
+ *  6. Le aplica si le SALVEAZA pe Control Hub -> TeleOp-ul le foloseste automat, si dupa restart.
  *
- * Unitati: unghi in grade, putere -1..1, timp in secunde (Kp = putere/grad, Kd = putere/(grad/s)).
+ * Fiecare test ruleaza cu ACEEASI viteza a buclei ca TeleOp-ul (masurata de turela in TeleOp)
+ * si cu acelasi controler (profil, deadzone, toleranta, kS) - altfel valorile bune aici
+ * oscileaza in TeleOp. Daca TeleOp-ul n-a rulat inca de la pornirea aplicatiei, se foloseste
+ * LOOP_MS_IMPLICIT.
+ *
+ * INAINTE DE INIT: turela la opritorul din DREAPTA (acolo encoderul devine 0), robotul pe loc.
  */
 @Configurable
 @TeleOp(name = "Turela - Auto Tuning PID", group = "Tuning")
 public class TurretAutoTuner extends LinearOpMode {
 
     // ---- reglabile din Panels ----
-    public static double RELAY_POWER = 0.20;      // puterea releului (trebuie sa fie peste kS)
-    public static double RELAY_HYST_DEG = 0.5;    // histerezis, ca zgomotul encoderului sa nu comute releul
-    public static int RELAY_CYCLES = 6;           // perioade masurate (primele 2 se ignora)
-    public static double RELAY_TIMEOUT_S = 10.0;
-    public static double KS_RAMP_PER_S = 0.05;    // cat de repede creste puterea la masurarea kS
-    public static double KS_MOVE_DEG_S = 4.0;     // de la viteza asta se considera ca "s-a miscat"
-    public static double STEP_DEG = 30.0;         // marimea treptei la test
-    public static double STEP_TIME_S = 2.0;       // cat timp se urmareste fiecare treapta
-    public static double SETTLE_BAND_DEG = 1.0;   // "stabilizat" = eroare sub asta
-    public static double SAFE_LIMIT_DEG = 60.0;   // peste asta orice test se opreste
-    public static double MAX_POWER = 0.6;         // ca in clasele turelei
+    public static double LOOP_MS_IMPLICIT = 30.0;   // bucla TeleOp, daca nu e masurata
+    public static double LOOP_MARJA = 1.25;         // testam cu bucla putin mai lenta decat in TeleOp
+    public static double KP_START = 0.02;
+    public static double KP_PAS = 1.3;              // Kp creste cu 30% la fiecare incercare
+    public static double KP_MAX = 0.6;
+    public static double KP_MARJA = 0.7;            // Kp ales = 70% din ultimul Kp bun
+    public static double MAX_DEPASIRE_DEG = 1.5;    // peste asta = prea agresiv
+    public static double BANDA_STABIL_DEG = 1.0;    // "a ajuns" = eroare sub asta (cel putin toleranta din TeleOp)
+    public static int MAX_SCHIMBARI_SENS = 3;       // schimbari de sens ale puterii cat sta pe tinta = oscilatie
+    public static double TINUT_S = 1.3;             // cat timp se urmareste fiecare mutare
+    public static double URMARIRE_VITEZA_DEG_S = 60;// tinta in miscare (ca robotul care se roteste)
+    public static double SAFE_LIMIT_DEG = 65.0;
+    public static double KS_RAMP_PER_S = 0.05;
+    public static double KS_MOVE_DEG_S = 4.0;
+
+    private static final double[] KD_CANDIDATI = { 0.0, 0.002, 0.004, 0.006, 0.009, 0.013 };
+    private static final double[] MUTARI = { 12, -12, 0, 30, 0 };
 
     private DcMotorEx motor;
-    private final ElapsedTime loopTimer = new ElapsedTime();
+    private final ElapsedTime pace = new ElapsedTime();
+    private double loopMs = 30;
+    private boolean aborted = false;
 
-    // rezultate
-    private double kSPlus = Double.NaN, kSMinus = Double.NaN;
-    private double ku = Double.NaN, tu = Double.NaN, amplitude = Double.NaN;
-    private final String[] ruleNames = { "Agresiv (Ziegler-Nichols PD)", "Echilibrat", "Fara depasire" };
-    private final double[][] candidates = new double[3][2]; // {Kp, Kd}
-    private int selected = 1;
-    private String lastStep = "-";
-    private String status = "Gata. Alege un test.";
+    private String stage = "Gata. A = porneste auto-tuning-ul.";
+    private final List<String> log = new ArrayList<>();
+    private String summary = "";
+    private boolean prevA, prevB, prevX, prevY;
 
-    private boolean prevX, prevY, prevA, prevB, prevUp, prevDown, prevRB;
+    /** Rezultatul unui test complet. */
+    private static class Result {
+        boolean ok = true;
+        boolean unstable = false;   // true = prea agresiv (depaseste / oscileaza); false = prea slab
+        String why = "";
+        double overshoot = 0, settleSum = 0, trackRms = 0;
+        int moves = 0, flips = 0, chatter = 0;
+        double settleMean() { return moves == 0 ? 99 : settleSum / moves; }
+        double score() { return settleMean() + 0.2 * overshoot + 0.1 * trackRms; }
+        String text() {
+            return ok ? String.format("OK  stab %.2fs  dep %.1f°  urm %.1f°", settleMean(), overshoot, trackRms)
+                      : "RESPINS: " + why;
+        }
+    }
 
     @Override
     public void runOpMode() {
-        for (LynxModule hub : hardwareMap.getAll(LynxModule.class)) {
-            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
-        }
         motor = hardwareMap.get(DcMotorEx.class, "MotorTurela");
         motor.setDirection(DcMotorEx.Direction.REVERSE);
         motor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         motor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         motor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
 
+        loopMs = (TurretPidStore.measuredLoopMs > 3 ? TurretPidStore.measuredLoopMs : LOOP_MS_IMPLICIT) * LOOP_MARJA;
+
         telemetry.addLine("Turela trebuie sa fie la opritorul din DREAPTA (encoder = 0).");
-        telemetry.addLine("Daca nu era: STOP, impinge-o acolo, INIT din nou.");
-        telemetry.addLine("Apoi START.");
+        telemetry.addLine("Robotul pe loc, nimeni langa turela.");
+        telemetry.addData("Bucla TeleOp", TurretPidStore.measuredLoopMs > 3
+                ? String.format("%.0f ms (masurata) -> testez la %.0f ms", TurretPidStore.measuredLoopMs, loopMs)
+                : String.format("nemasurata -> testez la %.0f ms. (Mai precis: ruleaza intai TeleOp-ul 20 s.)", loopMs));
         telemetry.update();
         waitForStart();
 
-        status = "Merg la centru...";
-        GoTo(0.0, TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, 3.0);
-        status = "Gata. Alege un test.";
+        GoTo(0, 2.0);
 
         while (opModeIsActive()) {
-            boolean x = gamepad1.x, y = gamepad1.y, a = gamepad1.a, b = gamepad1.b;
-            boolean up = gamepad1.dpad_up, down = gamepad1.dpad_down, rb = gamepad1.right_bumper;
-
-            if (x && !prevX) MeasureKS();
-            if (y && !prevY) RelayTest();
-            if (up && !prevUp) selected = (selected + 2) % 3;
-            if (down && !prevDown) selected = (selected + 1) % 3;
-            if (a && !prevA && !Double.isNaN(ku)) {
-                lastStep = "ales (" + ruleNames[selected] + "): "
-                        + StepTest(candidates[selected][0], candidates[selected][1], KsOrZero());
+            boolean a = gamepad1.a, b = gamepad1.b, x = gamepad1.x, y = gamepad1.y;
+            if (a && !prevA) RunAutoTune();
+            if (y && !prevY) {
+                stage = "Verific valorile actuale...";
+                Result r = Evaluate(TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, TurretMotionCompensatedPID.kS);
+                AddLog(String.format("Actual Kp %.4f Kd %.4f kS %.3f: %s", TurretMotionCompensatedPID.Kp,
+                        TurretMotionCompensatedPID.Kd, TurretMotionCompensatedPID.kS, r.text()));
+                stage = "Gata.";
+                GoTo(0, 1.5);
             }
-            if (b && !prevB) {
-                lastStep = "actual: " + StepTest(TurretMotionCompensatedPID.Kp,
-                        TurretMotionCompensatedPID.Kd, TurretMotionCompensatedPID.kS);
+            if (x && !prevX) {
+                boolean ok = TurretPidStore.Delete();
+                stage = ok ? "Fisierul cu valori a fost sters. La urmatorul TeleOp se folosesc valorile din cod."
+                           : "Nu am putut sterge fisierul.";
             }
-            if (rb && !prevRB && !Double.isNaN(ku)) Apply();
-
-            prevX = x; prevY = y; prevA = a; prevB = b; prevUp = up; prevDown = down; prevRB = rb;
-
-            HoldAt(0.0);
-            ShowTelemetry();
+            prevA = a; prevB = b; prevX = x; prevY = y;
+            aborted = false;
+            Hold();
+            Show();
         }
         motor.setPower(0);
     }
 
-    // ===================== teste =====================
+    // ======================================================================
+    //                              AUTO-TUNING
+    // ======================================================================
 
-    /** Creste puterea incet pana turela se misca; in ambele sensuri. */
-    private void MeasureKS() {
-        status = "kS: masor sensul + ...";
-        kSPlus = RampUntilMoves(+1);
-        GoTo(0.0, TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, 2.0);
-        status = "kS: masor sensul - ...";
-        kSMinus = RampUntilMoves(-1);
-        GoTo(0.0, TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, 2.0);
-        status = "kS gata.";
-    }
+    private void RunAutoTune() {
+        aborted = false;
+        log.clear();
+        summary = "";
 
-    private double RampUntilMoves(int dir) {
-        // pornim putin in partea opusa, ca sa avem loc de miscare
-        GoTo(-dir * 20.0, TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, 2.0);
-        motor.setPower(0);
-        sleep(300);
-        ElapsedTime t = new ElapsedTime();
-        double power = 0;
-        while (opModeIsActive() && power < 0.5) {
-            power = KS_RAMP_PER_S * t.seconds();
-            motor.setPower(dir * power);
-            double angle = Angle();
-            double vel = motor.getVelocity() / TurretMotionCompensatedPID.TICKS_PER_DEGREE;
-            if (Math.abs(vel) > KS_MOVE_DEG_S || Math.abs(angle) > SAFE_LIMIT_DEG) {
-                motor.setPower(0);
-                holdController = null;
-                return power;
-            }
-            telemetry.addData("kS", "sens %s, putere %.3f, viteza %.1f°/s", dir > 0 ? "+" : "-", power, vel);
-            telemetry.update();
-        }
-        motor.setPower(0);
-        holdController = null;
-        return Double.NaN;
-    }
-
-    /** Releu cu histerezis in jurul lui 0 -> oscilatie -> Ku, Tu. */
-    private void RelayTest() {
-        status = "Releu: merg la centru...";
-        GoTo(0.0, TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, 2.0);
-        double h = RELAY_POWER;
-        if (!Double.isNaN(kSPlus) && !Double.isNaN(kSMinus)) {
-            h = Math.max(h, 1.5 * Math.max(kSPlus, kSMinus)); // releul trebuie sa invinga frecarea
-        }
-        status = String.format("Releu: oscilez cu %.2f putere...", h);
-
-        List<Double> riseTimes = new ArrayList<>();
-        List<Double> amps = new ArrayList<>();
-        double out = h;
-        double hiPeak = -1e9, loPeak = 1e9;
-        ElapsedTime t = new ElapsedTime();
-        boolean aborted = false;
-
-        while (opModeIsActive() && t.seconds() < RELAY_TIMEOUT_S && riseTimes.size() < RELAY_CYCLES + 3) {
-            double angle = Angle();
-            if (Math.abs(angle) > SAFE_LIMIT_DEG) { aborted = true; break; }
-            double err = 0.0 - angle;
-            hiPeak = Math.max(hiPeak, angle);
-            loPeak = Math.min(loPeak, angle);
-
-            if (err > RELAY_HYST_DEG && out < 0) {          // comutare - -> +
-                out = h;
-                riseTimes.add(t.seconds());
-                if (hiPeak > -1e8 && loPeak < 1e8) amps.add((hiPeak - loPeak) / 2.0);
-                hiPeak = -1e9;
-                loPeak = 1e9;
-            } else if (err < -RELAY_HYST_DEG && out > 0) {  // comutare + -> -
-                out = -h;
-            }
-            motor.setPower(out);
-            telemetry.addData("Releu", "unghi %.1f°, iesire %+.2f, cicluri %d", angle, out, riseTimes.size());
-            telemetry.update();
-        }
-        motor.setPower(0);
-        holdController = null;
-
-        int skip = 2; // primele perioade nu sunt inca stabile
-        if (aborted || riseTimes.size() < skip + 3 || amps.size() < skip + 2) {
-            status = aborted ? "Releu OPRIT: turela a iesit din zona sigura. Scade RELAY_POWER."
-                    : "Releu: nu a oscilat destul. Creste RELAY_POWER (sau masoara intai kS cu X).";
-            GoTo(0.0, TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, 2.0);
+        // 1. kS
+        stage = "1/5 Masor kS (pornire)...";
+        double ksPlus = RampUntilMoves(+1);
+        if (Stop()) return;
+        double ksMinus = RampUntilMoves(-1);
+        if (Stop()) return;
+        if (Double.isNaN(ksPlus) || Double.isNaN(ksMinus)) {
+            stage = "OPRIT: turela nu se misca nici la putere 0.5. Verificati mecanic.";
             return;
         }
-        double sumT = 0; int nT = 0;
-        for (int i = skip + 1; i < riseTimes.size(); i++) { sumT += riseTimes.get(i) - riseTimes.get(i - 1); nT++; }
-        double sumA = 0; int nA = 0;
-        for (int i = skip; i < amps.size(); i++) { sumA += amps.get(i); nA++; }
-        tu = sumT / nT;
-        amplitude = sumA / nA;
-        double aEff = Math.sqrt(Math.max(amplitude * amplitude - RELAY_HYST_DEG * RELAY_HYST_DEG, 1e-6));
-        ku = 4.0 * h / (Math.PI * aEff);
+        double ks = 0.8 * Math.min(ksPlus, ksMinus);
+        AddLog(String.format("kS: + %.3f / - %.3f -> folosesc %.3f", ksPlus, ksMinus, ks));
 
-        candidates[0][0] = 0.8 * ku;  candidates[0][1] = 0.1 * ku * tu;    // Z-N PD
-        candidates[1][0] = 0.33 * ku; candidates[1][1] = 0.11 * ku * tu;   // "some overshoot"
-        candidates[2][0] = 0.2 * ku;  candidates[2][1] = 0.066 * ku * tu;  // "no overshoot"
+        // 2. referinta: valorile actuale
+        stage = "2/5 Testez valorile actuale (referinta)...";
+        double oldKp = TurretMotionCompensatedPID.Kp, oldKd = TurretMotionCompensatedPID.Kd, oldKs = TurretMotionCompensatedPID.kS;
+        Result before = Evaluate(oldKp, oldKd, oldKs);
+        if (Stop()) return;
+        AddLog(String.format("Inainte Kp %.4f Kd %.4f kS %.3f: %s", oldKp, oldKd, oldKs, before.text()));
 
-        status = "Releu gata. Alege setul (DPAD) si testeaza cu A.";
-        GoTo(0.0, TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, 2.0);
-    }
-
-    /** Treapta 0 -> +STEP -> -STEP -> 0 cu controlerul real (profil trapezoidal), raporteaza depasirea si timpul. */
-    private String StepTest(double kp, double kd, double ks) {
-        status = String.format("Treapta cu Kp=%.4f Kd=%.4f kS=%.3f ...", kp, kd, ks);
-        GoTo(0.0, kp, kd, 1.5);
-        double[] targets = { STEP_DEG, -STEP_DEG, 0.0 };
-        double worstOver = 0, worstSettle = 0;
-        boolean allSettled = true;
-        for (double target : targets) {
-            double[] r = new double[2];
-            boolean ok = GoToMeasured(target, kp, kd, ks, STEP_TIME_S, r);
-            worstOver = Math.max(worstOver, r[0]);
-            worstSettle = Math.max(worstSettle, r[1]);
-            allSettled &= ok;
+        // 3. Kp: crestem pana apare problema
+        double lastGoodKp = Double.NaN;
+        double kp = KP_START;
+        while (kp <= KP_MAX) {
+            stage = String.format("3/5 Caut Kp: incerc %.4f ...", kp);
+            Result r = Evaluate(kp, 0.0, ks);
+            if (Stop()) return;
+            AddLog(String.format("Kp %.4f: %s", kp, r.text()));
+            if (r.ok) lastGoodKp = kp;
+            else if (r.unstable) break;   // prea agresiv -> ne oprim; prea slab -> crestem in continuare
+            kp *= KP_PAS;
         }
-        status = "Treapta gata.";
-        return String.format("depasire max %.1f°, stabilizare %s", worstOver,
-                allSettled ? String.format("%.2f s", worstSettle) : "NU s-a stabilizat");
+        if (Double.isNaN(lastGoodKp)) {
+            stage = "OPRIT: nici cel mai mic Kp nu a mers. Scade KP_START sau verifica turela.";
+            return;
+        }
+        double chosenKp = lastGoodKp * KP_MARJA;
+        AddLog(String.format("Ultimul Kp bun %.4f -> aleg %.4f (marja %.0f%%)", lastGoodKp, chosenKp, KP_MARJA * 100));
+
+        // 4. Kd
+        double bestKd = 0;
+        Result best = null;
+        for (double kd : KD_CANDIDATI) {
+            stage = String.format("4/5 Caut Kd: incerc %.4f (Kp %.4f)...", kd, chosenKp);
+            Result r = Evaluate(chosenKp, kd, ks);
+            if (Stop()) return;
+            AddLog(String.format("Kd %.4f: %s", kd, r.text()));
+            if (r.ok && (best == null || r.score() < best.score())) {
+                best = r;
+                bestKd = kd;
+            }
+        }
+        if (best == null) bestKd = 0;
+
+        // 5. verificare de 2 ori; daca oscileaza, scadem Kp
+        for (int attempt = 0; attempt < 4; attempt++) {
+            stage = String.format("5/5 Verific Kp %.4f Kd %.4f kS %.3f (%d)...", chosenKp, bestKd, ks, attempt + 1);
+            Result r1 = Evaluate(chosenKp, bestKd, ks);
+            if (Stop()) return;
+            Result r2 = r1.ok ? Evaluate(chosenKp, bestKd, ks) : r1;
+            if (Stop()) return;
+            AddLog(String.format("Verificare: %s | %s", r1.text(), r2.text()));
+            if (r1.ok && r2.ok) {
+                Apply(chosenKp, bestKd, ks);
+                summary = String.format("NOU:     Kp %.4f  Kd %.4f  kS %.3f -> %s\nINAINTE: Kp %.4f  Kd %.4f  kS %.3f -> %s",
+                        chosenKp, bestKd, ks, r1.text(), oldKp, oldKd, oldKs, before.text());
+                stage = "GATA. Valorile sunt aplicate si salvate: porniti TeleOp-ul.";
+                GoTo(0, 1.5);
+                return;
+            }
+            chosenKp *= 0.8;
+        }
+        stage = "OPRIT: nu am gasit valori stabile. Valorile vechi raman neschimbate.";
+        GoTo(0, 1.5);
     }
 
-    private void Apply() {
-        double kp = candidates[selected][0], kd = candidates[selected][1], ks = KsOrZero();
+    private void Apply(double kp, double kd, double ks) {
         TurretMotionCompensatedPID.Kp = kp;
         TurretMotionCompensatedPID.Kd = kd;
         TurretMotionCompensatedPID.kS = ks;
         TurretBallisticShotPID.Kp = kp;
         TurretBallisticShotPID.Kd = kd;
         TurretBallisticShotPID.kS = ks;
-        status = String.format("APLICAT (pana la restart): Kp=%.4f Kd=%.4f kS=%.3f. Scrie-le in cod!", kp, kd, ks);
+        boolean saved = TurretPidStore.Save(kp, kd, ks);
+        AddLog(saved ? "Salvat pe Control Hub (se pastreaza si dupa restart)." : "ATENTIE: nu am putut salva fisierul!");
     }
 
-    // ===================== control =====================
+    // ======================================================================
+    //                    UN TEST COMPLET (mutari + urmarire)
+    // ======================================================================
 
-    /** Merge la unghi cu controlerul real; nu masoara nimic. */
-    private void GoTo(double target, double kp, double kd, double timeS) {
-        GoToMeasured(target, kp, kd, TurretMotionCompensatedPID.kS, timeS, null);
+    /** Ruleaza mutarile din MUTARI si urmarirea unei tinte in miscare, exact ca in TeleOp. */
+    private Result Evaluate(double kp, double kd, double ks) {
+        Result res = new Result();
+        GoTo(0, 1.5);
+        if (Stop()) { res.ok = false; res.why = "oprit"; return res; }
+
+        ProfiledPIDController c = NewController(kp, kd);
+        c.reset(Angle());
+        double band = Math.max(BANDA_STABIL_DEG, TurretMotionCompensatedPID.ANGLE_TOLERANCE_DEG + 0.1);
+
+        // --- mutari in trepte ---
+        for (double target : MUTARI) {
+            double start = Angle();
+            double dir = Math.signum(target - start);
+            double over = 0, settleAt = -1;
+            int flips = 0;
+            double lastSign = 0;
+            ElapsedTime t = new ElapsedTime();
+            while (opModeIsActive() && t.seconds() < TINUT_S) {
+                if (CheckAbort()) { res.ok = false; res.why = "oprit"; return res; }
+                double angle = Angle();
+                if (Math.abs(angle) > SAFE_LIMIT_DEG) { Off(); res.ok = false; res.why = "a iesit din zona sigura"; return res; }
+                double power = Control(c, angle, target, ks);
+                motor.setPower(power);
+
+                if (dir != 0) over = Math.max(over, (angle - target) * dir);
+                if (over > 3 * MAX_DEPASIRE_DEG) { Off(); res.ok = false; res.unstable = true; res.why = String.format("depasire %.1f°", over); return res; }
+                double err = target - angle;
+                if (Math.abs(err) < band) { if (settleAt < 0) settleAt = t.seconds(); } else settleAt = -1;
+                // schimbari de sens in a doua jumatate (cand ar trebui sa stea pe tinta)
+                if (t.seconds() > TINUT_S / 2 && Math.abs(power) > 0.03) {
+                    double s = Math.signum(power);
+                    if (lastSign != 0 && s != lastSign) flips++;
+                    lastSign = s;
+                }
+                Pace();
+                ShowLive(String.format("Kp %.4f Kd %.4f kS %.3f | tinta %.0f° unghi %.1f°", kp, kd, ks, target, angle));
+            }
+            res.overshoot = Math.max(res.overshoot, over);
+            res.flips = Math.max(res.flips, flips);
+            res.moves++;
+            res.settleSum += settleAt < 0 ? TINUT_S : settleAt;
+            if (over > MAX_DEPASIRE_DEG) { res.ok = false; res.unstable = true; res.why = String.format("depasire %.1f°", over); }
+            else if (flips > MAX_SCHIMBARI_SENS) { res.ok = false; res.unstable = true; res.why = "oscileaza pe tinta (" + flips + " schimbari)"; }
+            else if (settleAt < 0) { res.ok = false; res.why = String.format("nu ajunge la %.0f°", target); }
+            if (!res.ok) { Off(); return res; }
+        }
+
+        // --- urmarire: tinta care se misca inainte-inapoi (ca la rotirea robotului) ---
+        double amp = 20, period = 4 * amp / URMARIRE_VITEZA_DEG_S;
+        double sumSq = 0; int n = 0;
+        double lastSign = 0, lastFlipT = -1;
+        ElapsedTime t = new ElapsedTime();
+        double persistent = Angle();
+        while (opModeIsActive() && t.seconds() < 4.0) {
+            if (CheckAbort()) { res.ok = false; res.why = "oprit"; return res; }
+            double angle = Angle();
+            if (Math.abs(angle) > SAFE_LIMIT_DEG) { Off(); res.ok = false; res.why = "a iesit din zona sigura"; return res; }
+            double ph = (t.seconds() % period) / period;
+            double needed = ph < 0.5 ? -amp + 4 * amp * ph : 3 * amp - 4 * amp * ph; // triunghi -amp..amp
+            // aceeasi deadzone ca in TeleOp (cea mai mica, adica cazul cel mai sensibil)
+            if (Math.abs(angle - needed) > TurretMotionCompensatedPID.DEADZONE_FAR_DEG) persistent = needed;
+            double power = Control(c, angle, persistent, ks);
+            motor.setPower(power);
+            if (t.seconds() > 0.6) { sumSq += (needed - angle) * (needed - angle); n++; }
+            if (Math.abs(power) > 0.03) {
+                double s = Math.signum(power);
+                if (lastSign != 0 && s != lastSign) {
+                    if (lastFlipT >= 0 && t.seconds() - lastFlipT < 0.15) res.chatter++;
+                    lastFlipT = t.seconds();
+                }
+                lastSign = s;
+            }
+            Pace();
+            ShowLive(String.format("Kp %.4f Kd %.4f | urmarire: tinta %.1f° unghi %.1f°", kp, kd, needed, angle));
+        }
+        Off();
+        res.trackRms = n > 0 ? Math.sqrt(sumSq / n) : 99;
+        if (res.chatter > 6) { res.ok = false; res.unstable = true; res.why = "tremura la urmarire (" + res.chatter + ")"; }
+        return res;
     }
 
-    /**
-     * Acelasi controler ca in TurretMotionCompensatedPID (ProfiledPIDController + kS + limita de putere).
-     * r[0] = depasire (grade), r[1] = timp pana ramane in SETTLE_BAND_DEG. Returneaza true daca s-a stabilizat.
-     */
-    private boolean GoToMeasured(double target, double kp, double kd, double ks, double timeS, double[] r) {
-        ProfiledPIDController c = new ProfiledPIDController(kp, 0, kd,
-                new TrapezoidProfile.Constraints(TurretMotionCompensatedPID.maxVelocity,
-                        TurretMotionCompensatedPID.maxAcceleration));
-        double start = Angle();
-        c.reset(start);
-        double dir = Math.signum(target - start);
-        double over = 0;
-        double settleStart = -1;
+    // ======================================================================
+    //                              UTILITARE
+    // ======================================================================
+
+    private ProfiledPIDController NewController(double kp, double kd) {
+        return new ProfiledPIDController(kp, 0, kd, new TrapezoidProfile.Constraints(
+                TurretMotionCompensatedPID.maxVelocity, TurretMotionCompensatedPID.maxAcceleration));
+    }
+
+    /** Acelasi calcul ca TurretMotionCompensatedPID.Update(): PID cu profil + kS peste toleranta + limita 0.6. */
+    private double Control(ProfiledPIDController c, double angle, double target, double ks) {
+        double power = c.calculate(angle, target);
+        double err = target - angle;
+        if (Math.abs(err) > TurretMotionCompensatedPID.ANGLE_TOLERANCE_DEG) power += Math.signum(err) * ks;
+        return Range.clip(power, -0.6, 0.6);
+    }
+
+    /** Asteapta pana trece o bucla de durata TeleOp-ului. */
+    private void Pace() {
+        while (opModeIsActive() && pace.milliseconds() < loopMs) { /* asteptam */ }
+        pace.reset();
+    }
+
+    /** Duce turela la unghi cu valorile vechi, sigure (Kp 0.032 + kS mic). */
+    private void GoTo(double target, double timeS) {
+        ProfiledPIDController c = NewController(0.032, 0.005);
+        c.reset(Angle());
         ElapsedTime t = new ElapsedTime();
         while (opModeIsActive() && t.seconds() < timeS) {
-            double angle = Angle();
-            if (Math.abs(angle) > SAFE_LIMIT_DEG + 10) break;
-            double power = c.calculate(angle, target);
-            double err = target - angle;
-            if (Math.abs(err) > SETTLE_BAND_DEG) power += Math.signum(err) * ks;
-            power = Range.clip(power, -MAX_POWER, MAX_POWER);
-            motor.setPower(power);
-
-            if (dir != 0) over = Math.max(over, (angle - target) * dir);
-            if (Math.abs(err) < SETTLE_BAND_DEG) {
-                if (settleStart < 0) settleStart = t.seconds();
-            } else {
-                settleStart = -1;
-            }
-            if (r != null) {
-                telemetry.addData("Treapta", "tinta %.0f°, unghi %.1f°, putere %+.2f", target, angle, power);
-                telemetry.update();
-            }
+            if (CheckAbort()) break;
+            motor.setPower(Control(c, Angle(), target, 0.05));
+            Pace();
         }
-        holdController = null; // controlerul de "tinut pe loc" porneste din nou de la pozitia curenta
-        if (r != null) {
-            r[0] = over;
-            r[1] = settleStart < 0 ? timeS : settleStart;
-        }
-        return settleStart >= 0;
+        Off();
+        holdController = null;
     }
 
-    /** Tine turela pe loc intre teste (cu valorile actuale). */
+    private double RampUntilMoves(int dir) {
+        GoTo(-dir * 20.0, 2.0);
+        ElapsedTime t = new ElapsedTime();
+        double power = 0;
+        while (opModeIsActive() && power < 0.5) {
+            if (CheckAbort()) { Off(); return Double.NaN; }
+            power = KS_RAMP_PER_S * t.seconds();
+            motor.setPower(dir * power);
+            double vel = motor.getVelocity() / TurretMotionCompensatedPID.TICKS_PER_DEGREE;
+            if (Math.abs(vel) > KS_MOVE_DEG_S || Math.abs(Angle()) > SAFE_LIMIT_DEG) {
+                Off();
+                GoTo(0, 2.0);
+                return power;
+            }
+            ShowLive(String.format("kS: sens %s, putere %.3f", dir > 0 ? "+" : "-", power));
+        }
+        Off();
+        GoTo(0, 2.0);
+        return Double.NaN;
+    }
+
     private ProfiledPIDController holdController;
-    private void HoldAt(double target) {
+    private void Hold() {
         if (holdController == null) {
-            holdController = new ProfiledPIDController(TurretMotionCompensatedPID.Kp, 0, TurretMotionCompensatedPID.Kd,
-                    new TrapezoidProfile.Constraints(TurretMotionCompensatedPID.maxVelocity,
-                            TurretMotionCompensatedPID.maxAcceleration));
+            holdController = NewController(TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd);
             holdController.reset(Angle());
         }
-        double angle = Angle();
-        motor.setPower(Range.clip(holdController.calculate(angle, target), -MAX_POWER, MAX_POWER));
+        motor.setPower(Control(holdController, Angle(), 0, TurretMotionCompensatedPID.kS));
     }
+
+    private boolean CheckAbort() {
+        if (gamepad1.b) aborted = true;
+        return aborted || !opModeIsActive();
+    }
+
+    private boolean Stop() {
+        if (aborted || !opModeIsActive()) {
+            Off();
+            stage = "OPRIT de la B. Valorile vechi raman neschimbate.";
+            return true;
+        }
+        return false;
+    }
+
+    private void Off() { motor.setPower(0); }
 
     private double Angle() {
         return (motor.getCurrentPosition() - TurretMotionCompensatedPID.TICKS_AT_CENTER)
                 / TurretMotionCompensatedPID.TICKS_PER_DEGREE;
     }
 
-    private double KsOrZero() {
-        if (Double.isNaN(kSPlus) || Double.isNaN(kSMinus)) return 0.0;
-        return 0.8 * Math.min(kSPlus, kSMinus); // putin sub pragul de pornire, ca sa nu oscileze
+    private void AddLog(String s) {
+        log.add(s);
+        while (log.size() > 12) log.remove(0);
     }
 
-    // ===================== telemetrie =====================
+    private void ShowLive(String live) {
+        telemetry.addLine("=== AUTO TUNING TURELA ===  (B = opreste)");
+        telemetry.addData("Etapa", stage);
+        telemetry.addData("Acum", live);
+        for (String s : log) telemetry.addLine("  " + s);
+        telemetry.update();
+    }
 
-    private void ShowTelemetry() {
+    private void Show() {
         telemetry.addLine("=== AUTO TUNING TURELA ===");
-        telemetry.addData("Stare", status);
-        telemetry.addData("Unghi", "%.1f°  (ticks %d)", Angle(), motor.getCurrentPosition());
-        telemetry.addLine("X = kS | Y = releu | DPAD = alege | A = test ales | B = test actual | RB = aplica");
-        telemetry.addLine("");
-        telemetry.addData("Actual (MotionCompensated)", "Kp=%.4f Kd=%.4f kS=%.3f",
-                TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, TurretMotionCompensatedPID.kS);
-        telemetry.addData("kS masurat", "+ %.3f / - %.3f  -> propus %.3f",
-                kSPlus, kSMinus, KsOrZero());
-        if (!Double.isNaN(ku)) {
-            telemetry.addData("Releu", "Ku=%.4f  Tu=%.3f s  amplitudine=%.2f°", ku, tu, amplitude);
-            for (int i = 0; i < 3; i++) {
-                telemetry.addData((i == selected ? ">> " : "   ") + ruleNames[i],
-                        "Kp=%.4f Kd=%.4f", candidates[i][0], candidates[i][1]);
-            }
-        } else {
-            telemetry.addLine("Releu: inca nerulat (Y).");
-        }
-        telemetry.addData("Ultimul test treapta", lastStep);
+        telemetry.addData("Stare", stage);
+        telemetry.addLine("A = auto-tuning | Y = verifica valorile actuale | X = sterge valorile salvate | B = opreste");
+        telemetry.addData("Unghi", "%.1f°", Angle());
+        telemetry.addData("Bucla testata", "%.0f ms (TeleOp %s)", loopMs,
+                TurretPidStore.measuredLoopMs > 3 ? String.format("%.0f ms", TurretPidStore.measuredLoopMs) : "nemasurat");
+        telemetry.addData("Actual", "Kp %.4f  Kd %.4f  kS %.3f", TurretMotionCompensatedPID.Kp,
+                TurretMotionCompensatedPID.Kd, TurretMotionCompensatedPID.kS);
+        if (!summary.isEmpty()) telemetry.addLine(summary);
+        telemetry.addLine("--- jurnal ---");
+        for (String s : log) telemetry.addLine("  " + s);
         telemetry.update();
     }
 }

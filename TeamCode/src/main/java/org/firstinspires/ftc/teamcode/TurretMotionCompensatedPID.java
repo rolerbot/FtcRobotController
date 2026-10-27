@@ -146,6 +146,15 @@ public class TurretMotionCompensatedPID implements TurretShot {
     public void Initialize(HardwareMap hwMap, boolean resetEncoder) {
         LinkComponents(hwMap);
 
+        // valorile gasite de "Turela - Auto Tuning PID" (daca exista) inlocuiesc Kp / Kd / kS din cod
+        double[] saved = TurretPidStore.Load();
+        TurretPidStore.loadedFromFile = saved != null;
+        if (saved != null) {
+            Kp = saved[0];
+            Kd = saved[1];
+            kS = saved[2];
+        }
+
         if (resetEncoder) {
             MotorTurela.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         }
@@ -163,6 +172,7 @@ public class TurretMotionCompensatedPID implements TurretShot {
     }
 
     public void Update() {
+        TurretPidStore.ReportLoop(); // tunerul testeaza cu aceeasi durata a buclei
         if (ct2 != null) {
             btnManual.readValue();
             if (btnManual.wasJustPressed()) {
@@ -348,6 +358,8 @@ public class TurretMotionCompensatedPID implements TurretShot {
     @Override
     public void UpdateTelemetry(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
         telemetry.addLine("=== TURELA ===");
+        telemetry.addData("  PID", "Kp %.4f  Kd %.4f  kS %.3f  (%s)  bucla %.0f ms", Kp, Kd, kS,
+                TurretPidStore.loadedFromFile ? "din auto-tuning" : "din cod", TurretPidStore.measuredLoopMs);
         telemetry.addData("  Mod", isManualMode ? "MANUAL" : (autoAim ? "AUTO (TurretMotionCompensatedPID)" : "UNGHI FIX"));
         telemetry.addData("  Unghi", "%.1f°", currentAngle);
         telemetry.addData("  Tinta", "%.1f° (calculat %.1f°)", targetAngle, neededAngle);

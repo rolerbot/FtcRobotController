@@ -17,7 +17,6 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 /**
  * Drivetrain2 - varianta de test pentru Drivetrain (aceleasi motoare, aceleasi comenzi).
  * In TeleOp se inlocuieste doar tipul si "new": Drivetrain2 drivetrain = new Drivetrain2(ct1, ct2, robotPinpoint);
- *
  * Ce face in plus:
  *  1. OPRIRE LINA: cand lasi joystick-ul, puterea scade treptat (DECEL_PER_SEC), nu instant.
  *     Accelerarea ramane instant, ca sa raspunda la fel de repede.

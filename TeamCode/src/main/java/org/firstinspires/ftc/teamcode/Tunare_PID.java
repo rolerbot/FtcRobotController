@@ -7,28 +7,34 @@ import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+
 
 public class FunctiePreTunare implements Subsystem {
     private DcMotorEx shooter1;
     private DcMotorEx shooter2;
 
-    private static final double TICKS_PER_REV = 28;   // goBILDA 6000 RPM motor
-    private double step1 = 0.1, step2 = 0.01;
     private boolean active = false;
     private GamepadEx ct1;
     private Telemetry telemetry;
-    private final double TRANSFER_P = 10.0;
-    private final double TRANSFER_I = 3.0;
-    private final double TRANSFER_D = 0.0;
-    private final double TRANSFER_F = 13cl.0;
-    private final double TRANSFER_VELOCITY = 2800;
+    private double currenttargetVelocity = 1100;
+    double F = 13;
+    double P = 10;
+    double[] stepsizes = { 10.0, 1.0, 0.1, 0.01, 0.001 };
+    int stepIndex = 1;
 
-    ButtonReader step1_plus;
-    ButtonReader step1_minus;
-    ButtonReader step2_plus;
-    ButtonReader step2_minus;
+
+
+
+    ButtonReader stepIncrease;
+    ButtonReader Fincrease;
+    ButtonReader Fdecrease;
+    ButtonReader Pincrease;
+    ButtonReader Pdecrease;
     ButtonReader start;
     ButtonReader stop;
+    ButtonReader Vel_Up;
+    ButtonReader Vel_Dn;
 
     public FunctiePreTunare(GamepadEx ct, Telemetry telemetry)
     {
@@ -44,12 +50,17 @@ public class FunctiePreTunare implements Subsystem {
 
     public void Initialize(HardwareMap hwMap) {
         LinkComponents(hwMap);
-        step1_plus  = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
-        step1_minus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
-        step2_plus  = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
-        step2_minus = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
+
+        stepIncrease = new ButtonReader(ct1, GamepadKeys.Button.B);
+        Fincrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_LEFT);
+        Fdecrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_RIGHT);
+        Pincrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_UP);
+        Pdecrease = new ButtonReader(ct1, GamepadKeys.Button.DPAD_DOWN);
         start       = new ButtonReader(ct1, GamepadKeys.Button.A);
-        stop        = new ButtonReader(ct1, GamepadKeys.Button.B);
+        stop        = new ButtonReader(ct1, GamepadKeys.Button.Y);
+        Vel_Up = new ButtonReader(ct1, GamepadKeys.Button.RIGHT_BUMPER);
+        Vel_Dn = new ButtonReader(ct1, GamepadKeys.Button.LEFT_BUMPER);
+
 
         shooter1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -63,49 +74,82 @@ public class FunctiePreTunare implements Subsystem {
     }
 
     public void Apas() {
-        step1_plus.readValue();
-        step1_minus.readValue();
-        step2_plus.readValue();
-        step2_minus.readValue();
+
+        stepIncrease.readValue();
+        Fincrease.readValue();
+        Fdecrease.readValue();
+        Pincrease.readValue();
+        Pdecrease.readValue();
         start.readValue();
         stop.readValue();
+        Vel_Up.readValue();
+        Vel_Dn.readValue();
 
-        if (start.wasJustPressed()) {
-            power = 0.1;                 // power now matches what the motors get
-            shooter1.setPower(power);
-            shooter2.setPower(power);
+        if (start.wasJustPressed())
+        {
             active = true;
+            shooter1.setVelocity(currenttargetVelocity);
+            shooter2.setVelocity(currenttargetVelocity);
         }
 
-        if (active) {
-            if (step1_plus.wasJustPressed())       power += step1;
-            else if (step1_minus.wasJustPressed()) power -= step1;
-            else if (step2_plus.wasJustPressed())  power += step2;
-            else if (step2_minus.wasJustPressed()) power -= step2;
+        if(active == true)
+        {
+            if (stepIncrease.wasJustPressed())
+                stepIndex = (stepIndex + 1) % stepsizes.length;
 
-            power = Math.min(1.0, Math.max(0.0, power));   // clamp AFTER the buttons
-            shooter1.setPower(power);
-            shooter2.setPower(power);
+            if (Fincrease.wasJustPressed())
+                F += stepsizes[stepIndex];
+
+            if (Fdecrease.wasJustPressed())
+                F -= stepsizes[stepIndex];
+
+            if (Pincrease.wasJustPressed())
+                P += stepsizes[stepIndex];
+
+            if (Pdecrease.wasJustPressed())
+                P -= stepsizes[stepIndex];
+
+            if (Vel_Up.wasJustPressed()) {
+                currenttargetVelocity += 50;
+                currenttargetVelocity = Math.min(5000, currenttargetVelocity);
+                shooter1.setVelocity(currenttargetVelocity);
+                shooter2.setVelocity(currenttargetVelocity);
+            }
+
+            if (Vel_Dn.wasJustPressed()) {
+                currenttargetVelocity -= 50;
+                currenttargetVelocity = Math.max(0, currenttargetVelocity);
+                shooter1.setVelocity(currenttargetVelocity);
+                shooter2.setVelocity(currenttargetVelocity);
+            }
+
+
+                 F = Math.max(0, Math.min(25, F));
+                 P = Math.max(0, Math.min(25, P));
+                PIDFCoefficients pidfCoefficients = new PIDFCoefficients(P, 0, 0, F);
+               shooter1.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+               shooter2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+
 
             if (stop.wasJustPressed()) {
-                power = 0;
-                shooter1.setPower(0);
-                shooter2.setPower(0);
+
+                shooter1.setVelocity(0);
+                shooter2.setVelocity(0);
                 active = false;
             }
-        }
 
-        double vel1 = shooter1.getVelocity();   // ticks/sec
-        double vel2 = shooter2.getVelocity();
+            }
 
         telemetry.addData("Active", active);
-        telemetry.addData("Power", "%.2f", power);
-        telemetry.addData("Shooter1 ticks/s", "%.0f", vel1);
-        telemetry.addData("Shooter2 ticks/s", "%.0f", vel2);
-        telemetry.addData("Shooter1 RPM", "%.0f", vel1 * 60 / TICKS_PER_REV);
-        telemetry.addData("Shooter2 RPM", "%.0f", vel2 * 60 / TICKS_PER_REV);
-        telemetry.addData("F estimat", "%.2f", vel1 > 100 ? 32767 * power / vel1 : 0);
+        telemetry.addData("P", "%.3f", P);
+        telemetry.addData("F", "%.3f", F);
+        telemetry.addData("Target velocity (ticks/s)", "%.0f", currenttargetVelocity);
+        telemetry.addData("Shooter 1 velocity (ticks/s)", "%.0f", shooter1.getVelocity());
+        telemetry.addData("Shooter 2 velocity (ticks/s)", "%.0f", shooter2.getVelocity());
         telemetry.update();
+
+
     }
 
     public void Run()

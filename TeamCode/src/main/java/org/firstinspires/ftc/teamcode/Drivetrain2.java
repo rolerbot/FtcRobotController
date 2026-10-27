@@ -45,15 +45,15 @@ public class Drivetrain2 implements Subsystem {
     // ===================== OPRIRE LINA =====================
     // Cat de repede scade puterea cand lasi joystick-ul (putere pe secunda).
     // 4.0 = de la viteza maxima la 0 in 0.25 s. Mai mic = oprire mai lunga si mai lina.
-    public static double DECEL_PER_SEC = 2.0;
+    public static double DECEL_PER_SEC = 4.0;
     // true = motoarele merg liber (FLOAT) cat se opreste (aluneca mai mult, ca la Pedro);
     // false = BRAKE si cat se opreste (oprirea urmeaza exact rampa de mai sus).
-    public static boolean FLOAT_CAT_SE_OPRESTE = true;
+    public static boolean FLOAT_CAT_SE_OPRESTE = false;
     public static double STICK_DEADBAND = 0.10;  // ca la blocarea din RobotPinpoint; sub asta joystick-ul e considerat lasat
 
     // ===================== MENTINERE POZITIE =====================
     public static boolean HOLD_ACTIV = true;
-    public static double HOLD_DELAY_S = 0.4;           // cat sta oprit inainte sa inceapa mentinerea
+    public static double HOLD_DELAY_S = 0.25;          // cat sta oprit inainte sa inceapa mentinerea
     public static double HOLD_MAX_SPEED_IN_S = 2.0;    // considerat oprit sub viteza asta
     public static double HOLD_MAX_TURN_DEG_S = 5.0;
     public static double HOLD_KP = 0.06;               // putere per inch de eroare
@@ -72,7 +72,7 @@ public class Drivetrain2 implements Subsystem {
     //  1.0 = exact follower.holdPoint() din Pedro (moale)
     //  ~2.2 = cat de tare corecteaza Pedro cand urmareste un traseu (PIDF-ul fara scalarea de hold)
     // Daca robotul tremura / oscileaza pe loc -> scadeti (1.5).
-    public static double HOLD_RIGIDITATE = 2.3;
+    public static double HOLD_RIGIDITATE = 2.0;
     public static double HOLD_DEADBAND_IN = 0.4;       // sub eroarea asta nu corecteaza (fara tremurat)
     public static double HOLD_DEADBAND_DEG = 1.0;
     public static double HOLD_MAX_POWER = 0.45;        // putere maxima de corectie (deplasare)

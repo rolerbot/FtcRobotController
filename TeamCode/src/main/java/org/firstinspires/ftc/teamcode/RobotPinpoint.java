@@ -203,7 +203,8 @@ public class RobotPinpoint implements Subsystem {
                 && Math.abs(gamepad1.getLeftY()) < STICK_DEADBAND
                 && gamepad1.gamepad.left_trigger < STICK_DEADBAND
                 && gamepad1.gamepad.right_trigger < STICK_DEADBAND
-                && Math.abs(gamepad1.getRightX()) < STICK_DEADBAND;
+                && Math.abs(gamepad1.getRightX()) < STICK_DEADBAND
+                && !motorsCommanded;
         if (!driverIdle) {
             locked = false;
             stillTimer.reset();
@@ -288,6 +289,11 @@ public class RobotPinpoint implements Subsystem {
      * Reset la pozitia initiala. Robotul trebuie sa fie fix in acel loc cand apesi,
      * pentru ca se recalibreaza si IMU-ul.
      */
+    // true cand drivetrain-ul comanda motoarele (ex. Drivetrain2 readuce robotul pe pozitie).
+    // Atunci blocarea NU are voie sa porneasca: ar "sterge" rotirea reala ca pe o deriva.
+    private boolean motorsCommanded = false;
+    public void SetMotorsCommanded(boolean commanded) { motorsCommanded = commanded; }
+
     private int resetCount = 0;
     /** Creste la fiecare ResetPosition(); Drivetrain2 il foloseste ca sa nu mearga spre o pozitie veche. */
     public int GetResetCount() { return resetCount; }

@@ -216,6 +216,11 @@ public class Drivetrain2 implements Subsystem {
             }
         }
 
+        // spune-i lui RobotPinpoint ca motoarele lucreaza -> nu blocheaza heading-ul in timpul corectiei
+        if (robotPinpoint != null) {
+            robotPinpoint.SetMotorsCommanded(outDrive != 0 || outStrafe != 0 || outTwist != 0);
+        }
+
         speeds[0] = (outDrive - outStrafe + outTwist); // FS
         speeds[1] = (outDrive + outStrafe - outTwist); // FD
         speeds[2] = (outDrive + outStrafe + outTwist); // SS

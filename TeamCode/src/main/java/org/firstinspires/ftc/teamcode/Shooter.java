@@ -213,6 +213,9 @@ public class Shooter implements Subsystem {
     }
 
     public void Run() {
+        if (robotPinpoint != null) {
+            robotPinpoint.SetFlywheelVelocity(MotorAruncare.getVelocity()); // pentru compensarea derivei
+        }
         UpdateVoltageCompensation();
 
         if (autoSpinUpBoost && autoBoostTimer.milliseconds() > 900) {

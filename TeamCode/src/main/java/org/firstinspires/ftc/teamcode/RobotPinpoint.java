@@ -4,6 +4,7 @@ import com.bylazar.configurables.annotations.Configurable;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
@@ -51,6 +52,27 @@ public class RobotPinpoint implements Subsystem {
     public static double TARGET_RED_X = 135;
     public static double TARGET_RED_Y = 144 - 7;
     // =====================================================
+
+    // ===================== COMPENSARE DERIVA DIN VIBRATII (doar TeleOp) =====================
+    // Masurat cu testele "Deriva - Shooter ..." (robot pe loc, shooter + intake + transfer pornite):
+    //   baterie plina, flywheel ~1580 tick/s -> -0.41 °/min; flywheel ~1060 -> -0.27 °/min
+    //   => deriva ~ proportionala cu viteza flywheel-ului: -0.00026 °/min pentru fiecare tick/s.
+    // Codul scade deriva asta din heading cat timp merge flywheel-ul.
+    // Corectia se scrie in Pinpoint doar cand robotul sta (ca X/Y sa nu fie afectate);
+    // pana atunci se aplica doar in calcul.
+    // DUPA ORICE SCHIMBARE DE MONTAJ AL PINPOINT-ULUI: refaceti testele si actualizati valoarea.
+    public static boolean COMPENSARE_DERIVA = true;
+    public static double DERIVA_GRADE_PE_MIN_PER_TICK = -0.00026; // °/min pentru 1 tick/s de flywheel
+    public static double DERIVA_FLYWHEEL_MIN = 300;               // sub asta flywheel-ul e considerat oprit
+    public static double DERIVA_SCRIERE_MIN_DEG = 0.1;            // de la cat se scrie corectia in Pinpoint
+    private double flywheelVelocity = 0;
+    private double pendingDriftDeg = 0;     // corectie calculata, inca nescrisa in Pinpoint
+    private double totalDriftDeg = 0;       // tot ce s-a corectat de la start (telemetrie)
+    private final ElapsedTime driftTimer = new ElapsedTime();
+
+    /** Viteza reala a flywheel-ului (tick/s), trimisa de Shooter la fiecare bucla. */
+    public void SetFlywheelVelocity(double ticksPerSecond) { flywheelVelocity = Math.abs(ticksPerSecond); }
+    // ==========================================================================================
 
     // Pozitia curenta a robotului
     private double x = 0;
@@ -131,6 +153,9 @@ public class RobotPinpoint implements Subsystem {
             pinpoint.update();
         }
         ReadPosition();
+        if (ownsUpdate) {
+            CompensateDrift();
+        }
 
         if (gamepad2 != null) {
             boolean currentTriggerState = gamepad2.gamepad.left_bumper;
@@ -183,6 +208,7 @@ public class RobotPinpoint implements Subsystem {
         resetCount++;
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, initialX, initialY, AngleUnit.DEGREES, initialHeading));
         pinpoint.recalibrateIMU();
+        pendingDriftDeg = 0;
 
         x = initialX;
         y = initialY;
@@ -209,9 +235,36 @@ public class RobotPinpoint implements Subsystem {
     /** Seteaza pozitia curenta (relocalizare). */
     public void SetPosition(double x, double y, double headingDegrees) {
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, headingDegrees));
+        pendingDriftDeg = 0;
         this.x = x;
         this.y = y;
         this.heading = headingDegrees;
+        UpdateGoalGeometry();
+    }
+
+    /** Scade deriva din vibratii (rata dupa viteza flywheel-ului). */
+    private void CompensateDrift() {
+        double dt = Math.min(driftTimer.seconds(), 0.1);
+        driftTimer.reset();
+        if (!COMPENSARE_DERIVA) {
+            pendingDriftDeg = 0;
+            return;
+        }
+        if (flywheelVelocity > DERIVA_FLYWHEEL_MIN) {
+            double rateDegPerMin = DERIVA_GRADE_PE_MIN_PER_TICK * flywheelVelocity;
+            double step = -rateDegPerMin * dt / 60.0;   // scadem deriva
+            pendingDriftDeg += step;
+            totalDriftDeg += step;
+        }
+        if (pendingDriftDeg == 0) return;
+
+        heading = NormalizeDeg(heading + pendingDriftDeg);
+        boolean still = Math.hypot(velX, velY) < 1.0 && Math.abs(Math.toDegrees(headingVelRad)) < 2.0;
+        if (still && Math.abs(pendingDriftDeg) >= DERIVA_SCRIERE_MIN_DEG) {
+            // robotul sta -> scriem heading-ul corectat in Pinpoint, X/Y raman exact cum sunt
+            pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, x, y, AngleUnit.DEGREES, heading));
+            pendingDriftDeg = 0;
+        }
         UpdateGoalGeometry();
     }
 
@@ -285,5 +338,9 @@ public class RobotPinpoint implements Subsystem {
         telemetry.addData("  Dist goal", "%.1f\" (%.0f cm)", distanceToGoalIn, distanceToGoalIn * 2.54);
         telemetry.addData("  Unghi goal", "%.1f°", angleToGoalDeg);
         telemetry.addData("  Viteza", "vx %.1f  vy %.1f in/s  w %.0f°/s", velX, velY, Math.toDegrees(headingVelRad));
+        telemetry.addData("  Compensare deriva", !COMPENSARE_DERIVA ? "OPRITA"
+                : String.format("%.2f °/min (fly %.0f) | corectat %+.2f° | de scris %+.2f°",
+                    flywheelVelocity > DERIVA_FLYWHEEL_MIN ? DERIVA_GRADE_PE_MIN_PER_TICK * flywheelVelocity : 0.0,
+                    flywheelVelocity, totalDriftDeg, pendingDriftDeg));
     }
 }

@@ -13,7 +13,7 @@ public class TeleOpAlbastru extends LinearOpMode {
     Drivetrain2 drivetrain;
     Intake intake;
     Mixer mixer;
-    Shooter shooter;
+    Shooter2 shooter;
     LimeLight limelight;
     TurretShot turretMechanism;
     RobotPinpoint robotPinpoint;
@@ -48,7 +48,7 @@ public class TeleOpAlbastru extends LinearOpMode {
         limelight = new LimeLight(true, false, ct2);
         limelight.Initialize(hardwareMap);
 
-        shooter = new Shooter(myLogger, mixer, ct1, ct2, limelight, robotPinpoint);
+        shooter = new Shooter2(myLogger, mixer, ct1, ct2, limelight, robotPinpoint);
         shooter.Initialize(hardwareMap);
 
         turretMechanism = new TurretMotionCompensatedPID(robotPinpoint, ct2); // varianta 2: tabel + tinta virtuala

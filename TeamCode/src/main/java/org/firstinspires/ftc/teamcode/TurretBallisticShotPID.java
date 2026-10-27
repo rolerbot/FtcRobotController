@@ -57,15 +57,18 @@ public class TurretBallisticShotPID implements TurretShot {
 
     private double maxTurretSpeed = 0.6;
 
-    // Deadzone / toleranta (grade), in functie de distanta (inch) - valorile din codul vechi
-    public static double ANGLE_TOLERANCE_DEG = 0.9;   // departe (>= 3.3 m)
-    public static double DEADZONE_FAR_DEG = 0.5;      // departe (>= 3.3 m)
-    public static double CLOSE_DISTANCE_IN = 90.55;   // < 2.3 m
-    public static double DEADZONE_CLOSE_DEG = 1.8;
-    public static double TOLERANCE_CLOSE_DEG = 2.0;
-    public static double MID_DISTANCE_IN = 130.0;     // < 3.3 m
-    public static double DEADZONE_MID_DEG = 2.0;
-    public static double TOLERANCE_MID_DEG = 2.2;
+    // Deadzone / toleranta (grade) si puterea PID-ului, dupa distanta pana la goal (inch):
+    //  - APROAPE: deadzone / toleranta mai mari, PID mai puternic (tinta se muta repede cand mergi)
+    //  - DEPARTE: deadzone / toleranta mai mici, PID mai bland (corectii mici si precise)
+    // Intre CLOSE_DISTANCE_IN si FAR_DISTANCE_IN valorile trec lin de la una la alta.
+    public static double CLOSE_DISTANCE_IN = 90.55;   // sub asta = aproape (2.3 m)
+    public static double FAR_DISTANCE_IN = 130.0;     // peste asta = departe (3.3 m)
+    public static double DEADZONE_CLOSE_DEG = 2.0;
+    public static double TOLERANCE_CLOSE_DEG = 2.2;
+    public static double DEADZONE_FAR_DEG = 0.5;
+    public static double ANGLE_TOLERANCE_DEG = 0.9;   // toleranta departe
+    public static double KP_SCALE_CLOSE = 1.3;        // aproape: Kp x 1.3
+    public static double KP_SCALE_FAR = 0.8;          // departe: Kp x 0.8
     // ---------------------------------------------
 
     // Unde priveste turela la TICKS_AT_CENTER fata de fata robotului (0 = inainte, ca in codul vechi)
@@ -114,6 +117,7 @@ public class TurretBallisticShotPID implements TurretShot {
     private double neededAngle = 0;      // unghiul calculat din Pinpoint in bucla asta
     private double currentDeadzone = DEADZONE_FAR_DEG;
     private double currentTolerance = ANGLE_TOLERANCE_DEG;
+    private double currentKpScale = 1.0;
 
     private boolean autoAim = true;
 
@@ -212,21 +216,17 @@ public class TurretBallisticShotPID implements TurretShot {
             return;
         }
 
-        // Deadzone si toleranta dupa distanta (ca in codul vechi, dar distanta vine din Pinpoint)
+        // Deadzone, toleranta si puterea PID dupa distanta (trec lin intre aproape si departe)
         double distance = distanceIn;
-        currentDeadzone = DEADZONE_FAR_DEG;
-        currentTolerance = ANGLE_TOLERANCE_DEG;
+        double f = 1.0; // 1 = departe, 0 = aproape
         if (distance > 0) {
-            if (distance < CLOSE_DISTANCE_IN) {
-                currentDeadzone = DEADZONE_CLOSE_DEG;
-                currentTolerance = TOLERANCE_CLOSE_DEG;
-            } else if (distance < MID_DISTANCE_IN) {
-                currentDeadzone = DEADZONE_MID_DEG;
-                currentTolerance = TOLERANCE_MID_DEG;
-            }
+            f = Range.clip((distance - CLOSE_DISTANCE_IN) / Math.max(FAR_DISTANCE_IN - CLOSE_DISTANCE_IN, 1.0), 0.0, 1.0);
         }
+        currentDeadzone = DEADZONE_CLOSE_DEG + (DEADZONE_FAR_DEG - DEADZONE_CLOSE_DEG) * f;
+        currentTolerance = TOLERANCE_CLOSE_DEG + (ANGLE_TOLERANCE_DEG - TOLERANCE_CLOSE_DEG) * f;
+        currentKpScale = KP_SCALE_CLOSE + (KP_SCALE_FAR - KP_SCALE_CLOSE) * f;
 
-        controller.setPID(Kp, Ki, Kd);
+        controller.setPID(Kp * currentKpScale, Ki, Kd);
         controller.setConstraints(new TrapezoidProfile.Constraints(maxVelocity, maxAcceleration));
         controller.setTolerance(currentTolerance);
 
@@ -406,7 +406,7 @@ public class TurretBallisticShotPID implements TurretShot {
         telemetry.addData("  Unghi", "%.1f°", currentAngle);
         telemetry.addData("  Tinta", "%.1f° (calculat %.1f°)", targetAngle, neededAngle);
         telemetry.addData("  Eroare (tinta-unghi)", "%.2f°", targetAngle - currentAngle);
-        telemetry.addData("  Deadzone / toleranta", "%.1f° / %.1f°", currentDeadzone, currentTolerance);
+        telemetry.addData("  Deadzone / toleranta / Kp", "%.1f° / %.1f° / x%.2f (Kp %.4f)", currentDeadzone, currentTolerance, currentKpScale, Kp * currentKpScale);
         telemetry.addData("  Ticks", currentTicks);
         if (isTargetOutOfRange()) {
             telemetry.addLine("  Tinta in afara de +-90°!");

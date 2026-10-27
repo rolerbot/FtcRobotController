@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Auto-tuning AUTOMAT pentru PID-ul turelei.
  *
- * A = porneste tot (dureaza ~3-4 minute). B = opreste. X = sterge valorile salvate (revine la cele din cod).
+ * Porneste SINGUR dupa START (PORNIRE_AUTOMATA). A = il porneste din nou (dureaza ~3-4 minute). B = opreste. X = sterge valorile salvate (revine la cele din cod).
  * Y = verifica doar valorile actuale (un singur test, fara sa schimbe nimic).
  *
  * Ce face singur:
@@ -38,7 +38,10 @@ import java.util.List;
 @TeleOp(name = "Turela - Auto Tuning PID", group = "Tuning")
 public class TurretAutoTuner extends LinearOpMode {
 
+    private static final String VERSIUNE = "v2 (automat)";
+
     // ---- reglabile din Panels ----
+    public static boolean PORNIRE_AUTOMATA = true;   // true = auto-tuning-ul porneste singur dupa START
     public static double LOOP_MS_IMPLICIT = 30.0;   // bucla TeleOp, daca nu e masurata
     public static double LOOP_MARJA = 1.25;         // testam cu bucla putin mai lenta decat in TeleOp
     public static double KP_START = 0.02;
@@ -92,7 +95,10 @@ public class TurretAutoTuner extends LinearOpMode {
 
         loopMs = (TurretPidStore.measuredLoopMs > 3 ? TurretPidStore.measuredLoopMs : LOOP_MS_IMPLICIT) * LOOP_MARJA;
 
+        telemetry.addLine("AUTO TUNING TURELA " + VERSIUNE);
         telemetry.addLine("Turela trebuie sa fie la opritorul din DREAPTA (encoder = 0).");
+        telemetry.addLine(PORNIRE_AUTOMATA ? "Dupa START porneste SINGUR (~3-4 min). B = opreste."
+                                           : "Dupa START apasa A. B = opreste.");
         telemetry.addLine("Robotul pe loc, nimeni langa turela.");
         telemetry.addData("Bucla TeleOp", TurretPidStore.measuredLoopMs > 3
                 ? String.format("%.0f ms (masurata) -> testez la %.0f ms", TurretPidStore.measuredLoopMs, loopMs)
@@ -101,10 +107,13 @@ public class TurretAutoTuner extends LinearOpMode {
         waitForStart();
 
         GoTo(0, 2.0);
+        if (PORNIRE_AUTOMATA && opModeIsActive()) SafeAutoTune();
 
         while (opModeIsActive()) {
-            boolean a = gamepad1.a, b = gamepad1.b, x = gamepad1.x, y = gamepad1.y;
-            if (a && !prevA) RunAutoTune();
+            // merg ambele controllere (gamepad 1 sau 2)
+            boolean a = gamepad1.a || gamepad2.a, b = gamepad1.b || gamepad2.b;
+            boolean x = gamepad1.x || gamepad2.x, y = gamepad1.y || gamepad2.y;
+            if (a && !prevA) SafeAutoTune();
             if (y && !prevY) {
                 stage = "Verific valorile actuale...";
                 Result r = Evaluate(TurretMotionCompensatedPID.Kp, TurretMotionCompensatedPID.Kd, TurretMotionCompensatedPID.kS);
@@ -129,6 +138,19 @@ public class TurretAutoTuner extends LinearOpMode {
     // ======================================================================
     //                              AUTO-TUNING
     // ======================================================================
+
+    /** Porneste auto-tuning-ul; orice eroare e afisata pe ecran in loc sa opreasca OpMode-ul. */
+    private void SafeAutoTune() {
+        stage = "A pornit auto-tuning-ul...";
+        Show();
+        try {
+            RunAutoTune();
+        } catch (Exception e) {
+            Off();
+            stage = "EROARE: " + e;
+        }
+        holdController = null;
+    }
 
     private void RunAutoTune() {
         aborted = false;
@@ -376,7 +398,7 @@ public class TurretAutoTuner extends LinearOpMode {
     }
 
     private boolean CheckAbort() {
-        if (gamepad1.b) aborted = true;
+        if (gamepad1.b || gamepad2.b) aborted = true;
         return aborted || !opModeIsActive();
     }
 
@@ -402,7 +424,7 @@ public class TurretAutoTuner extends LinearOpMode {
     }
 
     private void ShowLive(String live) {
-        telemetry.addLine("=== AUTO TUNING TURELA ===  (B = opreste)");
+        telemetry.addLine("=== AUTO TUNING TURELA " + VERSIUNE + " ===  (B = opreste)");
         telemetry.addData("Etapa", stage);
         telemetry.addData("Acum", live);
         for (String s : log) telemetry.addLine("  " + s);
@@ -410,7 +432,7 @@ public class TurretAutoTuner extends LinearOpMode {
     }
 
     private void Show() {
-        telemetry.addLine("=== AUTO TUNING TURELA ===");
+        telemetry.addLine("=== AUTO TUNING TURELA " + VERSIUNE + " ===");
         telemetry.addData("Stare", stage);
         telemetry.addLine("A = auto-tuning | Y = verifica valorile actuale | X = sterge valorile salvate | B = opreste");
         telemetry.addData("Unghi", "%.1f°", Angle());
